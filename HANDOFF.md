@@ -1,27 +1,32 @@
-# Groxy AI — Handoff Ledger
+# HANDOFF.md — Groxy AI
 
-**Last Updated:** 2026-11-14  
-**Current Owner:** Google Antigravity  
-**Current Milestone State:** **`v0.1.0` — Specification in Review** ([`specifications/GROXY-AI-SPEC-001.md`](specifications/GROXY-AI-SPEC-001.md) drafted; awaiting project-owner approval before writing any application code)
-
----
-
-## Frozen Upstream Ecosystem Baselines
-- **Core Language, Bytecode VM & Grisp Server:** **GRAB `v1.1.0`** (`urbanspress/grab.progress` / `urbanspress/grab.stable`) — provides `grab serve --allow-scripts`, `grab check`, `grab format`, `grab mcp`, `use http`, `use json`, `use data`, `use cache`, `use crypto`, `use env`, and `server.asset`.
-- **Reactive Frontend Runtime & 20-Element Library:** **Grex JS `v1.0.0`** (`urbanspress/grex-js.progress` / `urbanspress/grex-js.stable`) — provides `grex.elements.json`, `validateElementNode()`, `auditAccessibility()`, `createTheme()`, `createClassManager()`, and `GrexPreviewBridge`.
-- **Flagship Zero-Plugin CMS:** **GrabLab CMS `v1.0.1`** (`urbanspress/grablab-cms.progress` / `urbanspress/grablab-cms.stable`) — provides `GRABLAB-SPEC-100.md` frozen `grab mcp` tools (`list_content_types`, `query_entries`, `create_entry_draft`, `update_entry_layout`, `list_media`, `list_menus`), JSON-RPC `-32602` error reporting, `/static/grex/grex.elements.json`, and `301` redirect loop guards.
-- **Exclusive Visual Theme & Studio:** **Grex Theme Builder `v1.0.0`** (`urbanspress/grex-builder.progress` / `urbanspress/grex-builder.stable`) — provides `GREX-BUILDER-SPEC-100.md`, live `GRAB-DESIGN-SYSTEM.md` (`GET /api/design-system.md`), `POST /api/mcp/layout` with `actor: "groxy-ai"`, deterministic `createCommandStack` 1-click Undo parity, and WCAG AA enforcement.
+- **Current Owner:** Google Antigravity (`Orchestrator (Argon)` / `Google Hydrogen (High)`)
+- **Current Milestone State:** `v0.1.0` **Complete** (zero pending `v0.1.0` tasks; ready for `v0.2.0` Pre-Publish Grade Gate & Boost Diff Engine planning)
+- **Next Milestone:** `v0.2.0` — Pre-Publish Grade Gate & `"Let Groxy Boost This"` Diff Engine (see `docs/ROADMAP.md`)
 
 ---
 
-## Completed Setup Tasks
-- Created twin GitHub repositories `urbanspress/groxy-ai.progress` (`origin`) and `urbanspress/groxy-ai.stable` (`stable`).
-- Authored repository governance ([`GROXY-EXPERT.md`](GROXY-EXPERT.md), [`AGENTS.md`](AGENTS.md)), committed emerald `#10B981` badges (`docs/badges/`), full milestone roadmap ([`docs/ROADMAP.md`](docs/ROADMAP.md)), `README.md`, `LICENSE` (MIT), and pre-implementation specification [`specifications/GROXY-AI-SPEC-001.md`](specifications/GROXY-AI-SPEC-001.md).
-- Locked strict `MAJOR.MINOR.PATCH` SemVer and Release Compatibility Matrix rules into `AGENTS.md` across all five ecosystem repositories.
+## Frozen Upstream Contracts (Unmodified)
+- **GRAB:** `v1.1.0` (`urbanspress/grab`)
+- **Grex JS:** `v1.0.0` (`urbanspress/grex-js`)
+- **GrabLab CMS:** `v1.0.1` (`urbanspress/grablab-cms`)
+- **Grex Theme Builder:** `v1.0.0` (`urbanspress/grex-builder`)
 
 ---
 
-## Next Pending Task
-1. **Await Project Owner Approval** of [`specifications/GROXY-AI-SPEC-001.md`](specifications/GROXY-AI-SPEC-001.md).
-2. Upon approval, implement **Groxy AI `v0.1.0`** (`src/groxy.grab`, `playbook/seo-playbook.v1.json`, `assets/playbook.js`, `assets/auditor.js`, `assets/mcp-client.js`, `views/dashboard.grab.html`, and unit/DOM/a11y/live E2E tests).
-3. **Recommended Next Model Routing:** Once `GROXY-AI-SPEC-001.md` is approved, select **`Google Hydrogen (High)`** for standard `v0.1.0` module implementation (or **`Google Hydrogen (Extra)`** if tackling autonomous LLM reasoning / multi-server MCP orchestration).
+## `v0.1.0` Completion Summary
+1. **`specifications/GROXY-AI-SPEC-001.md` & `docs/ROADMAP.md`:** Both marked `Complete`.
+2. **Core Implementation Verified (`100%` pass):**
+   - `grab check --platform-config grab.platform.json src/groxy.grab`: exit `0`
+   - Non-destructive `grab format src/groxy.grab` byte-for-byte parity: verified exact match (`65,209` bytes)
+   - `node --test tests/unit_*.test.js`: `14/14` passing (`unit_playbook.test.js`, `unit_auditor.test.js`, `unit_mcp_client.test.js`, `unit_ui_dom.test.js`) with zero `<div>`, zero `innerHTML`, and 100% WCAG AA pass
+   - `python tests/integration_e2e.py`: Gates `1`, `2`, `3A` (`GRAB v1.1.0 grab mcp`), and `3B` (live **GrabLab CMS `v1.0.1` + Grex Theme Builder `v1.0.0` + Groxy AI `v0.1.0`**) passing `100%`
+3. **Release Artifacts Generated:**
+   - `docs/releases/pdf/Groxy-AI-v0.1.0-Guide.pdf` (`docs/releases/generate_release_guides.py`)
+   - `dist/groxy-ai-v0.1.0-bundle.zip` & `dist/SHA256SUMS.txt` (`scripts/package_release.py`)
+
+---
+
+## Next Step Guidance (for `v0.2.0`)
+1. Draft `specifications/GROXY-AI-SPEC-002.md` for `v0.2.0` (Pre-Publish Grade Gate & `"Let Groxy Boost This"` non-destructive Diff Preview Engine) using **`Google Hydrogen (Medium)`**.
+2. Once `GROXY-AI-SPEC-002.md` is approved by the project owner, implement `v0.2.0` with **`Google Hydrogen (High)`**, or switch to **`Orchestrator (Argon)`** if coordinating additive pre-publish hooks with `GrabLab CMS`.

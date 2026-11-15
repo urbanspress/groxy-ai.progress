@@ -1,6 +1,6 @@
 # GROXY-AI-SPEC-001: Groxy AI `v0.1.0` Core `grab mcp` Client, SEO Playbook & Deterministic Auditor
 
-- **Status:** Specification in Review *(Awaiting Project-Owner Approval Before Code Implementation)*
+- **Status:** Complete
 - **Milestone:** `v0.1.0` — Step 4 Foundation (Core `grab mcp` Client, Curated SEO Reasoning Playbook & Deterministic 4-Pillar Auditor)
 - **Foundational Upstream Baselines:**
   - **GRAB:** `v1.1.0` (`grab serve --allow-scripts`, `grab check`, `grab format <file>`, `grab mcp`, `use server`, `use http`, `use json`, `use data`, `use cache`, `use crypto`, `use env`, `server.asset`)

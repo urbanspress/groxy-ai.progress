@@ -1,0 +1,1399 @@
+use cache
+use collections
+use crypto
+use dates
+use env
+use files
+use http
+use json
+use math
+use server
+use text
+
+set groxy_cache to cache.open using "groxy"
+
+make safe_asset_url using raw_path
+  try
+    give back server.asset using raw_path
+  catch err
+    give back raw_path
+  end
+end
+
+make has_map_key using m, key
+  if m is nothing
+    give back no
+  end
+  try
+    set ks to collections.keys using m
+    for each k in ks
+      if k is key
+        give back yes
+      end
+    end
+  catch err
+    give back no
+  end
+  give back no
+end
+
+make is_record_value using val
+  if val is nothing
+    give back no
+  end
+  try
+    set ks to collections.keys using val
+    give back yes
+  catch err
+    give back no
+  end
+end
+
+make map_get_str using m, key, fallback
+  if not (has_map_key using m, key)
+    give back fallback
+  end
+  set v to m at key
+  if v is nothing
+    give back fallback
+  end
+  give back text.from using v
+end
+
+make get_or_create_csrf using c
+  set cached to cache.get using c, "groxy_csrf"
+  if cached.found
+    give back cached.value
+  end
+  set tok to crypto.random_urlsafe using 32
+  call cache.set using c, "groxy_csrf", tok, 86400000
+  give back tok
+end
+
+make verify_csrf using c, req
+  set expected to get_or_create_csrf using c
+  set hdr to ""
+  if req.headers has "x-csrf-token"
+    set hdr to text.from using (req.headers at "x-csrf-token")
+  end
+  if hdr is "" and (req.headers has "X-CSRF-Token")
+    set hdr to text.from using (req.headers at "X-CSRF-Token")
+  end
+  give back hdr is expected
+end
+
+make load_playbook_doc using c
+  set cached to cache.get using c, "playbook_doc"
+  if cached.found
+    give back cached.value
+  end
+  set raw to files.read_text using "playbook/seo-playbook.v1.json"
+  set parsed to json.parse using raw
+  call cache.set using c, "playbook_doc", parsed, 86400000
+  give back parsed
+end
+
+make list_contains using items, target
+  for each item in items
+    if item is target
+      give back yes
+    end
+  end
+  give back no
+end
+
+make is_allowed_grex_element using el_name
+  set allowed to ["Fragment", "TemplatePart", "Section", "Container", "Grid", "Stack", "Card", "Heading", "Text", "RichText", "Link", "Button", "Image", "Icon", "Form", "Input", "Select", "Tabs", "Accordion", "Modal", "Nav", "ForEach"]
+  give back list_contains using allowed, el_name
+end
+
+make is_allowed_grex_tag using tag_name
+  set allowed to ["fragment", "section", "main", "header", "footer", "article", "aside", "nav", "h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "small", "strong", "em", "blockquote", "time", "code", "a", "button", "img", "svg", "ul", "ol", "li", "form", "input", "select", "textarea", "label", "dialog", "tbody"]
+  give back list_contains using allowed, tag_name
+end
+
+make is_safe_url using raw_url
+  set s to text.lower using (text.trim using (text.from using raw_url))
+  if s is ""
+    give back yes
+  end
+  if (text.starts_with using s, "javascript:") or (text.starts_with using s, "vbscript:") or (text.starts_with using s, "file:") or (text.starts_with using s, "data:")
+    give back no
+  end
+  give back yes
+end
+
+make is_valid_slug_format using slug
+  set s to text.trim using (text.from using slug)
+  set slen to text.length using s
+  if slen is 0 or slen is greater than 75
+    give back no
+  end
+  if (text.starts_with using s, "-") or (text.ends_with using s, "-") or (text.contains using s, "--")
+    give back no
+  end
+  set allowed_chars to "abcdefghijklmnopqrstuvwxyz0123456789-"
+  set chars to text.split using s, ""
+  for each ch in chars
+    if not (text.contains using allowed_chars, ch)
+      give back no
+    end
+  end
+  give back yes
+end
+
+make is_exact_decimal_wire using val_str
+  set s to text.trim using (text.from using val_str)
+  set slen to text.length using s
+  if slen is 0
+    give back no
+  end
+  if text.starts_with using s, "-"
+    set s to text.replace using s, "-", ""
+    set slen to text.length using s
+    if slen is 0
+      give back no
+    end
+  end
+  if (text.contains using s, "000000") or (text.contains using s, "999999")
+    give back no
+  end
+  set digits to "0123456789"
+  set dot_count to 0
+  set chars to text.split using s, ""
+  set idx to 0
+  for each ch in chars
+    if ch is "."
+      set dot_count to dot_count plus 1
+      if dot_count is greater than 1 or idx is 0 or idx is (slen minus 1)
+        give back no
+      end
+    otherwise
+      if not (text.contains using digits, ch)
+        give back no
+      end
+    end
+    set idx to idx plus 1
+  end
+  give back yes
+end
+
+make hex_digit_val using ch
+  set digits to "0123456789abcdef"
+  set chars to text.split using digits, ""
+  set idx to 0
+  for each c in chars
+    if c is ch
+      give back idx
+    end
+    set idx to idx plus 1
+  end
+  give back -1
+end
+
+make parse_hex_color using raw_color
+  set s to text.lower using (text.trim using (text.from using raw_color))
+  if not (text.starts_with using s, "#")
+    give back nothing
+  end
+  set chars to text.split using s, ""
+  set n to collections.length using chars
+  if n is 4
+    set r0 to hex_digit_val using (chars at 1)
+    set g0 to hex_digit_val using (chars at 2)
+    set b0 to hex_digit_val using (chars at 3)
+    if r0 is less than 0 or g0 is less than 0 or b0 is less than 0
+      give back nothing
+    end
+    give back record {r: (r0 times 17), g: (g0 times 17), b: (b0 times 17)}
+  end
+  if n is 7
+    set r1 to hex_digit_val using (chars at 1)
+    set r2 to hex_digit_val using (chars at 2)
+    set g1 to hex_digit_val using (chars at 3)
+    set g2 to hex_digit_val using (chars at 4)
+    set b1 to hex_digit_val using (chars at 5)
+    set b2 to hex_digit_val using (chars at 6)
+    if r1 is less than 0 or r2 is less than 0 or g1 is less than 0 or g2 is less than 0 or b1 is less than 0 or b2 is less than 0
+      give back nothing
+    end
+    give back record {r: ((r1 times 16) plus r2), g: ((g1 times 16) plus g2), b: ((b1 times 16) plus b2)}
+  end
+  give back nothing
+end
+
+make linearize_channel using c255
+  set x to (c255 times 1.0) divided by 255.0
+  if x is at most 0.04045
+    give back x divided by 12.92
+  end
+  set inner to 0.59538671 minus (0.11764913 times x)
+  set inner to 0.55729664 plus (x times inner)
+  set inner to -0.03665408 plus (x times inner)
+  set val to 0.0013962 plus (x times inner)
+  if val is less than 0.0
+    give back 0.0
+  end
+  if val is greater than 1.0
+    give back 1.0
+  end
+  give back val
+end
+
+make compute_contrast_ratio using fg_hex, bg_hex
+  set fg to parse_hex_color using fg_hex
+  set bg to parse_hex_color using bg_hex
+  if fg is nothing or bg is nothing
+    give back nothing
+  end
+  set lf to (0.2126 times (linearize_channel using fg.r)) plus (0.7152 times (linearize_channel using fg.g)) plus (0.0722 times (linearize_channel using fg.b))
+  set lb to (0.2126 times (linearize_channel using bg.r)) plus (0.7152 times (linearize_channel using bg.g)) plus (0.0722 times (linearize_channel using bg.b))
+  set lighter to math.max using lf, lb
+  set darker to math.min using lf, lb
+  give back math.round using (((lighter plus 0.05) divided by (darker plus 0.05)) times 1.0), 2
+end
+
+make parse_design_system_md using md_raw
+  set md to text.from using md_raw
+  set lines to text.split using md, "\n"
+  set tokens_loaded to 0
+  set classes_loaded to 0
+  set registered_classes to []
+  set default_bg to "#ffffff"
+  set default_fg to ""
+  set section to ""
+  set sub to ""
+
+  for each raw_line in lines
+    set line to text.trim using raw_line
+    if text.starts_with using line, "## 1."
+      set section to "tokens"
+      set sub to ""
+    otherwise if text.starts_with using line, "## 2."
+      set section to "classes"
+      set sub to ""
+    otherwise if text.starts_with using line, "## 3."
+      set section to "elements"
+      set sub to ""
+    otherwise if text.starts_with using line, "## 4."
+      set section to "slots"
+      set sub to ""
+    otherwise if section is "tokens"
+      if text.starts_with using line, "### Base"
+        set sub to "base"
+      otherwise if (text.contains using (text.lower using line), "light") and (text.starts_with using line, "### ")
+        set sub to "light"
+      otherwise if (text.contains using (text.lower using line), "dark") and (text.starts_with using line, "### ")
+        set sub to "dark"
+      otherwise if (text.starts_with using line, "|") and (text.contains using line, "--grex-")
+        set parts to text.split using line, "|"
+        if (collections.length using parts) is greater than 2
+          set tok_name to text.trim using (text.replace using (parts at 1), "`", "")
+          set tok_val to text.trim using (text.replace using (parts at 2), "`", "")
+          if text.starts_with using tok_name, "--grex-"
+            set tokens_loaded to tokens_loaded plus 1
+            if sub is "light" or sub is "base"
+              if tok_name is "--grex-color-bg"
+                set default_bg to tok_val
+              end
+              if tok_name is "--grex-color-text"
+                set default_fg to tok_val
+              end
+            end
+          end
+        end
+      otherwise if (text.starts_with using line, "-") and (text.contains using line, "--grex-")
+        set bparts to text.split using line, ":"
+        if (collections.length using bparts) is greater than 1
+          set kparts to text.split using (bparts at 0), "--grex-"
+          set tok_name to ""
+          if (collections.length using kparts) is greater than 1
+            set tok_name to "--grex-" joined with (text.trim using (text.replace using (kparts at 1), "`", ""))
+          end
+          set tok_val to text.trim using (text.replace using (bparts at 1), "`", "")
+          if text.starts_with using tok_name, "--grex-"
+            set tokens_loaded to tokens_loaded plus 1
+            if sub is "light" or sub is "base"
+              if tok_name is "--grex-color-bg"
+                set default_bg to tok_val
+              end
+              if tok_name is "--grex-color-text"
+                set default_fg to tok_val
+              end
+            end
+          end
+        end
+      end
+    otherwise if section is "classes"
+      if text.contains using line, ".grex-c-"
+        set after_prefix to text.split using line, ".grex-c-"
+        if (collections.length using after_prefix) is greater than 1
+          set seg to after_prefix at 1
+          set clean_seg to text.replace using seg, "`", ""
+          set clean_seg to text.replace using clean_seg, "*", ""
+          set clean_seg to text.trim using clean_seg
+          if clean_seg is not ""
+            set classes_loaded to classes_loaded plus 1
+            set registered_classes to collections.append using registered_classes, clean_seg
+          end
+        end
+      end
+    end
+  end
+
+  give back record {tokens_loaded: tokens_loaded, reusable_classes_loaded: classes_loaded, registered_classes: registered_classes, default_bg: default_bg, default_fg: default_fg}
+end
+
+make tokenize_words using raw_text
+  set s to text.lower using (text.from using raw_text)
+  for each sep in ["\n", "\r", "\t", ",", ".", "!", "?", ";", ":", "\"", "'", "(", ")", "[", "]", "{", "}", "/", "<", ">"]
+    set s to text.replace using s, sep, " "
+  end
+  set raw_parts to text.split using s, " "
+  set words to []
+  for each p in raw_parts
+    set w to text.trim using p
+    if w is not ""
+      set words to collections.append using words, w
+    end
+  end
+  give back words
+end
+
+make count_phrase_occurrences using plain_text, phrase
+  set hay to text.lower using (text.from using plain_text)
+  set needle to text.lower using (text.trim using (text.from using phrase))
+  if hay is "" or needle is ""
+    give back 0
+  end
+  set parts to text.split using hay, needle
+  set n to collections.length using parts
+  if n is at most 1
+    give back 0
+  end
+  give back n minus 1
+end
+
+make infer_focus_keyword using title_str, stop_words
+  set words to tokenize_words using title_str
+  set kept to []
+  for each w in words
+    if ((text.length using w) is at least 3) and (not (list_contains using stop_words, w))
+      set kept to collections.append using kept, w
+    end
+  end
+  set klen to collections.length using kept
+  if klen is at least 2
+    give back (kept at 0) joined with " " joined with (kept at 1)
+  end
+  if klen is 1
+    give back kept at 0
+  end
+  give back ""
+end
+
+make strip_html_tags using raw_html
+  set s to text.from using raw_html
+  set out to ""
+  set in_tag to no
+  set chars to text.split using s, ""
+  for each ch in chars
+    if ch is "<"
+      set in_tag to yes
+      set out to out joined with " "
+    otherwise if ch is ">"
+      set in_tag to no
+      set out to out joined with " "
+    otherwise if not in_tag
+      set out to out joined with ch
+    end
+  end
+  give back out
+end
+
+make inspect_html_string using raw_html
+  set h to text.lower using (text.from using raw_html)
+  set div_count to 0
+  if text.contains using h, "<div"
+    set div_parts to text.split using h, "<div"
+    set div_count to (collections.length using div_parts) minus 1
+  end
+
+  set sec_violations to []
+  for each bad_tag in ["<script", "<iframe", "<object", "<embed", "<style"]
+    if text.contains using h, bad_tag
+      set sec_violations to collections.append using sec_violations, ("Forbidden HTML tag " joined with bad_tag joined with "> detected.")
+    end
+  end
+  for each bad_proto in ["javascript:", "vbscript:", "file:", "data:"]
+    if text.contains using h, bad_proto
+      set sec_violations to collections.append using sec_violations, ("Unsafe URL protocol " joined with bad_proto joined with " detected.")
+    end
+  end
+  if text.contains using h, "expression("
+    set sec_violations to collections.append using sec_violations, "Unsafe CSS expression() detected."
+  end
+  if (text.contains using h, " onclick=") or (text.contains using h, " onload=") or (text.contains using h, " onerror=")
+    set sec_violations to collections.append using sec_violations, "Inline event handler attribute detected."
+  end
+
+  set h1_count to 0
+  set sub_count to 0
+  set headings to []
+  for each lvl in [1, 2, 3, 4, 5, 6]
+    set open_tag to "<h" joined with (text.from using lvl)
+    if text.contains using h, open_tag
+      set segs to text.split using h, open_tag
+      set cnt to (collections.length using segs) minus 1
+      if lvl is 1
+        set h1_count to h1_count plus cnt
+      end
+      if lvl is 2 or lvl is 3
+        set sub_count to sub_count plus cnt
+      end
+      set idx to 0
+      while idx is less than cnt
+        set headings to collections.append using headings, lvl
+        set idx to idx plus 1
+      end
+    end
+  end
+
+  set img_missing_alt to 0
+  if text.contains using h, "<img"
+    set img_segs to text.split using h, "<img"
+    set i to 1
+    while i is less than (collections.length using img_segs)
+      set tag_seg to (text.split using (img_segs at i), ">") at 0
+      if (not (text.contains using tag_seg, "alt=")) and (not (text.contains using tag_seg, "aria-hidden=\"true\""))
+        set img_missing_alt to img_missing_alt plus 1
+      end
+      set i to i plus 1
+    end
+  end
+
+  set plain to strip_html_tags using raw_html
+  give back record {div_count: div_count, sec_violations: sec_violations, h1_count: h1_count, sub_count: sub_count, headings: headings, img_missing_alt: img_missing_alt, plain: plain}
+end
+
+make walk_layout_tree using node, depth, inherited_bg, acc
+  if not (is_record_value using node)
+    give back acc
+  end
+
+  set acc_nodes to acc.node_count plus 1
+  set acc_depth to math.max using acc.max_depth, depth
+  set acc_divs to acc.div_count
+  set acc_bad_els to acc.invalid_elements
+  set acc_bad_tags to acc.invalid_tags
+  set acc_sec to acc.security_violations
+  set acc_headings to acc.headings
+  set acc_h1 to acc.h1_count
+  set acc_sub to acc.sub_count
+  set acc_bad_imgs to acc.bad_images
+  set acc_img_total to acc.image_count
+  set acc_bad_forms to acc.bad_forms
+  set acc_bad_inter to acc.bad_interactive
+  set acc_links to acc.links
+  set acc_texts to acc.text_segments
+  set acc_classes to acc.classes_used
+  set acc_tokens_ref to acc.tokens_referenced
+  set acc_inline_colors to acc.inline_color_overrides
+  set acc_contrast_bad to acc.contrast_failures
+  set acc_focus_bad to acc.focus_failures
+
+  set el_type to ""
+  if has_map_key using node, "element"
+    set el_type to text.trim using (text.from using (node at "element"))
+  otherwise if has_map_key using node, "type"
+    set el_type to text.trim using (text.from using (node at "type"))
+  end
+
+  set raw_tag to ""
+  if has_map_key using node, "tag"
+    set raw_tag to text.lower using (text.trim using (text.from using (node at "tag")))
+  end
+
+  if (text.lower using el_type) is "div" or raw_tag is "div"
+    set acc_divs to acc_divs plus 1
+  end
+
+  if el_type is "" or (not (is_allowed_grex_element using el_type))
+    if (text.lower using el_type) is not "div"
+      set acc_bad_els to collections.append using acc_bad_els, el_type
+    end
+  end
+
+  if raw_tag is not "" and raw_tag is not "div"
+    if raw_tag is "script" or raw_tag is "iframe" or raw_tag is "object" or raw_tag is "embed" or raw_tag is "style"
+      set acc_sec to collections.append using acc_sec, ("Forbidden HTML tag <" joined with raw_tag joined with "> in layout node.")
+    otherwise if not (is_allowed_grex_tag using raw_tag)
+      set acc_bad_tags to collections.append using acc_bad_tags, raw_tag
+    end
+  end
+
+  set props to {}
+  if (has_map_key using node, "props") and (is_record_value using (node at "props"))
+    set props to node at "props"
+  end
+  set attrs to {}
+  if (has_map_key using node, "attrs") and (is_record_value using (node at "attrs"))
+    set attrs to node at "attrs"
+  end
+
+  for each bag in [props, attrs]
+    for each bk in (collections.keys using bag)
+      set bkl to text.lower using bk
+      if (text.starts_with using bkl, "on") or bkl is "innerhtml" or bkl is "outerhtml" or bkl is "dangerouslysetinnerhtml" or bkl is "srcdoc"
+        set acc_sec to collections.append using acc_sec, ("Forbidden inline handler/attribute: " joined with bk)
+      end
+      if bkl is "href" or bkl is "src" or bkl is "action" or bkl is "formaction"
+        set uval to text.from using (bag at bk)
+        if not (is_safe_url using uval)
+          set acc_sec to collections.append using acc_sec, ("Unsafe URL protocol in " joined with bk joined with ": " joined with uval)
+        end
+      end
+    end
+  end
+
+  set cls_raw to ""
+  if has_map_key using props, "class"
+    set cls_raw to text.from using (props at "class")
+  otherwise if has_map_key using props, "className"
+    set cls_raw to text.from using (props at "className")
+  otherwise if has_map_key using attrs, "class"
+    set cls_raw to text.from using (attrs at "class")
+  end
+  if cls_raw is not ""
+    for each cpart in (text.split using cls_raw, " ")
+      set cclean to text.trim using cpart
+      if cclean is not ""
+        set acc_classes to collections.append using acc_classes, cclean
+      end
+    end
+  end
+
+  if has_map_key using props, "html"
+    set h_info to inspect_html_string using (props at "html")
+    set acc_divs to acc_divs plus h_info.div_count
+    for each sv in h_info.sec_violations
+      set acc_sec to collections.append using acc_sec, sv
+    end
+    if h_info.plain is not ""
+      set acc_texts to collections.append using acc_texts, h_info.plain
+    end
+  end
+
+  set node_bg to inherited_bg
+  if (has_map_key using node, "styles") and (is_record_value using (node at "styles"))
+    set st_obj to node at "styles"
+    set base_st to st_obj
+    if has_map_key using st_obj, "base"
+      set base_st to st_obj at "base"
+    end
+    if is_record_value using base_st
+      if has_map_key using base_st, "background-color"
+        set node_bg to text.from using (base_st at "background-color")
+      otherwise if has_map_key using base_st, "backgroundColor"
+        set node_bg to text.from using (base_st at "backgroundColor")
+      otherwise if has_map_key using base_st, "background"
+        set node_bg to text.from using (base_st at "background")
+      end
+
+      if (has_map_key using base_st, "color") and node_bg is not ""
+        set fg_val to text.from using (base_st at "color")
+        set ratio to compute_contrast_ratio using fg_val, node_bg
+        if ratio is not nothing
+          if ratio is less than 4.5
+            set acc_contrast_bad to collections.append using acc_contrast_bad, ("Contrast ratio " joined with (text.from using ratio) joined with ":1 (" joined with fg_val joined with " on " joined with node_bg joined with ") is below WCAG AA 4.5:1.")
+          end
+        end
+      end
+
+      for each sk in (collections.keys using base_st)
+        set sv to text.from using (base_st at sk)
+        set svl to text.lower using (text.trim using sv)
+        if (text.contains using svl, "javascript:") or (text.contains using svl, "expression(") or (text.contains using svl, "<script")
+          set acc_sec to collections.append using acc_sec, ("Unsafe CSS expression in style " joined with sk)
+        end
+        if text.contains using sv, "var(--grex-"
+          set acc_tokens_ref to acc_tokens_ref plus 1
+        otherwise if sk is "color" or sk is "background-color" or sk is "backgroundColor"
+          set acc_inline_colors to acc_inline_colors plus 1
+        end
+        if (text.lower using sk) is "outline" and (svl is "none" or svl is "0")
+          set acc_focus_bad to acc_focus_bad plus 1
+        end
+      end
+    end
+  end
+
+  if el_type is "Heading"
+    set h_lvl to 2
+    if has_map_key using props, "level"
+      try
+        set h_lvl to text.to_integer using (text.from using (props at "level"))
+      catch err
+        set h_lvl to 2
+      end
+    otherwise if raw_tag is "h1"
+      set h_lvl to 1
+    otherwise if raw_tag is "h3"
+      set h_lvl to 3
+    end
+    set acc_headings to collections.append using acc_headings, h_lvl
+    if h_lvl is 1
+      set acc_h1 to acc_h1 plus 1
+    end
+    if h_lvl is 2 or h_lvl is 3
+      set acc_sub to acc_sub plus 1
+    end
+    set h_txt to map_get_str using props, "text", ""
+    if h_txt is not ""
+      set acc_texts to collections.append using acc_texts, h_txt
+    end
+  otherwise if el_type is "Text" or el_type is "RichText"
+    set t_txt to map_get_str using props, "text", ""
+    if t_txt is not ""
+      set acc_texts to collections.append using acc_texts, t_txt
+    end
+  otherwise if el_type is "Image"
+    set acc_img_total to acc_img_total plus 1
+    set is_deco to no
+    if has_map_key using props, "decorative"
+      if (props at "decorative") is yes
+        set is_deco to yes
+      end
+    end
+    if has_map_key using props, "isDecorative"
+      if (props at "isDecorative") is yes
+        set is_deco to yes
+      end
+    end
+    if has_map_key using props, "is_decorative"
+      if (props at "is_decorative") is yes
+        set is_deco to yes
+      end
+    end
+    if not is_deco
+      set alt_txt to text.trim using (map_get_str using props, "alt", "")
+      set alt_len to text.length using alt_txt
+      set alt_l to text.lower using alt_txt
+      if alt_len is less than 3 or alt_len is greater than 125 or (text.ends_with using alt_l, ".jpg") or (text.ends_with using alt_l, ".png") or alt_l is "image" or alt_l is "photo"
+        set acc_bad_imgs to acc_bad_imgs plus 1
+      end
+    end
+  otherwise if el_type is "Input" or el_type is "Select"
+    set itype to text.lower using (map_get_str using props, "type", "")
+    if itype is not "hidden"
+      set lbl to text.trim using (map_get_str using props, "label", "")
+      set albl to text.trim using (map_get_str using props, "aria-label", "")
+      set albl2 to text.trim using (map_get_str using attrs, "aria-label", "")
+      set albl3 to text.trim using (map_get_str using attrs, "aria-labelledby", "")
+      if lbl is "" and albl is "" and albl2 is "" and albl3 is ""
+        set acc_bad_forms to acc_bad_forms plus 1
+      end
+    end
+  otherwise if el_type is "Link" or el_type is "Button"
+    set atext to text.trim using (map_get_str using props, "text", "")
+    if atext is ""
+      set atext to text.trim using (map_get_str using props, "label", "")
+    end
+    if atext is ""
+      set atext to text.trim using (map_get_str using props, "aria-label", "")
+    end
+    if atext is ""
+      set atext to text.trim using (map_get_str using attrs, "aria-label", "")
+    end
+    if atext is ""
+      set acc_bad_inter to acc_bad_inter plus 1
+    otherwise
+      set acc_texts to collections.append using acc_texts, atext
+    end
+    if el_type is "Link"
+      set lhref to text.trim using (map_get_str using props, "href", "")
+      set acc_links to collections.append using acc_links, (record {href: lhref, text: atext})
+    end
+  end
+
+  set out_acc to record {node_count: acc_nodes, max_depth: acc_depth, div_count: acc_divs, invalid_elements: acc_bad_els, invalid_tags: acc_bad_tags, security_violations: acc_sec, headings: acc_headings, h1_count: acc_h1, sub_count: acc_sub, bad_images: acc_bad_imgs, image_count: acc_img_total, bad_forms: acc_bad_forms, bad_interactive: acc_bad_inter, links: acc_links, text_segments: acc_texts, classes_used: acc_classes, tokens_referenced: acc_tokens_ref, inline_color_overrides: acc_inline_colors, contrast_failures: acc_contrast_bad, focus_failures: acc_focus_bad}
+
+  if has_map_key using node, "children"
+    for each child in (node at "children")
+      set out_acc to walk_layout_tree using child, (depth plus 1), node_bg, out_acc
+    end
+  end
+
+  give back out_acc
+end
+
+make score_to_grade using score_val, publish_safe
+  if not publish_safe
+    give back "F"
+  end
+  if score_val is at least 97
+    give back "A+"
+  end
+  if score_val is at least 90
+    give back "A"
+  end
+  if score_val is at least 80
+    give back "B"
+  end
+  if score_val is at least 70
+    give back "C"
+  end
+  if score_val is at least 60
+    give back "D"
+  end
+  give back "F"
+end
+
+make make_finding using rule_id, category, severity, earned, possible, plain_english, suggested_action, source
+  give back record {rule_id: rule_id, category: category, severity: severity, points_earned: earned, points_possible: possible, plain_english: plain_english, suggested_action: suggested_action, source: source}
+end
+
+make normalize_path using raw_url
+  set s to text.trim using (text.from using raw_url)
+  if s is ""
+    give back ""
+  end
+  set qparts to text.split using s, "?"
+  set hparts to text.split using (qparts at 0), "#"
+  set clean to text.lower using (hparts at 0)
+  if ((text.length using clean) is greater than 1) and (text.ends_with using clean, "/")
+    set chars to text.split using clean, ""
+    set trimmed_list to collections.slice using chars, 0, ((collections.length using chars) minus 1)
+    set clean to text.join using trimmed_list, ""
+  end
+  give back clean
+end
+
+make is_internal_href using href
+  set h to text.trim using (text.from using href)
+  if h is "" or (text.starts_with using h, "#") or (not (is_safe_url using h))
+    give back no
+  end
+  if text.starts_with using h, "/"
+    give back yes
+  end
+  if (text.starts_with using (text.lower using h), "http://") or (text.starts_with using (text.lower using h), "https://") or (text.starts_with using (text.lower using h), "mailto:")
+    give back no
+  end
+  give back yes
+end
+
+make evaluate_audit_report using payload, playbook
+  set entry to {}
+  if (has_map_key using payload, "entry") and (is_record_value using (payload at "entry"))
+    set entry to payload at "entry"
+  end
+
+  set layout_root to nothing
+  if has_map_key using payload, "grex_layout"
+    set layout_root to payload at "grex_layout"
+  otherwise if has_map_key using payload, "layout"
+    set layout_root to payload at "layout"
+  otherwise if has_map_key using entry, "grex_layout"
+    set layout_root to entry at "grex_layout"
+  end
+
+  set html_fragment to map_get_str using payload, "html_fragment", ""
+  if html_fragment is ""
+    set html_fragment to map_get_str using entry, "body_html", ""
+  end
+
+  set ds_md to map_get_str using payload, "design_system_md", ""
+  set ds_info to parse_design_system_md using ds_md
+  set default_bg to ds_info.default_bg
+
+  set acc to record {node_count: 0, max_depth: 0, div_count: 0, invalid_elements: [], invalid_tags: [], security_violations: [], headings: [], h1_count: 0, sub_count: 0, bad_images: 0, image_count: 0, bad_forms: 0, bad_interactive: 0, links: [], text_segments: [], classes_used: [], tokens_referenced: 0, inline_color_overrides: 0, contrast_failures: [], focus_failures: 0}
+
+  if ds_info.default_fg is not "" and default_bg is not ""
+    set tok_ratio to compute_contrast_ratio using ds_info.default_fg, default_bg
+    if tok_ratio is not nothing
+      if tok_ratio is less than 4.5
+        set acc_cf to collections.append using acc.contrast_failures, ("Design system token contrast " joined with (text.from using tok_ratio) joined with ":1 is below 4.5:1.")
+        set acc to collections.put using acc, "contrast_failures", acc_cf
+      end
+    end
+  end
+
+  if is_record_value using layout_root
+    if has_map_key using layout_root, "templates"
+      set tmpls to layout_root at "templates"
+      for each tk in (collections.keys using tmpls)
+        set acc to walk_layout_tree using (tmpls at tk), 1, default_bg, acc
+      end
+    otherwise
+      set acc to walk_layout_tree using layout_root, 1, default_bg, acc
+    end
+  end
+
+  set html_info to inspect_html_string using html_fragment
+  set all_h1 to acc.h1_count plus html_info.h1_count
+  set all_sub to acc.sub_count plus html_info.sub_count
+  set all_headings to acc.headings
+  for each hl in html_info.headings
+    set all_headings to collections.append using all_headings, hl
+  end
+
+  set title to text.trim using (map_get_str using entry, "meta_title", "")
+  if title is ""
+    set title to text.trim using (map_get_str using entry, "title", "")
+  end
+  set excerpt to text.trim using (map_get_str using entry, "meta_description", "")
+  if excerpt is ""
+    set excerpt to text.trim using (map_get_str using entry, "excerpt", "")
+  end
+  set slug to text.trim using (map_get_str using entry, "slug", "")
+  set content_type to text.lower using (text.trim using (map_get_str using entry, "content_type", "post"))
+  if content_type is ""
+    set content_type to "post"
+  end
+  set entry_id to map_get_str using entry, "id", ""
+
+  set plain_body to (map_get_str using entry, "body", "") joined with " " joined with html_info.plain joined with " " joined with (text.join using acc.text_segments, " ")
+  set words to tokenize_words using plain_body
+  set word_count to collections.length using words
+
+  set focus_kw to text.trim using (map_get_str using payload, "focus_keyword", "")
+  if focus_kw is ""
+    set focus_kw to text.trim using (map_get_str using entry, "focus_keyword", "")
+  end
+  if focus_kw is ""
+    set focus_kw to infer_focus_keyword using title, (playbook at "stop_words")
+  end
+
+  set site_ctx to nothing
+  if (has_map_key using payload, "site_context") and (is_record_value using (payload at "site_context"))
+    set site_ctx to payload at "site_context"
+  end
+
+  set findings to []
+
+  # GROXY-SEO-001 (15 pts)
+  set tlen to text.length using title
+  if tlen is at least 50 and tlen is at most 60
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-001", "on_page_seo", "pass", 15, 15, ("Title length is " joined with (text.from using tlen) joined with " characters, optimal for Google Search."), "No change needed.", "Google Search Central / Semrush")
+  otherwise if (tlen is at least 30 and tlen is at most 49) or (tlen is at least 61 and tlen is at most 65)
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-001", "on_page_seo", "info", 12, 15, ("Title length is " joined with (text.from using tlen) joined with " characters (30-65 allowed; 50-60 optimal)."), "Refine title length toward 50-60 characters.", "Google Search Central / Semrush")
+  otherwise if tlen is at least 66 and tlen is at most 70
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-001", "on_page_seo", "warning", 10, 15, ("Title length is " joined with (text.from using tlen) joined with " characters, slightly above 65 characters."), "Trim filler words to keep title under 65 characters.", "Google Search Central / Semrush")
+  otherwise if tlen is greater than 0
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-001", "on_page_seo", "warning", 5, 15, ("Title length is " joined with (text.from using tlen) joined with " characters, outside the 30-65 character window."), "Rewrite title to 50-60 characters.", "Google Search Central / Semrush")
+  otherwise
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-001", "on_page_seo", "error", 0, 15, "Missing SEO title.", "Add a descriptive 50-60 character title.", "Google Search Central / Semrush")
+  end
+
+  # GROXY-SEO-002 (15 pts)
+  if focus_kw is ""
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-002", "on_page_seo", "error", 0, 15, "No focus keyword or topic phrase found.", "Provide a clear focus_keyword in title and opening paragraph.", "Semrush / Ahrefs")
+  otherwise
+    set kw_lower to text.lower using focus_kw
+    set title_lower to text.lower using title
+    set kw_words to tokenize_words using focus_kw
+    set in_title to text.contains using title_lower, kw_lower
+    if not in_title and ((collections.length using kw_words) is greater than 0)
+      set all_in_t to yes
+      for each kw_w in kw_words
+        if not (text.contains using title_lower, kw_w)
+          set all_in_t to no
+        end
+      end
+      set in_title to all_in_t
+    end
+    set lead_slice to collections.slice using words, 0, (math.min using 80, word_count)
+    set lead_text to text.join using lead_slice, " "
+    set in_lead to text.contains using lead_text, kw_lower
+    if not in_lead and ((collections.length using kw_words) is greater than 0)
+      set all_in_l to yes
+      for each kw_w in kw_words
+        if not (text.contains using lead_text, kw_w)
+          set all_in_l to no
+        end
+      end
+      set in_lead to all_in_l
+    end
+    set occ to count_phrase_occurrences using plain_body, focus_kw
+    set kw_len to math.max using 1, (collections.length using kw_words)
+    set density to 0.0
+    if word_count is greater than 0
+      set density to ((occ times kw_len) times 100.0) divided by (word_count times 1.0)
+    end
+    if density is greater than 3.0
+      set findings to collections.append using findings, (make_finding using "GROXY-SEO-002", "on_page_seo", "warning", 6, 15, ("Focus keyword density exceeds 3% (" joined with (text.from using (math.round using density, 1)) joined with "%)."), "Use natural synonyms to avoid keyword stuffing.", "Semrush / Ahrefs")
+    otherwise if in_title and in_lead
+      set findings to collections.append using findings, (make_finding using "GROXY-SEO-002", "on_page_seo", "pass", 15, 15, ("Focus keyword \"" joined with focus_kw joined with "\" appears naturally in title and opening section."), "No change needed.", "Semrush / Ahrefs")
+    otherwise if in_title or in_lead
+      set findings to collections.append using findings, (make_finding using "GROXY-SEO-002", "on_page_seo", "warning", 8, 15, ("Focus keyword \"" joined with focus_kw joined with "\" appears in only one of title or opening copy."), "Include your focus keyword in both title and opening H1/intro.", "Semrush / Ahrefs")
+    otherwise
+      set findings to collections.append using findings, (make_finding using "GROXY-SEO-002", "on_page_seo", "error", 0, 15, ("Focus keyword \"" joined with focus_kw joined with "\" missing from title and opening copy."), "Include the focus keyword in the title and opening section.", "Semrush / Ahrefs")
+    end
+  end
+
+  # GROXY-SEO-003 (15 pts)
+  set elen to text.length using excerpt
+  if elen is at least 120 and elen is at most 158
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-003", "on_page_seo", "pass", 15, 15, ("Meta description / excerpt is " joined with (text.from using elen) joined with " characters (optimal 120-158 window)."), "No change needed.", "Google Search Central / Semrush")
+  otherwise if (elen is at least 90 and elen is at most 119) or (elen is at least 159 and elen is at most 160)
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-003", "on_page_seo", "warning", 10, 15, ("Your summary excerpt is " joined with (text.from using elen) joined with " characters. Expanding it to 120-158 characters helps search results show a fuller preview."), "Tune excerpt to 120-158 characters.", "Google Search Central / Semrush")
+  otherwise if elen is greater than 0
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-003", "on_page_seo", "warning", 5, 15, ("Meta description is " joined with (text.from using elen) joined with " characters."), "Rewrite excerpt to 120-158 characters.", "Google Search Central / Semrush")
+  otherwise
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-003", "on_page_seo", "error", 0, 15, "Missing meta description / excerpt.", "Add a 120-158 character summary excerpt.", "Google Search Central / Semrush")
+  end
+
+  # GROXY-SEO-004 (10 pts)
+  set slug_ok to is_valid_slug_format using slug
+  set reserved_prefixes to playbook at "reserved_slug_prefixes"
+  set slug_segs to text.split using slug, "-"
+  set first_seg to ""
+  if (collections.length using slug_segs) is greater than 0
+    set first_seg to slug_segs at 0
+  end
+  set slug_collision to (list_contains using reserved_prefixes, slug) or (list_contains using reserved_prefixes, first_seg)
+  if (not slug_ok) or slug_collision
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-004", "on_page_seo", "error", 0, 10, ("URL slug \"" joined with slug joined with "\" is invalid or collides with reserved route prefix."), "Use a clean lowercase hyphenated slug.", "Google Search Central / GrabLab")
+  otherwise
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-004", "on_page_seo", "pass", 10, 10, ("URL slug \"" joined with slug joined with "\" is clean and collision-free."), "No change needed.", "Google Search Central / GrabLab")
+  end
+
+  # GROXY-SEO-005 (15 pts)
+  if all_h1 is 1
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-005", "on_page_seo", "pass", 15, 15, "Exactly one primary <h1> heading is present.", "No change needed.", "Ahrefs / Google Search Central")
+  otherwise if all_h1 is greater than 1
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-005", "on_page_seo", "warning", 5, 15, ("Found " joined with (text.from using all_h1) joined with " <h1> headings; keep one primary <h1>."), "Convert extra <h1> elements to <h2>.", "Ahrefs / Google Search Central")
+  otherwise
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-005", "on_page_seo", "error", 0, 15, "Missing primary <h1> heading.", "Add one Heading element with level 1.", "Ahrefs / Google Search Central")
+  end
+
+  # GROXY-SEO-006 (15 pts)
+  set min_words to 300
+  if content_type is "page" or content_type is "product"
+    set min_words to 120
+  end
+  if word_count is at least min_words and all_sub is at least 1
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-006", "on_page_seo", "pass", 15, 15, ("Content has " joined with (text.from using word_count) joined with " words and " joined with (text.from using all_sub) joined with " subheadings."), "No change needed.", "Semrush / Ahrefs")
+  otherwise if word_count is at least (math.floor using (min_words divided by 2))
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-006", "on_page_seo", "warning", 8, 15, ("Content has " joined with (text.from using word_count) joined with " words and " joined with (text.from using all_sub) joined with " subheadings."), ("Expand copy toward " joined with (text.from using min_words) joined with "+ words with H2/H3 subheadings."), "Semrush / Ahrefs")
+  otherwise
+    set thin_pts to 0
+    if word_count is greater than 0
+      set thin_pts to 3
+    end
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-006", "on_page_seo", "error", thin_pts, 15, ("Thin content (" joined with (text.from using word_count) joined with " words) below " joined with (text.from using min_words) joined with "-word target."), "Add substantive detail and structured H2/H3 sections.", "Semrush / Ahrefs")
+  end
+
+  # GROXY-SEO-007 (10 pts)
+  set dup_found to no
+  if site_ctx is not nothing and (has_map_key using site_ctx, "entries")
+    for each se in (site_ctx at "entries")
+      if is_record_value using se
+        set se_id to map_get_str using se, "id", ""
+        if entry_id is "" or se_id is not entry_id
+          set se_slug to text.lower using (text.trim using (map_get_str using se, "slug", ""))
+          set se_title to text.lower using (text.trim using (map_get_str using se, "title", ""))
+          if (slug is not "" and se_slug is (text.lower using slug)) or (title is not "" and se_title is (text.lower using title))
+            set dup_found to yes
+          end
+        end
+      end
+    end
+  end
+  if dup_found
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-007", "on_page_seo", "error", 0, 10, "Duplicate title or colliding slug detected across site entries.", "Choose a distinct title and URL slug.", "Ahrefs Site Audit")
+  otherwise
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-007", "on_page_seo", "pass", 10, 10, "Title and slug are unique.", "No change needed.", "Ahrefs Site Audit")
+  end
+
+  # GROXY-SEO-008 (5 pts)
+  set cf_bad to no
+  if (has_map_key using entry, "custom_fields") and (is_record_value using (entry at "custom_fields"))
+    set cf to entry at "custom_fields"
+    for each cfk in (collections.keys using cf)
+      set cfkl to text.lower using cfk
+      if cfkl is "price" or cfkl is "sale_price" or cfkl is "weight" or cfkl is "rating"
+        set cfv to text.from using (cf at cfk)
+        if cfv is not "" and (not (is_exact_decimal_wire using cfv))
+          set cf_bad to yes
+        end
+      end
+    end
+  end
+  if cf_bad
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-008", "on_page_seo", "error", 0, 5, "Numeric precision drift or invalid GrabDecimal format detected in custom_fields.", "Store decimal fields as exact base-10 wire strings (e.g., \"19.95\").", "GRAB ADR-025c / Google Merchant")
+  otherwise
+    set findings to collections.append using findings, (make_finding using "GROXY-SEO-008", "on_page_seo", "pass", 5, 5, "All GrabDecimal and GrabInteger custom fields preserve exact base-10 precision.", "No change needed.", "GRAB ADR-025c / Google Merchant")
+  end
+
+  # Pillar B: GROXY-A11Y-001..005
+  if (collections.length using acc.contrast_failures) is greater than 0
+    set findings to collections.append using findings, (make_finding using "GROXY-A11Y-001", "content_a11y", "error", 0, 25, (acc.contrast_failures at 0), "Adjust foreground/background colors to meet WCAG AA >= 4.5:1.", "GREX-A11Y-001 / WCAG 2.1 AA")
+  otherwise
+    set findings to collections.append using findings, (make_finding using "GROXY-A11Y-001", "content_a11y", "pass", 25, 25, "All text/background colors meet WCAG AA contrast standards.", "No change needed.", "GREX-A11Y-001 / WCAG 2.1 AA")
+  end
+
+  set total_bad_imgs to acc.bad_images plus html_info.img_missing_alt
+  if total_bad_imgs is greater than 0
+    set findings to collections.append using findings, (make_finding using "GROXY-A11Y-002", "content_a11y", "error", 0, 25, ((text.from using total_bad_imgs) joined with " image(s) lack descriptive alt text or explicit decorative flag."), "Add meaningful alt text (3-125 chars) or mark decorative: true.", "GREX-A11Y-002 / WCAG 2.1 AA")
+  otherwise
+    set findings to collections.append using findings, (make_finding using "GROXY-A11Y-002", "content_a11y", "pass", 25, 25, "All images provide compliant alt text or decorative attributes.", "No change needed.", "GREX-A11Y-002 / WCAG 2.1 AA")
+  end
+
+  if acc.bad_forms is greater than 0
+    set findings to collections.append using findings, (make_finding using "GROXY-A11Y-003", "content_a11y", "error", 0, 15, ((text.from using acc.bad_forms) joined with " form control(s) lack accessible labels."), "Add label or aria-label on every Input and Select.", "GREX-A11Y-003 / WCAG 2.1 AA")
+  otherwise
+    set findings to collections.append using findings, (make_finding using "GROXY-A11Y-003", "content_a11y", "pass", 15, 15, "All form controls expose accessible labels.", "No change needed.", "GREX-A11Y-003 / WCAG 2.1 AA")
+  end
+
+  set last_h to 0
+  set skipped_h to no
+  for each hl in all_headings
+    if last_h is greater than 0 and hl is greater than (last_h plus 1)
+      set skipped_h to yes
+    end
+    if hl is at least 1 and hl is at most 6
+      set last_h to hl
+    end
+  end
+  if skipped_h
+    set findings to collections.append using findings, (make_finding using "GROXY-A11Y-004", "content_a11y", "error", 0, 20, "Skipped heading level detected in semantic hierarchy.", "Keep headings sequential (h1 -> h2 -> h3).", "GREX-A11Y-004 / WCAG 2.1 AA")
+  otherwise if all_h1 is greater than 1
+    set findings to collections.append using findings, (make_finding using "GROXY-A11Y-004", "content_a11y", "warning", 10, 20, "Multiple <h1> headings detected.", "Use a single primary <h1> per page.", "GREX-A11Y-004 / WCAG 2.1 AA")
+  otherwise
+    set findings to collections.append using findings, (make_finding using "GROXY-A11Y-004", "content_a11y", "pass", 20, 20, "Heading hierarchy is sequential with zero skipped levels.", "No change needed.", "GREX-A11Y-004 / WCAG 2.1 AA")
+  end
+
+  if acc.bad_interactive is greater than 0 or acc.focus_failures is greater than 0
+    set findings to collections.append using findings, (make_finding using "GROXY-A11Y-005", "content_a11y", "error", 0, 15, "Interactive controls missing accessible label or keyboard focus outline.", "Add visible text/aria-label and keep :focus-visible outlines.", "GREX-A11Y-005 / WCAG 2.1 AA")
+  otherwise
+    set findings to collections.append using findings, (make_finding using "GROXY-A11Y-005", "content_a11y", "pass", 15, 15, "All buttons and links expose accessible names and focus rings.", "No change needed.", "GREX-A11Y-005 / WCAG 2.1 AA")
+  end
+
+  # Pillar C: GROXY-DOM-001..005
+  set total_divs to acc.div_count plus html_info.div_count
+  set has_div to total_divs is greater than 0
+  if has_div
+    set findings to collections.append using findings, (make_finding using "GROXY-DOM-001", "performance_dom", "critical", 0, 25, ("Detected " joined with (text.from using total_divs) joined with " forbidden wrapper <div> element(s)."), "Replace every <div> with semantic Grex elements.", "GREX-SCHEMA-001 / Grex JS v1.0.0")
+  otherwise
+    set findings to collections.append using findings, (make_finding using "GROXY-DOM-001", "performance_dom", "pass", 25, 25, "Zero wrapper <div> elements detected.", "No change needed.", "GREX-SCHEMA-001 / Grex JS v1.0.0")
+  end
+
+  if ((collections.length using acc.invalid_elements) is greater than 0) or ((collections.length using acc.invalid_tags) is greater than 0)
+    set findings to collections.append using findings, (make_finding using "GROXY-DOM-002", "performance_dom", "error", 0, 20, "Layout uses unsupported elements or disallowed HTML tags.", "Restrict nodes strictly to the 20 grex.elements.json components.", "grex.elements.json / Grex JS v1.0.0")
+  otherwise
+    set findings to collections.append using findings, (make_finding using "GROXY-DOM-002", "performance_dom", "pass", 20, 20, "All nodes use the 20 frozen Grex semantic elements.", "No change needed.", "grex.elements.json / Grex JS v1.0.0")
+  end
+
+  set all_sec to acc.security_violations
+  for each hsv in html_info.sec_violations
+    set all_sec to collections.append using all_sec, hsv
+  end
+  set has_sec to (collections.length using all_sec) is greater than 0
+  if has_sec
+    set findings to collections.append using findings, (make_finding using "GROXY-DOM-003", "performance_dom", "critical", 0, 25, ("Critical security violation: " joined with (all_sec at 0)), "Remove scripts, iframes, inline handlers, and unsafe URL protocols.", "GREX-SEC-003 / GREX-SEC-004")
+  otherwise
+    set findings to collections.append using findings, (make_finding using "GROXY-DOM-003", "performance_dom", "pass", 25, 25, "Zero scripts, inline handlers, or unsafe URL protocols detected.", "No change needed.", "GREX-SEC-003 / GREX-SEC-004")
+  end
+
+  if acc.max_depth is greater than 24 or acc.node_count is greater than 250
+    set findings to collections.append using findings, (make_finding using "GROXY-DOM-004", "performance_dom", "error", 0, 15, "DOM nesting exceeds 24 levels or 250 nodes.", "Flatten nested containers.", "GREX-BUILDER-SPEC-100")
+  otherwise if acc.max_depth is greater than 10 or acc.node_count is greater than 150
+    set findings to collections.append using findings, (make_finding using "GROXY-DOM-004", "performance_dom", "warning", 10, 15, "DOM depth or node count above lean targets.", "Keep depth <= 10 and nodes <= 150.", "GREX-BUILDER-SPEC-100")
+  otherwise
+    set findings to collections.append using findings, (make_finding using "GROXY-DOM-004", "performance_dom", "pass", 15, 15, ("Lean semantic DOM tree (depth " joined with (text.from using acc.max_depth) joined with ", " joined with (text.from using acc.node_count) joined with " nodes)."), "No change needed.", "GREX-BUILDER-SPEC-100")
+  end
+
+  set unknown_classes to []
+  if ds_info.reusable_classes_loaded is greater than 0
+    for each cls in acc.classes_used
+      if text.starts_with using cls, "grex-c-"
+        set short_c to text.replace using cls, "grex-c-", ""
+        if not (list_contains using ds_info.registered_classes, short_c)
+          set unknown_classes to collections.append using unknown_classes, cls
+        end
+      end
+    end
+  end
+  if (collections.length using unknown_classes) is greater than 0
+    set findings to collections.append using findings, (make_finding using "GROXY-DOM-005", "performance_dom", "warning", 7, 15, ("Layout references unregistered classes: " joined with (text.join using unknown_classes, ", ")), "Use .grex-c-* classes registered in GRAB-DESIGN-SYSTEM.md.", "GRAB-DESIGN-SYSTEM.md / Grex Theme Builder")
+  otherwise
+    set findings to collections.append using findings, (make_finding using "GROXY-DOM-005", "performance_dom", "pass", 15, 15, "Layout aligns cleanly with GRAB-DESIGN-SYSTEM.md tokens and classes.", "No change needed.", "GRAB-DESIGN-SYSTEM.md / Grex Theme Builder")
+  end
+
+  # Pillar D: GROXY-LINK-001..004
+  set internal_links to []
+  for each lnk in acc.links
+    if is_internal_href using lnk.href
+      set internal_links to collections.append using internal_links, lnk
+    end
+  end
+  set vague_list to playbook at "vague_anchors"
+  if (collections.length using internal_links) is 0
+    set findings to collections.append using findings, (make_finding using "GROXY-LINK-001", "linking_readiness", "warning", 8, 30, "No internal links found in content.", "Add 1-2 descriptive internal links to related pages.", "Ahrefs / Google Search Central")
+  otherwise
+    set vague_hits to 0
+    for each il in internal_links
+      set alow to text.lower using (text.trim using il.text)
+      if alow is "" or ((text.length using alow) is less than 4) or (list_contains using vague_list, alow)
+        set vague_hits to vague_hits plus 1
+      end
+    end
+    if vague_hits is greater than 0
+      set findings to collections.append using findings, (make_finding using "GROXY-LINK-001", "linking_readiness", "warning", 15, 30, "Internal link uses vague anchor text (e.g., \"click here\").", "Use descriptive anchor text indicating destination topic.", "Ahrefs / Google Search Central")
+    otherwise
+      set findings to collections.append using findings, (make_finding using "GROXY-LINK-001", "linking_readiness", "pass", 30, 30, ("Found " joined with (text.from using (collections.length using internal_links)) joined with " internal link(s) with descriptive anchors."), "No change needed.", "Ahrefs / Google Search Central")
+    end
+  end
+
+  # GROXY-LINK-002 (30 pts)
+  set self_slug_norm to normalize_path using ("/" joined with slug)
+  set redirect_hits to 0
+  set self_hits to 0
+  for each il in internal_links
+    set lnorm to normalize_path using il.href
+    if lnorm is self_slug_norm and slug is not ""
+      set self_hits to self_hits plus 1
+    end
+    if site_ctx is not nothing and (has_map_key using site_ctx, "redirects")
+      for each rd in (site_ctx at "redirects")
+        if is_record_value using rd
+          set old_p to normalize_path using ("/" joined with (map_get_str using rd, "old_slug", ""))
+          if old_p is lnorm and old_p is not "/"
+            set redirect_hits to redirect_hits plus 1
+          end
+        end
+      end
+    end
+  end
+  if redirect_hits is greater than 0
+    set findings to collections.append using findings, (make_finding using "GROXY-LINK-002", "linking_readiness", "error", 0, 30, "Internal link targets a superseded 301 redirect slug.", "Update internal links directly to canonical URLs.", "GrabLab 301 Redirect Guard / Ahrefs")
+  otherwise if self_hits is greater than 0
+    set findings to collections.append using findings, (make_finding using "GROXY-LINK-002", "linking_readiness", "warning", 10, 30, "Self-referencing link loop detected.", "Link to related sibling pages rather than the current URL.", "GrabLab 301 Redirect Guard / Ahrefs")
+  otherwise
+    set findings to collections.append using findings, (make_finding using "GROXY-LINK-002", "linking_readiness", "pass", 30, 30, "Internal links resolve cleanly with zero self-loops or 301 redirect chains.", "No change needed.", "GrabLab 301 Redirect Guard / Ahrefs")
+  end
+
+  # GROXY-LINK-003 (20 pts)
+  if site_ctx is not nothing and (has_map_key using site_ctx, "menus")
+    set found_in_nav to no
+    set menus_val to site_ctx at "menus"
+    if is_record_value using menus_val
+      for each mkey in (collections.keys using menus_val)
+        for each mi in (menus_val at mkey)
+          if is_record_value using mi
+            if (normalize_path using (map_get_str using mi, "href", "")) is self_slug_norm
+              set found_in_nav to yes
+            end
+          end
+        end
+      end
+    end
+    if found_in_nav
+      set findings to collections.append using findings, (make_finding using "GROXY-LINK-003", "linking_readiness", "pass", 20, 20, "Entry is linked from site navigation menus.", "No change needed.", "Ahrefs Site Audit / GrabLab Menus")
+    otherwise
+      set findings to collections.append using findings, (make_finding using "GROXY-LINK-003", "linking_readiness", "warning", 5, 20, "Entry is not currently linked in navigation menus (orphan risk).", "Add a link from primary navigation or sibling guides.", "Ahrefs Site Audit / GrabLab Menus")
+    end
+  otherwise
+    set findings to collections.append using findings, (make_finding using "GROXY-LINK-003", "linking_readiness", "info", 16, 20, "Standalone audit without site menu graph; verify navigation discoverability.", "Supply site_context menus to verify discoverability.", "Ahrefs Site Audit / GrabLab Menus")
+  end
+
+  # GROXY-LINK-004 (20 pts)
+  set has_meta to title is not "" and excerpt is not ""
+  if content_type is "product"
+    set cf_p to ""
+    if (has_map_key using entry, "custom_fields") and (is_record_value using (entry at "custom_fields"))
+      set cf_p to map_get_str using (entry at "custom_fields"), "price", ""
+    end
+    if has_meta and (is_exact_decimal_wire using cf_p)
+      set findings to collections.append using findings, (make_finding using "GROXY-LINK-004", "linking_readiness", "pass", 20, 20, "Product structured data metadata ready.", "No change needed.", "Google Search Central Structured Data")
+    otherwise
+      set findings to collections.append using findings, (make_finding using "GROXY-LINK-004", "linking_readiness", "warning", 10, 20, "Product structured data missing exact GrabDecimal price or excerpt.", "Provide title, excerpt, and exact GrabDecimal price.", "Google Search Central Structured Data")
+    end
+  otherwise
+    set has_author to ((map_get_str using entry, "author_name", "") is not "") or ((map_get_str using entry, "author", "") is not "")
+    set has_pub to ((map_get_str using entry, "published_at", "") is not "") or ((map_get_str using entry, "updated_at", "") is not "")
+    if has_meta and (has_author or content_type is "page") and (has_pub or content_type is "page")
+      set findings to collections.append using findings, (make_finding using "GROXY-LINK-004", "linking_readiness", "pass", 20, 20, "Schema.org rich result metadata ready.", "No change needed.", "Google Search Central Structured Data")
+    otherwise
+      set findings to collections.append using findings, (make_finding using "GROXY-LINK-004", "linking_readiness", "warning", 10, 20, "Structured data missing author or published_at metadata.", "Populate author_name and published_at metadata.", "Google Search Central Structured Data")
+    end
+  end
+
+  # Aggregate 4 pillar scores
+  set s_seo to 0
+  set s_a11y to 0
+  set s_dom to 0
+  set s_link to 0
+  for each f in findings
+    if f.category is "on_page_seo"
+      set s_seo to s_seo plus f.points_earned
+    otherwise if f.category is "content_a11y"
+      set s_a11y to s_a11y plus f.points_earned
+    otherwise if f.category is "performance_dom"
+      set s_dom to s_dom plus f.points_earned
+    otherwise if f.category is "linking_readiness"
+      set s_link to s_link plus f.points_earned
+    end
+  end
+
+  if has_sec
+    set s_dom to 0
+  end
+
+  set publish_safe to (not has_div) and (not has_sec)
+  set sum_scores to s_seo plus s_a11y plus s_dom plus s_link
+  set overall_score to math.floor using ((sum_scores plus 2) divided by 4)
+  if (not publish_safe) and overall_score is greater than 59
+    set overall_score to 59
+  end
+  set overall_grade to score_to_grade using overall_score, publish_safe
+
+  set audited_at to map_get_str using payload, "audited_at", ""
+  if audited_at is ""
+    set audited_at to map_get_str using entry, "updated_at", ""
+  end
+  if audited_at is ""
+    set audited_at to map_get_str using entry, "published_at", ""
+  end
+  if audited_at is ""
+    set audited_at to "2026-11-14T00:00:00Z"
+  end
+
+  set categories_obj to record {on_page_seo: (record {score: s_seo, grade: (score_to_grade using s_seo, yes), label: "On-Page SEO"}), content_a11y: (record {score: s_a11y, grade: (score_to_grade using s_a11y, yes), label: "Content & WCAG Accessibility"}), performance_dom: (record {score: s_dom, grade: (score_to_grade using s_dom, publish_safe), label: "Performance & Clean DOM"}), linking_readiness: (record {score: s_link, grade: (score_to_grade using s_link, yes), label: "Off-Page / Internal Linking Readiness"})}
+
+  give back record {schema_version: "0.1.0", playbook_version: (map_get_str using playbook, "playbook_version", "1.0.0"), audited_at: audited_at, target: (record {entry_id: entry_id, content_type: content_type, title: title, slug: slug}), overall_score: overall_score, overall_grade: overall_grade, publish_safe: publish_safe, categories: categories_obj, findings: findings, design_system_summary: (record {tokens_loaded: ds_info.tokens_loaded, reusable_classes_loaded: ds_info.reusable_classes_loaded, unknown_classes_used: unknown_classes})}
+end
+
+route "GET" "/_health"
+  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "0.1.0"}
+end
+
+route "GET" "/_ready"
+  try
+    set pb to load_playbook_doc using groxy_cache
+    set rule_cnt to collections.length using (pb at "rules")
+    if rule_cnt is not 22
+      give back server.json using 503, record {status: "not_ready", error: "Playbook rule count mismatch"}
+    end
+    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "0.1.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt}
+  catch err
+    give back server.json using 503, record {status: "not_ready", error: err.message}
+  end
+end
+
+route "GET" "/"
+  give back server.redirect using "/groxy", 302
+end
+
+route "GET" "/groxy"
+  set csrf to get_or_create_csrf using groxy_cache
+  set css_url to safe_asset_url using "/static/groxy/groxy.css"
+  set js_url to safe_asset_url using "/static/groxy/dashboard.js"
+  give back server.html using "../views/dashboard.grab.html", record {csrf_token: csrf, groxy_css_url: css_url, dashboard_js_url: js_url}
+end
+
+route "GET" "/api/groxy/playbook"
+  set pb to load_playbook_doc using groxy_cache
+  give back server.json using 200, pb
+end
+
+route "POST" "/api/groxy/audit" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set payload to server.parse_json using req
+    set pb to load_playbook_doc using groxy_cache
+
+    if (has_map_key using payload, "builder_url") and (not (has_map_key using payload, "design_system_md"))
+      set b_url to text.trim using (map_get_str using payload, "builder_url", "")
+      if b_url is not ""
+        try
+          set ds_resp to http.get using (b_url joined with "/api/design-system.md")
+          if ds_resp.ok
+            set payload to collections.put using payload, "design_system_md", ds_resp.body
+          end
+        catch net_err
+          set ignored to net_err.message
+        end
+      end
+    end
+
+    set report to evaluate_audit_report using payload, pb
+    give back server.json using 200, report
+  catch err
+    give back server.json using 400, record {ok: no, error: err.message}
+  end
+end
+
+route "POST" "/api/groxy/mcp/inspect" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set payload to server.parse_json using req
+    set cms_url to text.trim using (map_get_str using payload, "cms_url", "")
+    set builder_url to text.trim using (map_get_str using payload, "builder_url", "")
+    set cms_token to text.trim using (map_get_str using payload, "cms_token", "")
+
+    try
+      if cms_url is "" and (env.has using "GROXY_CMS_URL")
+        set cms_url to text.trim using (env.get using "GROXY_CMS_URL")
+      end
+      if builder_url is "" and (env.has using "GROXY_BUILDER_URL")
+        set builder_url to text.trim using (env.get using "GROXY_BUILDER_URL")
+      end
+    catch env_err
+      set ignored_env to env_err.message
+    end
+
+    set grab_cli_tools to ["grab_check", "grab_format", "grab_inspect_routes", "grab_inspect_schema", "grab_scaffold"]
+    set grablab_expected to ["list_content_types", "query_entries", "create_entry_draft", "update_entry_layout", "list_media", "list_menus"]
+
+    set cms_result to record {connected: no, tools: [], elements_count: 0, schema_version: ""}
+    if cms_url is not ""
+      set hdrs to {}
+      if cms_token is not ""
+        set hdrs to {"Authorization": ("Bearer " joined with cms_token)}
+      end
+      set tools_resp to http.get using (cms_url joined with "/api/mcp/tools"), record {headers: hdrs}
+      set elem_resp to http.get using (cms_url joined with "/static/grex/grex.elements.json")
+      set disc_tools to []
+      if tools_resp.ok
+        set tjson to json.parse using tools_resp.body
+        if has_map_key using tjson, "tools"
+          for each tl in (tjson at "tools")
+            if is_record_value using tl
+              set disc_tools to collections.append using disc_tools, (map_get_str using tl, "name", "")
+            end
+          end
+        end
+      end
+      set elem_cnt to 0
+      set elem_ver to ""
+      if elem_resp.ok
+        set ejson to json.parse using elem_resp.body
+        if has_map_key using ejson, "elementCount"
+          set elem_cnt to ejson at "elementCount"
+        end
+        set elem_ver to map_get_str using ejson, "schemaVersion", ""
+      end
+      set cms_result to record {connected: (tools_resp.ok and elem_resp.ok), tools: disc_tools, elements_count: elem_cnt, schema_version: elem_ver}
+    end
+
+    set builder_result to record {connected: no, tokens_loaded: 0, reusable_classes_loaded: 0, registered_classes: []}
+    if builder_url is not ""
+      set ds_resp to http.get using (builder_url joined with "/api/design-system.md")
+      if ds_resp.ok
+        set parsed_ds to parse_design_system_md using ds_resp.body
+        set builder_result to record {connected: yes, tokens_loaded: parsed_ds.tokens_loaded, reusable_classes_loaded: parsed_ds.reusable_classes_loaded, registered_classes: parsed_ds.registered_classes}
+      end
+    end
+
+    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "0.1.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
+  catch err
+    give back server.json using 400, record {ok: no, error: err.message}
+  end
+end

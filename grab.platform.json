@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "caches": {
+    "groxy": {
+      "driver": "memory",
+      "namespace": "groxy-ai",
+      "max_keys": 5000,
+      "max_bytes": 16777216
+    }
+  }
+}

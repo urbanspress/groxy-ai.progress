@@ -1,0 +1,233 @@
+:root {
+  --groxy-bg: #f8fafc;
+  --groxy-surface: #ffffff;
+  --groxy-border: #cbd5e1;
+  --groxy-text: #0f172a;
+  --groxy-muted: #475569;
+  --groxy-primary: #047857;
+  --groxy-primary-hover: #065f46;
+  --groxy-danger: #991b1b;
+  --groxy-danger-bg: #fef2f2;
+  --groxy-warn: #92400e;
+  --groxy-warn-bg: #fffbeb;
+  --groxy-pass: #065f46;
+  --groxy-pass-bg: #ecfdf5;
+  --groxy-radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body.groxy-body {
+  margin: 0;
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  background: var(--groxy-bg);
+  color: var(--groxy-text);
+  line-height: 1.55;
+}
+
+.groxy-site-header {
+  background: var(--groxy-surface);
+  border-bottom: 1px solid var(--groxy-border);
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.groxy-brand-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.groxy-badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: var(--groxy-pass-bg);
+  color: var(--groxy-pass);
+  border: 1px solid #a7f3d0;
+}
+
+.groxy-nav {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.groxy-nav a {
+  color: var(--groxy-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.groxy-nav a:hover {
+  text-decoration: underline;
+}
+
+main#groxy-inspector-root {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.groxy-card {
+  background: var(--groxy-surface);
+  border: 1px solid var(--groxy-border);
+  border-radius: var(--groxy-radius);
+  padding: 1.25rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.groxy-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.groxy-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.groxy-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.groxy-field label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--groxy-text);
+}
+
+.groxy-field input,
+.groxy-field select,
+.groxy-field textarea {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.95rem;
+  color: var(--groxy-text);
+  background: var(--groxy-surface);
+  border: 1px solid var(--groxy-border);
+  border-radius: 6px;
+}
+
+.groxy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.groxy-btn {
+  padding: 0.6rem 1.1rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  background: var(--groxy-primary);
+  color: #ffffff;
+}
+
+.groxy-btn:hover {
+  background: var(--groxy-primary-hover);
+}
+
+.groxy-btn-secondary {
+  background: var(--groxy-surface);
+  color: var(--groxy-text);
+  border-color: var(--groxy-border);
+}
+
+.groxy-btn-secondary:hover {
+  background: #f1f5f9;
+}
+
+:focus-visible {
+  outline: 3px solid var(--groxy-primary);
+  outline-offset: 2px;
+}
+
+.groxy-pillar-card {
+  background: var(--groxy-bg);
+  border: 1px solid var(--groxy-border);
+  border-radius: 8px;
+  padding: 0.9rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.groxy-score-num {
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.groxy-status-pill {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.groxy-status-pass {
+  background: var(--groxy-pass-bg);
+  color: var(--groxy-pass);
+}
+
+.groxy-status-warning,
+.groxy-status-info {
+  background: var(--groxy-warn-bg);
+  color: var(--groxy-warn);
+}
+
+.groxy-status-error,
+.groxy-status-critical {
+  background: var(--groxy-danger-bg);
+  color: var(--groxy-danger);
+}
+
+.groxy-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.groxy-table th,
+.groxy-table td {
+  border: 1px solid var(--groxy-border);
+  padding: 0.6rem 0.7rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.groxy-table th {
+  background: #f1f5f9;
+  font-weight: 700;
+}
+
+.groxy-muted {
+  color: var(--groxy-muted);
+  margin: 0;
+}
+
+.groxy-site-footer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 2rem;
+  color: var(--groxy-muted);
+  font-size: 0.875rem;
+}

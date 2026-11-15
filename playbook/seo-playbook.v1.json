@@ -1,0 +1,338 @@
+{
+  "schema_version": "0.1.0",
+  "playbook_version": "1.0.0",
+  "name": "Groxy AI Curated SEO, Accessibility & Clean-DOM Playbook",
+  "updated_at": "2026-11-14",
+  "pillars": {
+    "on_page_seo": {
+      "key": "on_page_seo",
+      "label": "On-Page SEO",
+      "weight": 25,
+      "max_points": 100
+    },
+    "content_a11y": {
+      "key": "content_a11y",
+      "label": "Content & WCAG Accessibility",
+      "weight": 25,
+      "max_points": 100
+    },
+    "performance_dom": {
+      "key": "performance_dom",
+      "label": "Performance & Clean DOM",
+      "weight": 25,
+      "max_points": 100
+    },
+    "linking_readiness": {
+      "key": "linking_readiness",
+      "label": "Off-Page / Internal Linking Readiness",
+      "weight": 25,
+      "max_points": 100
+    }
+  },
+  "grade_scale": [
+    {
+      "grade": "A+",
+      "min": 97,
+      "max": 100,
+      "summary": "Exceptional — ready to publish with top search, accessibility, and clean-DOM signals"
+    },
+    {
+      "grade": "A",
+      "min": 90,
+      "max": 96,
+      "summary": "Strong — passes all critical standards with only minor polish ideas"
+    },
+    {
+      "grade": "B",
+      "min": 80,
+      "max": 89,
+      "summary": "Good — solid foundation; quick Groxy improvements will raise search & UX quality"
+    },
+    {
+      "grade": "C",
+      "min": 70,
+      "max": 79,
+      "summary": "Fair — noticeable SEO, heading, alt-text, or contrast gaps to address"
+    },
+    {
+      "grade": "D",
+      "min": 60,
+      "max": 69,
+      "summary": "Needs Work — significant structural, SEO, or accessibility defects"
+    },
+    {
+      "grade": "F",
+      "min": 0,
+      "max": 59,
+      "summary": "Failing / Unsafe — critical SEO, WCAG AA, wrapper-<div>, or security issues present"
+    }
+  ],
+  "reserved_slug_prefixes": [
+    "admin",
+    "api",
+    "static",
+    "_health",
+    "_ready",
+    "groxy",
+    "studio",
+    "preview"
+  ],
+  "stop_words": [
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "be",
+    "by",
+    "for",
+    "from",
+    "in",
+    "is",
+    "it",
+    "of",
+    "on",
+    "or",
+    "that",
+    "the",
+    "this",
+    "to",
+    "was",
+    "with"
+  ],
+  "vague_anchors": [
+    "click here",
+    "read more",
+    "learn more",
+    "here",
+    "link",
+    "this",
+    "more",
+    "website",
+    "page",
+    "view more"
+  ],
+  "allowed_grex_elements": [
+    "Section",
+    "Container",
+    "Grid",
+    "Stack",
+    "Card",
+    "Heading",
+    "Text",
+    "RichText",
+    "Link",
+    "Button",
+    "Image",
+    "Icon",
+    "Form",
+    "Input",
+    "Select",
+    "Tabs",
+    "Accordion",
+    "Modal",
+    "Nav",
+    "ForEach"
+  ],
+  "rules": [
+    {
+      "rule_id": "GROXY-SEO-001",
+      "category": "on_page_seo",
+      "title": "Optimal SEO Title Length",
+      "source": "Google Search Central / Semrush",
+      "max_points": 15,
+      "critical_safety": false,
+      "description": "Title tag or entry.title exists and spans 30-65 characters (50-60 characters optimal to avoid SERP truncation)."
+    },
+    {
+      "rule_id": "GROXY-SEO-002",
+      "category": "on_page_seo",
+      "title": "Focus Keyword Alignment & Natural Density",
+      "source": "Semrush / Ahrefs",
+      "max_points": 15,
+      "critical_safety": false,
+      "description": "Target focus keyword (or inferred topic term) appears naturally in title and primary H1/opening copy with <= 3% density."
+    },
+    {
+      "rule_id": "GROXY-SEO-003",
+      "category": "on_page_seo",
+      "title": "Meta Description / Excerpt Length",
+      "source": "Google Search Central / Semrush",
+      "max_points": 15,
+      "critical_safety": false,
+      "description": "Meta description or entry.excerpt is present and 120-158 characters (<= 160 max to avoid search snippet clipping)."
+    },
+    {
+      "rule_id": "GROXY-SEO-004",
+      "category": "on_page_seo",
+      "title": "Clean Lowercase Hyphenated URL Slug",
+      "source": "Google Search Central / GrabLab",
+      "max_points": 10,
+      "critical_safety": false,
+      "description": "Slug matches ^[a-z0-9]+(?:-[a-z0-9]+)*$, stays <= 75 chars, avoids stop-word bloat, and never collides with reserved route prefixes."
+    },
+    {
+      "rule_id": "GROXY-SEO-005",
+      "category": "on_page_seo",
+      "title": "Single Primary H1 Heading",
+      "source": "Ahrefs / Google Search Central",
+      "max_points": 15,
+      "critical_safety": false,
+      "description": "Exactly one <h1> (Heading level 1) exists in the primary content flow matching page search intent."
+    },
+    {
+      "rule_id": "GROXY-SEO-006",
+      "category": "on_page_seo",
+      "title": "Content Depth & Subheading Scannability",
+      "source": "Semrush / Ahrefs",
+      "max_points": 15,
+      "critical_safety": false,
+      "description": "Substantive editorial copy (>= 300 words for post/article or >= 120 words for page/product) structured with H2/H3 subheadings."
+    },
+    {
+      "rule_id": "GROXY-SEO-007",
+      "category": "on_page_seo",
+      "title": "Site-Wide Title & Slug Uniqueness",
+      "source": "Ahrefs Site Audit",
+      "max_points": 10,
+      "critical_safety": false,
+      "description": "Zero duplicate title or colliding slug across site entries returned by query_entries."
+    },
+    {
+      "rule_id": "GROXY-SEO-008",
+      "category": "on_page_seo",
+      "title": "Exact GrabDecimal / GrabInteger Numeric Integrity",
+      "source": "GRAB ADR-025c / Google Merchant",
+      "max_points": 5,
+      "critical_safety": false,
+      "description": "Structured numeric custom fields preserve exact base-10 wire strings with zero IEEE-754 float coercion or NaN drift."
+    },
+    {
+      "rule_id": "GROXY-A11Y-001",
+      "category": "content_a11y",
+      "title": "WCAG AA Color Contrast Ratio",
+      "source": "GREX-A11Y-001 / WCAG 2.1 AA",
+      "max_points": 25,
+      "critical_safety": false,
+      "description": "Text/background color pairs across nodes and --grex-* tokens meet >= 4.5:1 (>= 3.0:1 for large text)."
+    },
+    {
+      "rule_id": "GROXY-A11Y-002",
+      "category": "content_a11y",
+      "title": "Descriptive Image Alt Text",
+      "source": "GREX-A11Y-002 / WCAG 2.1 AA",
+      "max_points": 25,
+      "critical_safety": false,
+      "description": "Every Image supplies descriptive alt text (3-125 chars, not a raw filename) or explicit decorative: true / isDecorative: true."
+    },
+    {
+      "rule_id": "GROXY-A11Y-003",
+      "category": "content_a11y",
+      "title": "Accessible Form Input & Select Labels",
+      "source": "GREX-A11Y-003 / WCAG 2.1 AA",
+      "max_points": 15,
+      "critical_safety": false,
+      "description": "Every Input and Select exposes a non-empty label, aria-label, or aria-labelledby."
+    },
+    {
+      "rule_id": "GROXY-A11Y-004",
+      "category": "content_a11y",
+      "title": "Sequential Semantic Heading Hierarchy",
+      "source": "GREX-A11Y-004 / WCAG 2.1 AA",
+      "max_points": 20,
+      "critical_safety": false,
+      "description": "Heading levels (h1 -> h2 -> h3...) advance sequentially with zero skipped heading levels."
+    },
+    {
+      "rule_id": "GROXY-A11Y-005",
+      "category": "content_a11y",
+      "title": "Accessible Interactive Controls & Focus Rings",
+      "source": "GREX-A11Y-005 / WCAG 2.1 AA",
+      "max_points": 15,
+      "critical_safety": false,
+      "description": "Every Button and Link provides a non-empty accessible label and preserves visible :focus-visible outlines."
+    },
+    {
+      "rule_id": "GROXY-DOM-001",
+      "category": "performance_dom",
+      "title": "Zero Wrapper-<div> Guarantee",
+      "source": "GREX-SCHEMA-001 / Grex JS v1.0.0",
+      "max_points": 25,
+      "critical_safety": true,
+      "description": "Layout tree and rendered HTML contain zero <div> wrapper tags (any <div> forces overall grade F and publish_safe: false)."
+    },
+    {
+      "rule_id": "GROXY-DOM-002",
+      "category": "performance_dom",
+      "title": "Strict 20-Element Grex Semantic Allowlist",
+      "source": "grex.elements.json / Grex JS v1.0.0",
+      "max_points": 20,
+      "critical_safety": false,
+      "description": "All nodes belong strictly to the 20 Grex elements with allowed semantic HTML5 tags (section, main, header, nav, article, aside, footer)."
+    },
+    {
+      "rule_id": "GROXY-DOM-003",
+      "category": "performance_dom",
+      "title": "Zero XSS, Inline Script & Unsafe URL Guard",
+      "source": "GREX-SEC-003 / GREX-SEC-004",
+      "max_points": 25,
+      "critical_safety": true,
+      "description": "Zero <script>, <iframe>, <object>, <style>, on* handlers, innerHTML/srcdoc, unsafe protocols, or CSS expression() (violation caps Clean DOM at 0 and grade at F)."
+    },
+    {
+      "rule_id": "GROXY-DOM-004",
+      "category": "performance_dom",
+      "title": "DOM Depth & Lean Node Budget",
+      "source": "GREX-BUILDER-SPEC-100",
+      "max_points": 15,
+      "critical_safety": false,
+      "description": "Layout nesting stays <= 24 levels (<= 10 optimal) and total node count stays <= 150 nodes."
+    },
+    {
+      "rule_id": "GROXY-DOM-005",
+      "category": "performance_dom",
+      "title": "GRAB-DESIGN-SYSTEM.md Token & Class Fidelity",
+      "source": "GRAB-DESIGN-SYSTEM.md / Grex Theme Builder",
+      "max_points": 15,
+      "critical_safety": false,
+      "description": "Reuses registered --grex-* tokens and .grex-c-* utility classes instead of unknown classes or excessive inline style overrides."
+    },
+    {
+      "rule_id": "GROXY-LINK-001",
+      "category": "linking_readiness",
+      "title": "Internal Link Presence & Descriptive Anchors",
+      "source": "Ahrefs / Google Search Central",
+      "max_points": 30,
+      "critical_safety": false,
+      "description": "Includes descriptive internal links (1-2 per 500 words) without vague anchors such as click here or read more."
+    },
+    {
+      "rule_id": "GROXY-LINK-002",
+      "category": "linking_readiness",
+      "title": "Broken Link, Loop & 301 Slug History Guard",
+      "source": "GrabLab 301 Redirect Guard / Ahrefs",
+      "max_points": 30,
+      "critical_safety": false,
+      "description": "Detects self-loops, broken internal targets, and links pointing to superseded 301 redirect slugs instead of canonical URLs."
+    },
+    {
+      "rule_id": "GROXY-LINK-003",
+      "category": "linking_readiness",
+      "title": "Navigation & Orphan Page Discoverability",
+      "source": "Ahrefs Site Audit / GrabLab Menus",
+      "max_points": 20,
+      "critical_safety": false,
+      "description": "Checks whether the entry is reachable from site navigation menus or sibling internal links."
+    },
+    {
+      "rule_id": "GROXY-LINK-004",
+      "category": "linking_readiness",
+      "title": "Schema.org Rich Result Metadata Readiness",
+      "source": "Google Search Central Structured Data",
+      "max_points": 20,
+      "critical_safety": false,
+      "description": "Verifies required metadata for structured data output (author/date/excerpt for posts, exact GrabDecimal price/SKU for products, headings for pages)."
+    }
+  ]
+}
