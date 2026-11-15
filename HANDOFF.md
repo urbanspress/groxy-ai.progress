@@ -74,7 +74,7 @@ Completed multi-repository security, DOM, accessibility, precision, container, a
 
 ---
 
-## Planned Backwards-Compatible Minor Track (`v1.1.0` – `v1.5.0`)
+## Planned Backwards-Compatible Minor Track (`v1.1.0` – `v1.6.0`)
 
 - **Milestone `v1.1.0` — Screenshot-to-Grex Visual Replica (`POST /api/groxy/vision-clone`):** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified; specification & implementation pending owner scheduling after Step 5):
   - Accepts user-uploaded reference screenshots (`PNG`/`JPEG`/`WebP` verified via magic bytes + max size caps).
@@ -93,6 +93,9 @@ Completed multi-repository security, DOM, accessibility, precision, container, a
 - **Milestone `v1.5.0` — Bespoke Store Schema Quiz & Opt-In "Talk to Groxy" Database & Store Consultant:** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified):
   - **Store Architecture Quiz (`POST /api/groxy/db/architect-quiz`):** Generates lean, zero-bloat `.grab` database migrations (`ADR-024f` + `ADR-025c`) tailored to the user's exact business model and dispatches to **Groxy Desk** / **Gashboard** SSH tunnels for human-approved provisioning (`GROXY-SAFE-001`).
   - **Opt-In Database & Store Consultant (`groxy_db_consultant_enabled`):** Reads live `.grab` schema, row counts, active `ForEach` Query Loops, `slug_history` redirects, and order records (`SCHEMA-CONTEXT.md` + `SITE-CONTEXT.md`) to provide honest **Impact & Risk Assessments** (*Safe / Caution / High-Risk Data Loss*) before any table/column/data change, triggering an automatic **Grabtaculous** Pre-Deploy Snapshot before applying approved adjustments.
+- **Milestone `v1.6.0` — Lovable/Base44-Style Iterative Section Co-Pilot & Golden-Ratio Design-Craft Engine:** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified):
+  - **Targeted Section Refinement (`POST /api/groxy/section-refine`):** Conversational per-section editing inside **Grex Theme Builder** patching only the selected subtree via `POST /api/mcp/layout` (`actor: "groxy-ai"`, 1-click `Ctrl+Z` undo, `GROXY-SAFE-001` approval gate).
+  - **Design-Craft & Visual Rhythm Playbook (`playbook/design-craft.v1.json`):** Enforces `8pt` spacing rhythm, `60–65ch` readable line measure, 1-primary-CTA-per-fold hierarchy, Light/Dark surface elevation (`--grex-surface-1` / `--grex-surface-2`), and automatic full-stack wiring of generated forms and `ForEach` grids to live **GrabLab CMS** content types and `ADR-025c` `GrabDecimal` product fields.
 
 ---
 
