@@ -76,3 +76,25 @@ Scope:
 - Extracts visual hierarchy, spacing rhythm, typography scale, and color tokens via a configured vision model (local **Ollama** `llama3.2-vision` / `qwen2.5-vl` with zero mandatory cloud API fees, or optional user-supplied API key).
 - Compiles a clean, zero-wrapper-`<div>` **`Grex JS v1.0.0`** layout (`divCount === 0`, WCAG AA `>= 4.5:1` contrast auto-repaired, `ADR-025c` exact decimals preserved, `GRAB-DESIGN-SYSTEM.md` tokens & `.grex-c-*` classes applied).
 - Gated behind `X-CSRF-Token` + single-use `approval_token` (`GROXY-SAFE-001`) before dispatching to Grex Theme Builder via `POST /api/mcp/layout` (`actor: "groxy-ai"` with 1-click Undo parity).
+
+---
+
+## `v1.2.0` — 1-Time Brand DNA & Voice Setup Wizard (`BRAND-DNA.md`) & Batch Content/Product Campaign Engine (`POST /api/groxy/batch-create`)
+
+**Status:** Planned — Backwards-Compatible Minor Feature
+
+Scope:
+- **1-Time Brand DNA & Voice Setup Wizard (`BRAND-DNA.md`):** 8–10 question onboarding wizard capturing brand tone, target audience, value propositions, editorial guardrails, pricing rules, and `--grex-*` visual identity, saving `storage/BRAND-DNA.md` alongside portable `Site DNA`.
+- **Batch Content/Product Campaign Engine (`POST /api/groxy/batch-create`):** Powers 1-sentence batch creation of up to 40+ SEO/WCAG-audited blog posts or products with exact `ADR-025c` `GrabDecimal` prices, zero-`<div>` clean DOM, and `schema.org` JSON-LD readiness.
+- **Human-in-the-Loop Safety (`GROXY-SAFE-001`):** Strictly gated behind `create_entry_draft` (`status: "draft"`) and single-use `approval_token` + `X-CSRF-Token` confirmation before persisting drafts into GrabLab CMS.
+
+---
+
+## `v1.3.0` — Autonomous Post-Purchase Email Flow Designer & Copywriter
+
+**Status:** Planned — Backwards-Compatible Minor Feature
+
+Scope:
+- Reads `storage/BRAND-DNA.md`, `storage/SITE-CONTEXT.md`, and live `--grex-*` design tokens (`GET /api/design-system.md`) to design multi-step post-purchase transactional and retention flows.
+- Generates branded receipt copy, onboarding/setup guides, review request sequences, and exact-price (`ADR-025c` `GrabDecimal`) product cross-sell flows paired with GrabLab CMS `email_outbox` triggers and Grex Builder `mode: "email"` templates.
+- All generated sequences, subject lines, and dispatch bindings remain strictly gated behind `GROXY-SAFE-001` single-use `approval_token` review prior to activation.
