@@ -3,6 +3,19 @@
 All notable changes to **Groxy AI** (`urbanspress/groxy-ai`) are documented in this file.
 Versioning follows `MAJOR.MINOR.PATCH` SemVer rules per [`AGENTS.md`](AGENTS.md).
 
+## [v1.0.0] — 2026-11-15
+
+### Added & Frozen
+- **Pre-`v1.0.0` 5-Layer Cross-Repository Security, DOM & Contract Audit (`100%` Pass):**
+  - Verified `0` wrapper `<div>` tags across all `25` ecosystem `.grab.html` templates, `0` `.innerHTML` / `eval()` usages, 100% WCAG AA contrast across all `40` Style Pack × Blueprint combinations, byte-exact `ADR-025c` `GrabDecimal`/`GrabInteger` precision, single-use `approval_token` + `X-CSRF-Token` human-in-the-loop safety (`GROXY-SAFE-001`), `--read-only` rootfs isolation, `GRAB-E401`/`GRAB-E402` guards, and full MCP/design-system parity across **GRAB `v1.1.0`**, **Grex JS `v1.0.0`**, **GrabLab CMS `v1.0.1`**, **Grex Theme Builder `v1.0.0`**, and **Groxy AI `v1.0.0`**.
+- **SemVer `v1.x` Contract & Service Version Freeze (`ADR-027c`, [`specifications/GROXY-AI-SPEC-005.md`](specifications/GROXY-AI-SPEC-005.md)):**
+  - Freezes all `22` HTTP routes in [`src/groxy.grab`](src/groxy.grab) (`/_health`, `/_ready`, `/api/groxy/playbook` (`service_version: "1.0.0"`), `/api/groxy/mcp/inspect`), the 22-rule Playbook ([`playbook/seo-playbook.v1.json`](playbook/seo-playbook.v1.json)), all `8` Industry & Goal-Aware Style Packs × `5` Blueprints, and `GROXY_VERSION = "1.0.0"` exports across all [`public/groxy/`](public/groxy/) and [`assets/`](assets/) runtime modules (including [`assets/booster.js`](assets/booster.js) and [`assets/site-context.js`](assets/site-context.js)), plus [`views/dashboard.grab.html`](views/dashboard.grab.html).
+  - Preserves backwards-compatible endpoint payload `schema_version` identifiers (`"0.1.0"`–`"0.4.0"`) across the `v1.x` release line.
+- **Hardened `--read-only` Container Deployment Bundle ([`deploy/docker-compose.yml`](deploy/docker-compose.yml), [`deploy/README.md`](deploy/README.md)):**
+  - Ships standalone (`groxy-ai`) and 4-layer integrated (`--profile ecosystem-stack` with `grablab-cms:v1.0.1` and `grex-builder-studio:v1.0.0`) Compose manifests enforcing `read_only: true`, `cap_drop: ["ALL"]`, `no-new-privileges:true`, `tmpfs: /tmp:rw,noexec,nosuid`, loopback binding (`127.0.0.1:${GROXY_PORT:-8090}:8090`), writable mounts scoped strictly to `storage/` and `cache/`, and zero hardcoded secrets or private IPs.
+- **Production Verification, Packaging & Release Guide:**
+  - Added [`tests/unit_v100_production_audit.test.js`](tests/unit_v100_production_audit.test.js) (`37/37` Node tests passing), updated [`tests/integration_e2e.py`](tests/integration_e2e.py) (Gates `1`, `2`, `3A`, `3B` passing 100%), updated [`scripts/package_release.py`](scripts/package_release.py) to include `deploy/` in `dist/groxy-ai-v1.0.0-bundle.zip` + `dist/SHA256SUMS.txt`, and added the plain-English `v1.0.0` guide in [`docs/releases/generate_release_guides.py`](docs/releases/generate_release_guides.py).
+
 ## [v0.4.0] — 2026-11-15
 
 ### Added

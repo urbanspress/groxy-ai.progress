@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-Groxy AI v0.4.0 — Full Cross-Layer End-to-End Verification Suite.
+Groxy AI v1.0.0 — Full Cross-Layer End-to-End Verification Suite.
 
 Runs 3 non-negotiable gates:
   Gate 1: Static analysis (grab check), non-destructive canonical formatting (grab format byte-for-byte),
-          .grab.html compile probe, and zero wrapper-<div> / zero-innerHTML source verification.
+          .grab.html compile probe, deploy/ --read-only manifest verification, and zero wrapper-<div> / zero-innerHTML source verification.
   Gate 2: Node unit & DOM accessibility suite (node --test tests/unit_*.test.js).
   Gate 3: Live cross-layer integration spinning up:
             - Core GRAB v1.1.0 `grab mcp` stdio JSON-RPC 2.0 server
             - GrabLab CMS v1.0.1 (isolated temp copy)
             - Grex Theme Builder v1.0.0 (isolated temp copy)
-            - Groxy AI v0.4.0 (src/groxy.grab)
+            - Groxy AI v1.0.0 (src/groxy.grab)
 """
 
 import http.cookiejar
@@ -185,6 +185,21 @@ def gate_1_static_and_format(grab_bin: str):
         assert ".innerHTML" not in code_only, f"{js_file.name} must never reference .innerHTML"
         assert not re.search(r"\beval\s*\(", code_only), f"{js_file.name} must never call eval()"
 
+    # Hardened --read-only container deployment verification
+    compose_path = REPO_ROOT / "deploy" / "docker-compose.yml"
+    deploy_readme_path = REPO_ROOT / "deploy" / "README.md"
+    assert compose_path.exists(), "deploy/docker-compose.yml missing"
+    assert deploy_readme_path.exists(), "deploy/README.md missing"
+    compose_text = compose_path.read_text(encoding="utf-8")
+    deploy_readme_text = deploy_readme_path.read_text(encoding="utf-8")
+    assert "read_only: true" in compose_text
+    assert "no-new-privileges:true" in compose_text
+    assert "cap_drop:" in compose_text and "ALL" in compose_text
+    assert "/tmp:rw,noexec,nosuid" in compose_text
+    assert "../storage:/app/storage:rw" in compose_text
+    assert "../cache:/app/cache:rw" in compose_text
+    assert not re.search(r"\b(?:10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(?:1[6-9]|2\d|3[0-1])\.\d+\.\d+)\b", compose_text + "\n" + deploy_readme_text)
+
     print("  [PASS] Gate 1 complete.")
 
 
@@ -201,6 +216,7 @@ def gate_2_node_tests():
         "tests/unit_enrichment.test.js",
         "tests/unit_mcp_client.test.js",
         "tests/unit_ui_dom.test.js",
+        "tests/unit_v100_production_audit.test.js",
     ])
     print("  [PASS] Gate 2 complete (all unit & DOM tests passed).")
 
@@ -300,7 +316,7 @@ def gate_3a_grab_mcp_stdio(grab_bin: str):
 
 
 def gate_3b_live_cross_layer(grab_bin: str):
-    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v0.4.0...")
+    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v1.0.0...")
     cms_src = Path(os.environ.get("GRABLAB_CMS_DIR", r"C:\Development\grablab-cms"))
     builder_src = Path(os.environ.get("GREX_BUILDER_DIR", r"C:\Development\grex-builder"))
     if not (cms_src / "src" / "app.grab").exists():
@@ -415,7 +431,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         procs.append(builder_proc)
         wait_for_health(builder_url, builder_proc, "Grex Theme Builder v1.0.0", log_path=builder_log)
 
-        # 3. Start Groxy AI v0.4.0 from REPO_ROOT
+        # 3. Start Groxy AI v1.0.0 from REPO_ROOT
         groxy_log = tmp_root / "groxy.log"
         groxy_fh = open(groxy_log, "wb+")
         log_files.append(groxy_fh)
@@ -445,7 +461,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
             stderr=subprocess.STDOUT,
         )
         procs.append(groxy_proc)
-        health_json = wait_for_health(groxy_url, groxy_proc, "Groxy AI v0.4.0", log_path=groxy_log)
+        health_json = wait_for_health(groxy_url, groxy_proc, "Groxy AI v1.0.0", log_path=groxy_log)
         assert health_json.get("status") == "ok", (
             f"Unexpected /_health payload from Groxy AI: {health_json}"
         )
@@ -461,6 +477,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         st, _, html = http_request(f"{groxy_url}/groxy")
         assert st == 200
         assert re.search(r"<div\b", html, re.IGNORECASE) is None, "/groxy HTML must have zero <div> elements"
+        assert '<meta name="groxy-version" content="1.0.0">' in html, "Missing groxy-version 1.0.0 meta tag"
         m = re.search(r'<meta\s+name="groxy-csrf"\s+content="([^"]+)"', html)
         assert m, "Missing groxy-csrf meta tag in /groxy HTML"
         groxy_csrf = m.group(1)
@@ -479,6 +496,8 @@ def gate_3b_live_cross_layer(grab_bin: str):
         assert st == 200
         pb = json.loads(pb_body)
         assert len(pb.get("rules", [])) == 22
+        assert pb.get("playbook_version") == "1.0.0"
+        assert pb.get("service_version") == "1.0.0"
 
         # Verify CSRF enforcement on all POST routes
         for post_path in [
@@ -529,7 +548,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         assert st_insp == 200, f"/api/groxy/mcp/inspect failed ({st_insp}): {insp_body}"
         insp = json.loads(insp_body)
         assert insp["ok"] is True
-        assert insp["version"] == "0.4.0"
+        assert insp["version"] == "1.0.0"
         assert insp["grablab_cms"]["connected"] is True
         assert insp["grablab_cms"]["elements_count"] == 20
         assert "create_entry_draft" in insp["grablab_cms"]["tools"]
@@ -1394,7 +1413,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         assert st_dnamd == 200 and "text/markdown" in hdrs_dnamd.get("content-type", "").lower()
         assert "# Groxy Site DNA Export (0.4.0)" in dnamd_body
 
-        print("  [PASS] Gate 3B complete (live 4-layer GRAB + GrabLab CMS + Grex Builder + Groxy AI v0.4.0 verified 100%).")
+        print("  [PASS] Gate 3B complete (live 4-layer GRAB + GrabLab CMS + Grex Builder + Groxy AI v1.0.0 verified 100%).")
     finally:
         for p in reversed(procs):
             terminate_process(p)
@@ -1413,7 +1432,7 @@ def main():
     gate_2_node_tests()
     gate_3a_grab_mcp_stdio(grab_bin)
     gate_3b_live_cross_layer(grab_bin)
-    print("\nALL GROXY AI v0.4.0 VERIFICATION GATES PASSED 100%.")
+    print("\nALL GROXY AI v1.0.0 VERIFICATION GATES PASSED 100%.")
 
 
 if __name__ == "__main__":

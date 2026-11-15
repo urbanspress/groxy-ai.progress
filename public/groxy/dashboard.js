@@ -1,9 +1,11 @@
 /**
- * Groxy AI v0.4.0 — Zero-<div> Visual Generator Studio, Site-Wide Intelligence,
+ * Groxy AI v1.0.0 — Zero-<div> Visual Generator Studio, Site-Wide Intelligence,
  * Schema.org JSON-LD, Media alt-Text Enrichment, Morning Boost Digest & Diff UI.
  * Built strictly with Grex JS v1.0.0 signals and semantic HTML5 elements.
  * Zero innerHTML writes, zero eval(), zero wrapper <div> elements.
  */
+
+export const GROXY_VERSION = "1.0.0";
 
 import {
   auditAccessibility,
@@ -474,7 +476,7 @@ export function mountGroxyDashboard(options = {}) {
     class: "groxy-card",
     "aria-label": "Deterministic SEO and DOM Auditor",
   });
-  formCard.appendChild(createEl(doc, "h1", {}, "Groxy AI v0.3.0 — Visual Generator Studio, Pre-Publish Gate & Audit Inspector"));
+  formCard.appendChild(createEl(doc, "h1", {}, "Groxy AI v1.0.0 — Visual Generator Studio, Site Intelligence, Pre-Publish Gate & Audit Inspector"));
   formCard.appendChild(
     createEl(
       doc,

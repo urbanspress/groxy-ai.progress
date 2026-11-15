@@ -1,10 +1,12 @@
 /**
- * Groxy AI v0.1.0 — Unified `grab mcp` & Grex Theme Builder Client.
+ * Groxy AI v1.0.0 — Unified `grab mcp` & Grex Theme Builder Client.
  * Connects safely to:
  *   1. GrabLab CMS v1.0.1 (POST /api/mcp, GET /api/mcp/tools, POST /api/mcp/tools/{name}, /static/grex/grex.elements.json)
  *   2. Grex Theme Builder v1.0.0 (GET /api/design-system.md, POST /api/mcp/layout, GET /api/studio/commands, GET /api/revisions)
  *   3. Core GRAB CLI v1.1.0 stdio MCP tools (grab_check, grab_format, grab_inspect_routes, grab_inspect_schema, grab_scaffold)
  */
+
+export const GROXY_VERSION = "1.0.0";
 
 import { parseDesignSystemMarkdown } from "./playbook.js";
 

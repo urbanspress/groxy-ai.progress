@@ -59,8 +59,8 @@ Scope:
 
 ## `v1.0.0` — Production Release, Hardened `--read-only` Container Packaging & Full Ecosystem E2E Verification
 
-**Status:** Planned
+**Status:** Approved & Frozen — Complete ([`specifications/GROXY-AI-SPEC-005.md`](../specifications/GROXY-AI-SPEC-005.md))
 
 Scope:
-- Full pre-`v1.0.0` second-opinion security, DOM, contract, and human-in-the-loop safety audit (`Orchestrator (Argon)`).
-- Hardened `--read-only` Docker deployment manifests (`deploy/docker-compose.yml`), SemVer `v1.x` contract freeze, plain-English walkthrough PDF (`docs/releases/pdf/Groxy-AI-v1.0.0-Guide.pdf`), and synchronized `v1.0.0` promotion to `urbanspress/groxy-ai.progress` and `urbanspress/groxy-ai.stable`.
+- Full pre-`v1.0.0` second-opinion security, DOM, contract, and human-in-the-loop safety audit (`Orchestrator (Argon)` — **100% Complete** across all 5 ecosystem layers).
+- Hardened `--read-only` Docker deployment manifests (`deploy/docker-compose.yml` & `deploy/README.md`), SemVer `v1.x` contract freeze, plain-English walkthrough PDF (`docs/releases/pdf/Groxy-AI-v1.0.0-Guide.pdf`), and synchronized `v1.0.0` promotion to `urbanspress/groxy-ai.progress` and `urbanspress/groxy-ai.stable`.

@@ -22,7 +22,7 @@ def sha256_file(path: Path) -> str:
 
 
 def collect_release_files():
-    include_dirs = ["src", "views", "public", "assets", "playbook"]
+    include_dirs = ["src", "views", "public", "assets", "playbook", "deploy"]
     include_files = ["grab.platform.json", "README.md", "CHANGELOG.md", "GROXY-EXPERT.md", "LICENSE"]
     files = []
 
@@ -43,7 +43,7 @@ def collect_release_files():
 
 
 def main():
-    version = sys.argv[1] if len(sys.argv) > 1 else "0.1.0"
+    version = sys.argv[1] if len(sys.argv) > 1 else "1.0.0"
     version_tag = version.lstrip("v")
 
     DIST_DIR.mkdir(parents=True, exist_ok=True)

@@ -1,5 +1,5 @@
 /**
- * Groxy AI v0.4.0 — Autonomous `GRAB-DESIGN-SYSTEM.md`-Aware Visual Page & Section Generator
+ * Groxy AI v1.0.0 — Autonomous `GRAB-DESIGN-SYSTEM.md`-Aware Visual Page & Section Generator
  *
  * Pure zero-dependency ES module producing semantic 20-element `grex.elements.json` trees
  * across 8 industry & goal-aware Style Packs and 5 Blueprints (40 combinations) with active
@@ -7,6 +7,8 @@
  * `GrabInteger` wire string preservation (`ADR-025c`), strict `validateElementNode()` + WCAG AA
  * `auditAccessibility()` compliance, and pre-dispatch 4-pillar Grade A / A+ gating.
  */
+
+export const GROXY_VERSION = "1.0.0";
 
 import {
   auditAccessibility,

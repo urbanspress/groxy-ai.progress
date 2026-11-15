@@ -1,0 +1,219 @@
+# Groxy AI v1.0.0 — Production Hardened Docker Compose Template
+#
+# Supports two deployment modes on GRAB v1.1.0 + Grisp + Grex JS v1.0.0:
+#   1. Default (`groxy-ai`): Standalone hardened Groxy AI agent (`src/groxy.grab`)
+#      with immutable `--read-only` root filesystem and writable mounts strictly scoped to:
+#        - ../storage -> /app/storage (runtime SITE-CONTEXT.md snapshot persistence)
+#        - ../cache   -> /app/cache   (optional runtime cache scratch area)
+#   2. Profile `ecosystem-stack` (`--profile ecosystem-stack`): Integrated 4-layer stack
+#      wiring `groxy-ai` alongside `grablab-cms` (v1.0.1) and `grex-builder-studio` (v1.0.0)
+#      over explicit `--allow-net` service allowlists.
+#
+# SECURITY: Never commit real passwords, signing keys, bearer tokens, or
+# production IP addresses to Git. Supply secrets via an untracked .env file or secret manager.
+
+services:
+  groxy-ai:
+    image: ${GROXY_IMAGE:-groxy-ai:v1.0.0}
+    container_name: groxy-ai
+    restart: unless-stopped
+
+    # Equivalent to `docker run --read-only`: immutable container root filesystem.
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+
+    # Bind host port to loopback so a TLS reverse proxy (Caddy/Nginx) terminates HTTPS.
+    ports:
+      - "127.0.0.1:${GROXY_PORT:-8090}:8090"
+
+    working_dir: /app
+
+    # Scoped writable volumes only; src/, views/, public/, assets/, playbook/, and grab.platform.json remain immutable.
+    volumes:
+      - ../storage:/app/storage:rw
+      - ../cache:/app/cache:rw
+
+    environment:
+      GROXY_STORAGE_DIR: /app/storage
+      GROXY_SITE_CONTEXT_PATH: /app/storage/SITE-CONTEXT.md
+      GROXY_CMS_URL: ${GROXY_CMS_URL:-}
+      GROXY_BUILDER_URL: ${GROXY_BUILDER_URL:-}
+
+    command:
+      - grab
+      - serve
+      - --addr
+      - 0.0.0.0:8090
+      - --allow-public
+      - --allow-scripts
+      - --diagnostics
+      - production
+      - --log-format
+      - json
+      - --trusted-proxy
+      - ${GROXY_TRUSTED_PROXY:-127.0.0.1}
+      - --allow-read
+      - /app
+      - --allow-write
+      - /app/storage
+      - --allow-write
+      - /app/cache
+      - --allow-env
+      - GROXY_STORAGE_DIR,GROXY_SITE_CONTEXT_PATH,GROXY_CMS_URL,GROXY_BUILDER_URL
+      - --platform-config
+      - /app/grab.platform.json
+      - --allow-cache
+      - groxy:read-write
+      - --allow-net
+      - ${GROXY_ALLOW_NET:-grablab-cms:8080,grex-builder-studio:8080}
+      - --static
+      - /app/public
+      - /app/src/groxy.grab
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8090/_ready || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  grablab-cms:
+    profiles: ["ecosystem-stack"]
+    image: ${GRABLAB_IMAGE:-grablab-cms:v1.0.1}
+    container_name: grablab-cms
+    restart: unless-stopped
+
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+
+    ports:
+      - "127.0.0.1:${GRABLAB_PORT:-8080}:8080"
+
+    working_dir: /app
+
+    volumes:
+      - ./grablab-storage:/app/storage:rw
+      - ./grablab-uploads:/app/uploads:rw
+      - ./shared-grex:/app/public/grex:rw
+
+    environment:
+      GRABLAB_MASTER_KEY: ${GRABLAB_MASTER_KEY:?Set GRABLAB_MASTER_KEY in .env or secret manager}
+      GRABLAB_UPLOAD_DIR: /app/uploads
+      GRABLAB_MAX_UPLOAD_BYTES: ${GRABLAB_MAX_UPLOAD_BYTES:-10485760}
+
+    command:
+      - grab
+      - serve
+      - --addr
+      - 0.0.0.0:8080
+      - --allow-public
+      - --allow-scripts
+      - --diagnostics
+      - production
+      - --log-format
+      - json
+      - --trusted-proxy
+      - ${GRABLAB_TRUSTED_PROXY:-127.0.0.1}
+      - --allow-read
+      - /app
+      - --allow-write
+      - /app/uploads
+      - --allow-env
+      - GRABLAB_MASTER_KEY,GRABLAB_UPLOAD_DIR,GRABLAB_MAX_UPLOAD_BYTES
+      - --db-config
+      - /app/grab.data.json
+      - --allow-db
+      - main:read-write
+      - --platform-config
+      - /app/grab.platform.json
+      - --allow-cache
+      - cms:read-write
+      - --allow-cache
+      - cms:limit
+      - --static
+      - /app/public
+      - /app/src/app.grab
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/_ready || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  grex-builder-studio:
+    profiles: ["ecosystem-stack"]
+    image: ${GREX_BUILDER_IMAGE:-grex-builder-studio:v1.0.0}
+    container_name: grex-builder-studio
+    restart: unless-stopped
+
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+
+    ports:
+      - "127.0.0.1:${GREX_STUDIO_PORT:-8081}:8080"
+
+    working_dir: /app
+
+    volumes:
+      - ./builder-storage:/app/storage:rw
+      - ./shared-grex:/app/public/grex:rw
+
+    environment:
+      GREX_STATIC_DIR: /app/public/grex
+      GREX_DESIGN_SYSTEM_PATH: /app/storage/GRAB-DESIGN-SYSTEM.md
+
+    command:
+      - grab
+      - serve
+      - --addr
+      - 0.0.0.0:8080
+      - --allow-public
+      - --allow-scripts
+      - --diagnostics
+      - production
+      - --log-format
+      - json
+      - --trusted-proxy
+      - ${GREX_TRUSTED_PROXY:-127.0.0.1}
+      - --allow-read
+      - /app
+      - --allow-write
+      - /app/public/grex
+      - --allow-write
+      - /app/storage
+      - --allow-env
+      - GREX_STATIC_DIR,GREX_DESIGN_SYSTEM_PATH
+      - --db-config
+      - /app/grab.data.json
+      - --allow-db
+      - main:read-write
+      - --platform-config
+      - /app/grab.platform.json
+      - --allow-cache
+      - studio:read-write
+      - --static
+      - /app/public
+      - /app/src/studio.grab
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/_ready || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

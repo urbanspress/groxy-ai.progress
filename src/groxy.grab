@@ -4245,7 +4245,7 @@ make render_site_dna_md_grab using dna
 end
 
 route "GET" "/_health"
-  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "0.4.0"}
+  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "1.0.0"}
 end
 
 route "GET" "/_ready"
@@ -4255,7 +4255,7 @@ route "GET" "/_ready"
     if rule_cnt is not 22
       give back server.json using 503, record {status: "not_ready", error: "Playbook rule count mismatch"}
     end
-    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "0.4.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt}
+    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "1.0.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt}
   catch err
     give back server.json using 503, record {status: "not_ready", error: err.message}
   end
@@ -4274,7 +4274,9 @@ end
 
 route "GET" "/api/groxy/playbook"
   set pb to load_playbook_doc using groxy_cache
-  give back server.json using 200, pb
+  set pb_out to copy_to_map using pb
+  set pb_out to collections.put using pb_out, "service_version", "1.0.0"
+  give back server.json using 200, pb_out
 end
 
 route "POST" "/api/groxy/audit" using req
@@ -4370,7 +4372,7 @@ route "POST" "/api/groxy/mcp/inspect" using req
       end
     end
 
-    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "0.4.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
+    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "1.0.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
   catch err
     give back server.json using 400, record {ok: no, error: err.message}
   end

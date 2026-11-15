@@ -2,8 +2,8 @@
 
 **Step 4 of the Post-1.0 GRAB Ecosystem:** Autonomous Design, Content & SEO Intelligence Agent built natively on **GRAB `v1.1.0`**, **Grex JS `v1.0.0`**, **GrabLab CMS `v1.0.1`**, and **Grex Theme Builder `v1.0.0`**.
 
-- **Current Release:** `v0.4.0` (**Complete** — Site-Wide Internal Linking Graph, Schema.org JSON-LD, Media `alt`-Text Enrichment & Non-Intrusive Background Snapshot Workflows)
-- **Next Milestone:** Pre-`v1.0.0` Cross-Layer Audit (`Orchestrator (Argon)`) -> `v1.0.0` (Production Release, Hardened `--read-only` Container Packaging & Full Ecosystem E2E Verification)
+- **Current Release:** `v1.0.0` (**Approved & Frozen — Complete** — Production Autonomous Design, Content & SEO Intelligence Agent, Hardened `--read-only` Container Packaging & Full 5-Layer Ecosystem Verification)
+- **Frozen `v1.x` Contract:** All `22` routes in `src/groxy.grab`, 22-rule Playbook (`playbook/seo-playbook.v1.json`), `8 × 5` (`40`) WCAG AA Style Pack × Blueprint combinations, `GROXY-SAFE-001`, and `ADR-025c` wire precision are frozen under SemVer `v1.x` (`ADR-027c`).
 - **Development Repo (`origin`):** `https://github.com/urbanspress/groxy-ai.progress`
 - **Production Release Repo (`stable`):** `https://github.com/urbanspress/groxy-ai.stable`
 
@@ -37,11 +37,16 @@ grab check --platform-config grab.platform.json src/groxy.grab
 # 2. Start Groxy AI Inspector UI & API server
 grab serve --addr 127.0.0.1:8090 --allow-scripts --platform-config grab.platform.json --allow-cache groxy:read-write --static public --allow-read . --allow-write storage src/groxy.grab
 
-# 3. Run Node unit & DOM tests (35/35 tests)
-node --test tests/unit_*.test.js
+# 3. Run Node unit, DOM & v1.0.0 production audit tests (37/37 tests)
+node --test tests/*.test.js
 
-# 4. Run full 4-layer live cross-layer E2E verification (GRAB + GrabLab CMS + Grex Builder + Groxy AI)
+# 4. Run full 5-layer live cross-layer E2E verification (GRAB + Grex JS + GrabLab CMS + Grex Builder + Groxy AI)
 python tests/integration_e2e.py
+
+# 5. Start hardened --read-only Docker container (standalone or 4-layer stack)
+docker compose -f deploy/docker-compose.yml up -d
+# Optional integrated 4-layer stack:
+docker compose -f deploy/docker-compose.yml --profile ecosystem-stack up -d
 ```
 
 ---
@@ -54,7 +59,7 @@ python tests/integration_e2e.py
 | Reactive Frontend Runtime | `urbanspress/grex-js` | `>= v1.0.0 (< v2.0.0)` | `signal`/`computed`/`effect`, `setSafeText`, `auditAccessibility` |
 | Flagship Zero-Plugin CMS | `urbanspress/grablab-cms` | `>= v1.0.1 (< v2.0.0)` | Content types, draft entries, menus, media, `/api/mcp` tools |
 | Visual Theme Builder | `urbanspress/grex-builder` | `>= v1.0.0 (< v2.0.0)` | `/api/design-system.md`, `POST /api/mcp/layout`, visual preview |
-| Autonomous SEO & Design Agent | `urbanspress/groxy-ai` | `>= v0.1.0` | Playbook scoring, MCP diagnostics, semantic Inspector UI |
+| Autonomous SEO & Design Agent | `urbanspress/groxy-ai` | `>= v1.0.0 (< v2.0.0)` | Playbook scoring, Boost diff, Visual Generator, Site Intelligence |
 
 ---
 
@@ -63,13 +68,16 @@ python tests/integration_e2e.py
 - [Agent Rules (`AGENTS.md`)](AGENTS.md)
 - [Engineering Invariants (`GROXY-EXPERT.md`)](GROXY-EXPERT.md)
 - [Roadmap (`docs/ROADMAP.md`)](docs/ROADMAP.md)
+- [Hardened Container Deployment (`deploy/docker-compose.yml` & `deploy/README.md`)](deploy/README.md)
 - [v0.1.0 Specification (`specifications/GROXY-AI-SPEC-001.md`)](specifications/GROXY-AI-SPEC-001.md)
 - [v0.2.0 Specification (`specifications/GROXY-AI-SPEC-002.md`)](specifications/GROXY-AI-SPEC-002.md)
 - [v0.3.0 Specification (`specifications/GROXY-AI-SPEC-003.md`)](specifications/GROXY-AI-SPEC-003.md)
 - [v0.4.0 Specification (`specifications/GROXY-AI-SPEC-004.md`)](specifications/GROXY-AI-SPEC-004.md)
+- [v1.0.0 Specification (`specifications/GROXY-AI-SPEC-005.md`)](specifications/GROXY-AI-SPEC-005.md)
 - [v0.1.0 Walkthrough Guide (`docs/releases/pdf/Groxy-AI-v0.1.0-Guide.pdf`)](docs/releases/pdf/Groxy-AI-v0.1.0-Guide.pdf)
 - [v0.2.0 Walkthrough Guide (`docs/releases/pdf/Groxy-AI-v0.2.0-Guide.pdf`)](docs/releases/pdf/Groxy-AI-v0.2.0-Guide.pdf)
 - [v0.3.0 Walkthrough Guide (`docs/releases/pdf/Groxy-AI-v0.3.0-Guide.pdf`)](docs/releases/pdf/Groxy-AI-v0.3.0-Guide.pdf)
 - [v0.4.0 Walkthrough Guide (`docs/releases/pdf/Groxy-AI-v0.4.0-Guide.pdf`)](docs/releases/pdf/Groxy-AI-v0.4.0-Guide.pdf)
+- [v1.0.0 Walkthrough Guide (`docs/releases/pdf/Groxy-AI-v1.0.0-Guide.pdf`)](docs/releases/pdf/Groxy-AI-v1.0.0-Guide.pdf)
 - [Changelog (`CHANGELOG.md`)](CHANGELOG.md)
 - [Handoff Log (`HANDOFF.md`)](HANDOFF.md)

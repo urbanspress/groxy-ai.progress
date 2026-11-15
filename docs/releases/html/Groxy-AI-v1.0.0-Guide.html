@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Groxy AI v1.0.0 Walkthrough Guide</title>
+  <style>
+    @page { size: letter; margin: 0.65in; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      line-height: 1.48;
+      font-size: 9.8pt;
+      margin: 0;
+    }
+    header {
+      border-bottom: 3px solid #047857;
+      padding-bottom: 0.65rem;
+      margin-bottom: 0.9rem;
+    }
+    h1 { margin: 0 0 0.2rem 0; font-size: 19pt; color: #064e3b; }
+    .subtitle { margin: 0; color: #334155; font-size: 10.6pt; font-weight: 600; }
+    .meta { margin: 0.3rem 0 0 0; color: #475569; font-size: 9pt; }
+    h2 {
+      margin: 1rem 0 0.4rem 0;
+      font-size: 12.2pt;
+      color: #065f46;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 0.16rem;
+      page-break-after: avoid;
+    }
+    p { margin: 0.3rem 0 0.5rem 0; }
+    ul { margin: 0.2rem 0 0.6rem 1.2rem; padding: 0; }
+    li { margin-bottom: 0.22rem; }
+    .callout {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      border-left: 4px solid #047857;
+      border-radius: 6px;
+      padding: 0.6rem 0.8rem;
+      margin: 0.65rem 0;
+      page-break-inside: avoid;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.65rem 0 0.9rem 0;
+      font-size: 8.9pt;
+      page-break-inside: avoid;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 0.36rem 0.48rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #ecfdf5; color: #0f172a; font-weight: 700; }
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      background: #f1f5f9;
+      padding: 0.06rem 0.25rem;
+      border-radius: 4px;
+      font-size: 8.6pt;
+    }
+    footer {
+      margin-top: 1.15rem;
+      padding-top: 0.55rem;
+      border-top: 1px solid #e2e8f0;
+      color: #475569;
+      font-size: 8.8pt;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Groxy AI v1.0.0 — Production Release Guide</h1>
+    <p class="subtitle">Autonomous Design, Content &amp; SEO Intelligence Agent &bull; Hardened <code>--read-only</code> Container Bundle &amp; Frozen <code>v1.x</code> Contracts</p>
+    <p class="meta">Post-1.0 Ecosystem Step 4 Complete &bull; Built on GRAB v1.1.0 + Grex JS v1.0.0 + GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0</p>
+  </header>
+
+  <section class="callout">
+    <p><strong>What Groxy AI v1.0.0 Delivers in Plain English:</strong> Groxy AI is now production-ready as Step 4 of the GRAB Ecosystem. It gives writers, designers, and site owners a calm, zero-API-fee SEO, accessibility, and visual page assistant that audits every page deterministically across 22 curated rules, boosts weak drafts with side-by-side Before/After previews, generates WCAG AA layouts from 8 Style Packs &times; 5 Blueprints using live <code>GRAB-DESIGN-SYSTEM.md</code> tokens, maps site-wide internal links and <code>schema.org</code> JSON-LD, enriches Media Library <code>alt</code> text, and runs safely inside a locked-down <code>--read-only</code> Docker container without ever auto-publishing live pages.</p>
+  </section>
+
+  <section>
+    <h2>1. Complete v0.1.0 &rarr; v1.0.0 Capabilities at a Glance</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Milestone</th>
+          <th>Core Capability Delivered</th>
+          <th>Safety &amp; Precision Guarantee</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>v0.1.0</strong></td>
+          <td>22-rule deterministic SEO/A11y/DOM/Linking Playbook, 4-pillar <code>0–100</code> (<code>A+</code>–<code>F</code>) Auditor, zero-<code>&lt;div&gt;</code> <code>/groxy</code> Inspector, and unified <code>grab mcp</code> + CMS + Theme Builder bridge.</td>
+          <td>Hard <code>F</code> cap (<code>&le; 59</code>) on wrapper <code>&lt;div&gt;</code> or script/URL injections; read-only MCP defaults (<code>GRAB-E401</code> / <code>GRAB-E402</code>).</td>
+        </tr>
+        <tr>
+          <td><strong>v0.2.0</strong></td>
+          <td>Opt-in Pre-Publish Grade Review Gate &amp; <strong>&ldquo;Let Groxy Boost This&rdquo;</strong> side-by-side Before/After diff engine.</td>
+          <td><code>X-CSRF-Token</code> + single-use <code>approval_token</code>; <code>create_entry_draft</code> enforces <code>status: "draft"</code>; exact <code>ADR-025c</code> pricing strings preserved.</td>
+        </tr>
+        <tr>
+          <td><strong>v0.3.0</strong></td>
+          <td>Autonomous <code>GRAB-DESIGN-SYSTEM.md</code>-aware Visual Page &amp; Section Generator (5 semantic Blueprints, live <code>--grex-*</code> tokens, <code>ForEach</code> loops).</td>
+          <td>Every generated layout passes <code>validateElementNode()</code>, <code>auditAccessibility()</code>, Grade <code>A</code>/<code>A+</code> gate, and Grex Theme Builder 1-click <code>Ctrl+Z</code> Undo (<code>actor: "groxy-ai"</code>).</td>
+        </tr>
+        <tr>
+          <td><strong>v0.4.0</strong></td>
+          <td>8 Industry &amp; Goal-Aware Style Packs (40 combinations), live <code>SITE-CONTEXT.md</code> sync, Internal Linking Graph, <code>schema.org</code> JSON-LD, Media <code>alt</code> Enrichment, Nightly Watch Digest &amp; Site DNA export.</td>
+          <td><code>301</code> redirect loops excluded from link suggestions; <code>&lt;/script&gt;</code> XSS escaping; decorative images keep <code>alt=""</code>; zero popups or silent edits.</td>
+        </tr>
+        <tr>
+          <td><strong>v1.0.0</strong></td>
+          <td>Pre-<code>v1.0.0</code> 5-layer security/DOM/contract audit, SemVer <code>v1.x</code> contract freeze across all 22 HTTP routes, hardened <code>deploy/docker-compose.yml</code> (<code>--read-only</code>), and 5-layer E2E verification.</td>
+          <td>Immutable rootfs (<code>read_only: true</code>, <code>cap_drop: ["ALL"]</code>, <code>no-new-privileges:true</code>), writable mounts scoped solely to <code>storage/</code> &amp; <code>cache/</code>, zero secrets in Git.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>2. Hardened <code>--read-only</code> Production Hosting (<code>deploy/</code>)</h2>
+    <ul>
+      <li><strong>Immutable Container Root Filesystem:</strong> <code>deploy/docker-compose.yml</code> enforces <code>read_only: true</code>, <code>cap_drop: ["ALL"]</code>, <code>no-new-privileges:true</code>, and <code>tmpfs: /tmp:rw,noexec,nosuid,size=64m</code> with loopback port binding (<code>127.0.0.1:8090:8090</code>) behind Caddy or Nginx TLS.</li>
+      <li><strong>Scoped Writable Mounts:</strong> Only <code>../storage:/app/storage:rw</code> (for <code>SITE-CONTEXT.md</code>) and <code>../cache:/app/cache:rw</code> are writable; source files, templates, playbook rules, and Grex JS assets remain read-only.</li>
+      <li><strong>Two Ready Modes:</strong> Standalone <code>groxy-ai</code> by default, or full 4-layer stack (<code>docker compose -f deploy/docker-compose.yml --profile ecosystem-stack up -d</code>) alongside <code>grablab-cms</code> (<code>v1.0.1</code>) and <code>grex-builder-studio</code> (<code>v1.0.0</code>).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3. 5-Layer Ecosystem Compatibility &amp; Final Verification</h2>
+    <ul>
+      <li><strong>Frozen Upstream Baselines (Zero Modifications):</strong> <code>GRAB v1.1.0</code>, <code>Grex JS v1.0.0</code>, <code>GrabLab CMS v1.0.1</code>, and <code>Grex Theme Builder v1.0.0</code>.</li>
+      <li><strong>Static &amp; Canonical Format Gate:</strong> <code>grab check --platform-config grab.platform.json src/groxy.grab</code> and non-destructive byte-for-byte <code>grab format</code> comparison passed 100%.</li>
+      <li><strong>Automated Unit, DOM &amp; Deploy Audit Suite:</strong> <code>node --test tests/*.test.js</code> passed 100% (0 <code>&lt;div&gt;</code> tags across all 25 ecosystem <code>.grab.html</code> templates, 0 <code>innerHTML</code> writes, 40/40 Style Pack &times; Blueprints WCAG AA pass, <code>ADR-025c</code> exact precision, and hardened <code>deploy/</code> checks).</li>
+      <li><strong>Live 4-Layer Cross-Layer E2E:</strong> <code>python tests/integration_e2e.py</code> passed Gates 1, 2, 3A (<code>grab mcp</code>), and 3B (live GRAB + GrabLab CMS + Grex Theme Builder + Groxy AI v1.0.0) 100%.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <p>Groxy AI v1.0.0 &bull; Urban's Press / GRAB Ecosystem &bull; SemVer Tier: v1.0.0 Initial Stable Production Release &bull; Step 4 Complete (Next: Step 5 Gashboard + Grabtaculous + grabman)</p>
+  </footer>
+</body>
+</html>
