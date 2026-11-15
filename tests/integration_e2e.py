@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Groxy AI v0.3.0 — Full Cross-Layer End-to-End Verification Suite.
+Groxy AI v0.4.0 — Full Cross-Layer End-to-End Verification Suite.
 
 Runs 3 non-negotiable gates:
   Gate 1: Static analysis (grab check), non-destructive canonical formatting (grab format byte-for-byte),
@@ -10,7 +10,7 @@ Runs 3 non-negotiable gates:
             - Core GRAB v1.1.0 `grab mcp` stdio JSON-RPC 2.0 server
             - GrabLab CMS v1.0.1 (isolated temp copy)
             - Grex Theme Builder v1.0.0 (isolated temp copy)
-            - Groxy AI v0.3.0 (src/groxy.grab)
+            - Groxy AI v0.4.0 (src/groxy.grab)
 """
 
 import http.cookiejar
@@ -82,10 +82,10 @@ def http_request(url, method="GET", headers=None, json_body=None, opener=None):
     try:
         resp = opener.open(req, timeout=10) if opener else urllib.request.urlopen(req, timeout=10)
         body = resp.read().decode("utf-8", errors="replace")
-        return resp.status, dict(resp.headers), body
+        return resp.status, {k.lower(): v for k, v in resp.headers.items()}, body
     except urllib.error.HTTPError as err:
         body = err.read().decode("utf-8", errors="replace")
-        return err.code, dict(err.headers), body
+        return err.code, {k.lower(): v for k, v in err.headers.items()}, body
 
 
 def wait_for_health(base_url, proc, label, timeout_s=20.0, log_path=None):
@@ -176,6 +176,7 @@ def gate_1_static_and_format(grab_bin: str):
         REPO_ROOT / "public" / "groxy" / "auditor.js",
         REPO_ROOT / "public" / "groxy" / "booster.js",
         REPO_ROOT / "public" / "groxy" / "generator.js",
+        REPO_ROOT / "public" / "groxy" / "site-context.js",
         REPO_ROOT / "public" / "groxy" / "mcp-client.js",
         REPO_ROOT / "public" / "groxy" / "dashboard.js",
     ]:
@@ -196,6 +197,8 @@ def gate_2_node_tests():
         "tests/unit_auditor.test.js",
         "tests/unit_booster.test.js",
         "tests/unit_generator.test.js",
+        "tests/unit_site_intelligence.test.js",
+        "tests/unit_enrichment.test.js",
         "tests/unit_mcp_client.test.js",
         "tests/unit_ui_dom.test.js",
     ])
@@ -276,6 +279,15 @@ def gate_3a_grab_mcp_stdio(grab_bin: str):
         "/api/groxy/style-packs",
         "/api/groxy/generate-layout",
         "/api/groxy/generate-layout/apply",
+        "/api/groxy/site-context/sync",
+        "/api/groxy/site-context.md",
+        "/api/groxy/links/analyze",
+        "/api/groxy/schema/generate",
+        "/api/groxy/media/enrich-alt",
+        "/api/groxy/media/enrich-alt/approve",
+        "/api/groxy/watch/run",
+        "/api/groxy/watch/digest",
+        "/api/groxy/site-dna/export",
     ]:
         assert required_route in routes_raw, f"Route {required_route} missing from grab_inspect_routes output"
 
@@ -288,7 +300,7 @@ def gate_3a_grab_mcp_stdio(grab_bin: str):
 
 
 def gate_3b_live_cross_layer(grab_bin: str):
-    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v0.3.0...")
+    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v0.4.0...")
     cms_src = Path(os.environ.get("GRABLAB_CMS_DIR", r"C:\Development\grablab-cms"))
     builder_src = Path(os.environ.get("GREX_BUILDER_DIR", r"C:\Development\grex-builder"))
     if not (cms_src / "src" / "app.grab").exists():
@@ -403,7 +415,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         procs.append(builder_proc)
         wait_for_health(builder_url, builder_proc, "Grex Theme Builder v1.0.0", log_path=builder_log)
 
-        # 3. Start Groxy AI v0.3.0 from REPO_ROOT
+        # 3. Start Groxy AI v0.4.0 from REPO_ROOT
         groxy_log = tmp_root / "groxy.log"
         groxy_fh = open(groxy_log, "wb+")
         log_files.append(groxy_fh)
@@ -422,6 +434,8 @@ def gate_3b_live_cross_layer(grab_bin: str):
                 "public",
                 "--allow-read",
                 ".",
+                "--allow-write",
+                "storage",
                 "--allow-net",
                 f"127.0.0.1:{cms_port},127.0.0.1:{builder_port}",
                 "src/groxy.grab",
@@ -431,7 +445,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
             stderr=subprocess.STDOUT,
         )
         procs.append(groxy_proc)
-        health_json = wait_for_health(groxy_url, groxy_proc, "Groxy AI v0.3.0", log_path=groxy_log)
+        health_json = wait_for_health(groxy_url, groxy_proc, "Groxy AI v0.4.0", log_path=groxy_log)
         assert health_json.get("status") == "ok", (
             f"Unexpected /_health payload from Groxy AI: {health_json}"
         )
@@ -515,7 +529,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         assert st_insp == 200, f"/api/groxy/mcp/inspect failed ({st_insp}): {insp_body}"
         insp = json.loads(insp_body)
         assert insp["ok"] is True
-        assert insp["version"] == "0.3.0"
+        assert insp["version"] == "0.4.0"
         assert insp["grablab_cms"]["connected"] is True
         assert insp["grablab_cms"]["elements_count"] == 20
         assert "create_entry_draft" in insp["grablab_cms"]["tools"]
@@ -874,13 +888,21 @@ def gate_3b_live_cross_layer(grab_bin: str):
         st_packs, _, packs_raw = http_request(f"{groxy_url}/api/groxy/style-packs")
         assert st_packs == 200, f"GET /api/groxy/style-packs failed ({st_packs}): {packs_raw}"
         packs_doc = json.loads(packs_raw)
-        assert packs_doc["schema_version"] == "0.3.0"
+        assert packs_doc["schema_version"] == "0.4.0"
+        assert packs_doc["total_style_packs"] == 8
         assert [p["id"] for p in packs_doc["style_packs"]] == [
             "emerald-editorial",
             "obsidian-tech",
             "warm-commerce",
             "swiss-minimal",
+            "local-service-trust",
+            "creative-studio-bold",
+            "creator-academy",
+            "wellness-organic",
         ]
+        for sp in packs_doc["style_packs"]:
+            assert sp["contrast_report"]["wcag_aa"] is True, f"WCAG AA contrast failed for {sp['id']}"
+            assert sp["contrast_report"]["min_ratio"] >= 4.5
         assert [b["id"] for b in packs_doc["blueprints"]] == [
             "full_landing_page",
             "hero_section",
@@ -888,6 +910,12 @@ def gate_3b_live_cross_layer(grab_bin: str):
             "faq_accordion",
             "foreach_showcase",
         ]
+        st_saas, _, saas_raw = http_request(f"{groxy_url}/api/groxy/style-packs?goal=saas")
+        assert st_saas == 200, f"GET style-packs?goal=saas failed ({st_saas}): {saas_raw}"
+        assert [p["id"] for p in json.loads(saas_raw)["style_packs"]] == ["obsidian-tech"]
+        st_svc, _, svc_raw = http_request(f"{groxy_url}/api/groxy/style-packs?industry=home_services")
+        assert st_svc == 200, f"GET style-packs?industry=home_services failed ({st_svc}): {svc_raw}"
+        assert [p["id"] for p in json.loads(svc_raw)["style_packs"]] == ["local-service-trust"]
 
         # Snapshot Builder commands, home draft tree, and CMS entries BEFORE generation
         _, _, cmds_pre_raw = http_request(f"{builder_url}/api/studio/commands")
@@ -1111,7 +1139,262 @@ def gate_3b_live_cross_layer(grab_bin: str):
         _, _, state_final_raw = http_request(f"{builder_url}/api/studio/state")
         assert json.loads(state_final_raw)["published"] == live_before
 
-        print("  [PASS] Gate 3B complete (live 4-layer GRAB + GrabLab CMS + Grex Builder + Groxy AI v0.3.0 verified 100%).")
+        # -----------------------------------------------------------------
+        # v0.4.0: Site Context Sync, Link Graph + Loop Exclusion, Schema.org
+        # JSON-LD, Media Alt Enrichment, Nightly Watch Digest & Site DNA
+        # -----------------------------------------------------------------
+        # Verify CSRF enforcement across new v0.4.0 POST endpoints
+        for csrf_ep in [
+            "/api/groxy/site-context/sync",
+            "/api/groxy/links/analyze",
+            "/api/groxy/schema/generate",
+            "/api/groxy/media/enrich-alt",
+            "/api/groxy/media/enrich-alt/approve",
+            "/api/groxy/watch/run",
+        ]:
+            st_nc, _, _ = http_request(
+                f"{groxy_url}{csrf_ep}",
+                method="POST",
+                headers={"X-CSRF-Token": "wrong-csrf"},
+                json_body={},
+            )
+            assert st_nc == 403, f"Expected 403 invalid CSRF on {csrf_ep}, got {st_nc}"
+
+        # 1. Sync live SITE-CONTEXT.md (pulling live GrabLab CMS + Grex Builder design system)
+        st_sync, _, sync_raw = http_request(
+            f"{groxy_url}/api/groxy/site-context/sync",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "grablab_url": cms_url,
+                "mcp_token": cms_token,
+                "builder_url": builder_url,
+                "site_name": "E2E Connected Site",
+                "site_url": cms_url,
+                "products": [
+                    {"title": "E2E Espresso Scale", "path": "/products/scale", "sku": "SCL-01", "price": "149.95", "currency": "USD"},
+                    {"title": "E2E Grinder", "path": "/products/grinder", "sku": "GRD-02", "price": "10020", "currency": "USD"},
+                ],
+                "redirects": [
+                    {"old_path": "/legacy-v1", "target_path": "/legacy-v2", "status_code": 301},
+                    {"old_path": "/legacy-v2", "target_path": "/guides/semantic-live", "status_code": 301},
+                    {"old_path": "/loop-one", "target_path": "/loop-two", "status_code": 301},
+                    {"old_path": "/loop-two", "target_path": "/loop-one", "status_code": 301},
+                ],
+            },
+        )
+        assert st_sync == 200, f"Site context sync failed ({st_sync}): {sync_raw}"
+        sync_doc = json.loads(sync_raw)
+        assert sync_doc["ok"] is True
+        assert sync_doc["persisted_to_cache"] is True
+        assert sync_doc["persisted_to_disk"] is True
+        assert sync_doc["decimal_integrity_verified"] is True
+        assert sync_doc["counts"]["entries"] >= 1
+        assert sync_doc["counts"]["products"] >= 2
+        assert (REPO_ROOT / "storage" / "SITE-CONTEXT.md").exists()
+
+        st_md, hdrs_md, md_body = http_request(f"{groxy_url}/api/groxy/site-context.md")
+        assert st_md == 200
+        assert "text/markdown" in hdrs_md.get("content-type", "").lower()
+        assert "# SITE-CONTEXT.md" in md_body
+        assert '"149.95"' in md_body
+
+        # 2. Analyze Internal Linking Graph (read-only + orphan + 301 loop exclusion)
+        graph_payload = {
+            "site_context": {
+                "site_name": "Link Graph E2E",
+                "site_url": "https://e2e.example",
+                "redirects": [
+                    {"old_path": "/v1-seo", "target_path": "/v2-seo", "status_code": 301},
+                    {"old_path": "/v2-seo", "target_path": "/guides/seo", "status_code": 301},
+                    {"old_path": "/loop-one", "target_path": "/loop-two", "status_code": 301},
+                    {"old_path": "/loop-two", "target_path": "/loop-one", "status_code": 301},
+                    {"old_path": "/self-cycle", "target_path": "/self-cycle", "status_code": 301},
+                ],
+                "menus": [
+                    {"location": "primary", "items": [{"label": "Home", "url": "/"}]},
+                ],
+                "entries": [
+                    {
+                        "id": 1,
+                        "title": "Home",
+                        "slug": "home",
+                        "full_path": "/",
+                        "content_type": "page",
+                        "status": "published",
+                        "body_html": '<p><a href="/guides/seo">SEO Architecture</a> <a href="/missing-404">click here</a></p>',
+                    },
+                    {
+                        "id": 2,
+                        "title": "SEO Architecture Guide",
+                        "slug": "seo",
+                        "full_path": "/guides/seo",
+                        "content_type": "post",
+                        "status": "published",
+                        "tags": ["seo"],
+                        "body_html": '<p>Links back <a href="/">Home Overview</a></p>',
+                    },
+                    {
+                        "id": 3,
+                        "title": "Orphan SEO Checklist",
+                        "slug": "orphan-seo",
+                        "full_path": "/guides/orphan-seo",
+                        "content_type": "post",
+                        "status": "published",
+                        "tags": ["seo"],
+                        "body_html": "<p>No inbound links yet.</p>",
+                    },
+                    {
+                        "id": 4,
+                        "title": "Loop Target",
+                        "slug": "loop-one",
+                        "full_path": "/loop-one",
+                        "content_type": "page",
+                        "status": "published",
+                        "tags": ["seo"],
+                        "body_html": "<p>Loop page.</p>",
+                    },
+                ],
+            }
+        }
+        st_lnk, _, lnk_raw = http_request(
+            f"{groxy_url}/api/groxy/links/analyze",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body=graph_payload,
+        )
+        assert st_lnk == 200, f"links/analyze failed ({st_lnk}): {lnk_raw}"
+        lnk_doc = json.loads(lnk_raw)
+        assert lnk_doc["mutates_live_cms"] is False
+        assert lnk_doc["summary"]["orphan_count"] >= 1
+        assert lnk_doc["summary"]["redirect_loop_count"] >= 2
+        assert lnk_doc["summary"]["broken_link_count"] >= 1
+        assert lnk_doc["summary"]["generic_anchor_count"] >= 1
+        excl = set(lnk_doc["excluded_loop_targets"])
+        assert "/loop-one" in excl and "/loop-two" in excl and "/self-cycle" in excl
+        assert len(lnk_doc["suggestions"]) >= 1
+        for sg in lnk_doc["suggestions"]:
+            assert sg["target_path"] not in excl, f"301 loop leaked into link suggestions: {sg}"
+            assert sg["anchor_text"].lower() not in {"click here", "read more", "here"}
+
+        # 3. Deterministic Schema.org JSON-LD (exact price + 422 float reject + XSS </script> escape)
+        st_sch, _, sch_raw = http_request(
+            f"{groxy_url}/api/groxy/schema/generate",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "schema_types": ["Product", "Article"],
+                "site_url": "https://e2e.example",
+                "entry": {
+                    "title": 'Headline </script><script>alert(1)</script> & Guide',
+                    "full_path": "/products/e2e-kettle",
+                    "custom_fields": {"price": "49.99", "currency": "USD", "sku": "E2E-49"},
+                },
+                "include_breadcrumbs": True,
+                "include_website": True,
+            },
+        )
+        assert st_sch == 200, f"schema/generate failed ({st_sch}): {sch_raw}"
+        sch_doc = json.loads(sch_raw)
+        assert sch_doc["decimal_integrity_verified"] is True
+        assert sch_doc["xss_safe"] is True
+        assert "</script>" not in sch_doc["json_ld_escaped"].lower()
+        assert "\\u003c/script\\u003e" in sch_doc["json_ld_escaped"]
+        prod_ent = next(n for n in sch_doc["json_ld"]["@graph"] if n["@type"] == "Product")
+        assert prod_ent["offers"]["price"] == "49.99" and isinstance(prod_ent["offers"]["price"], str)
+
+        st_flt, _, flt_raw = http_request(
+            f"{groxy_url}/api/groxy/schema/generate",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"schema_type": "Product", "product": {"name": "Bad Float", "price": 49.99}},
+        )
+        assert st_flt == 422, f"Expected HTTP 422 rejecting JS float price in schema/generate, got {st_flt}: {flt_raw}"
+
+        # 4. Media Library alt-Text Enrichment (decorative preserved + single-use approval_token)
+        st_med, _, med_raw = http_request(
+            f"{groxy_url}/api/groxy/media/enrich-alt",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "media": [
+                    {"id": 501, "filename": "IMG_1234.jpg", "alt_text": "IMG_1234.jpg", "decorative": False, "context_entry_title": "Espresso Scale Showcase"},
+                    {"id": 502, "filename": "divider.svg", "alt_text": "", "decorative": True},
+                ]
+            },
+        )
+        assert st_med == 200, f"media/enrich-alt failed ({st_med}): {med_raw}"
+        med_doc = json.loads(med_raw)
+        assert med_doc["approval_required"] is True
+        alt_tok = med_doc["approval_token"]
+        assert alt_tok and alt_tok.startswith("altok_")
+        assert med_doc["summary"]["decorative_preserved"] == 1
+        dec_item = next(i for i in med_doc["items"] if i["media_id"] == 502)
+        assert dec_item["proposed_alt"] == "" and dec_item["aria_hidden"] == "true"
+
+        st_bad_tok, _, _ = http_request(
+            f"{groxy_url}/api/groxy/media/enrich-alt/approve",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"approval_token": "altok_invalid", "updates": [{"media_id": 501, "alt_text": "Espresso scale product photo"}]},
+        )
+        assert st_bad_tok == 403
+
+        st_mapp, _, mapp_raw = http_request(
+            f"{groxy_url}/api/groxy/media/enrich-alt/approve",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "approval_token": alt_tok,
+                "updates": [
+                    {"media_id": 501, "alt_text": "Espresso Scale Showcase — digital stainless coffee scale"},
+                    {"media_id": 502, "alt_text": "Should remain empty decorative"},
+                ],
+            },
+        )
+        assert st_mapp == 200, f"media/enrich-alt/approve failed ({st_mapp}): {mapp_raw}"
+        mapp_doc = json.loads(mapp_raw)
+        assert mapp_doc["single_use_consumed"] is True
+        assert mapp_doc["approved_count"] == 1
+        assert mapp_doc["preserved_decorative_count"] == 1
+        assert next(i for i in mapp_doc["approved_items"] if i["media_id"] == 502)["alt_text"] == ""
+
+        st_mrep, _, _ = http_request(
+            f"{groxy_url}/api/groxy/media/enrich-alt/approve",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"approval_token": alt_tok, "updates": [{"media_id": 501, "alt_text": "Replay alt text"}]},
+        )
+        assert st_mrep == 409, f"Expected 409 replay conflict on consumed media approval_token, got {st_mrep}"
+
+        # 5. Groxy Nightly Watch Digest + Portable Site DNA Export
+        st_wrun, _, wrun_raw = http_request(
+            f"{groxy_url}/api/groxy/watch/run",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body=graph_payload,
+        )
+        assert st_wrun == 200, f"watch/run failed ({st_wrun}): {wrun_raw}"
+        wrun_doc = json.loads(wrun_raw)
+        assert wrun_doc["popups"] is False and wrun_doc["silent_edits"] is False and wrun_doc["mutates_live_cms"] is False
+        assert any(o["cta_label"] == "🚀 Let Groxy Boost This" for o in wrun_doc["boost_opportunities"])
+
+        st_wdig, _, wdig_raw = http_request(f"{groxy_url}/api/groxy/watch/digest")
+        assert st_wdig == 200 and json.loads(wdig_raw)["digest_name"] == "Morning Boost Report"
+
+        st_dna, _, dna_raw = http_request(f"{groxy_url}/api/groxy/site-dna/export?style_pack=local-service-trust")
+        assert st_dna == 200, f"site-dna/export failed ({st_dna}): {dna_raw}"
+        dna_doc = json.loads(dna_raw)
+        assert dna_doc["schema_version"] == "0.4.0"
+        assert "gashboard" in dna_doc["compatible_consumers"] and "grabman" in dna_doc["compatible_consumers"]
+        assert dna_doc["active_style_pack"]["id"] == "local-service-trust"
+        assert dna_doc["decimal_integrity_verified"] is True
+
+        st_dnamd, hdrs_dnamd, dnamd_body = http_request(f"{groxy_url}/api/groxy/site-dna/export?format=markdown")
+        assert st_dnamd == 200 and "text/markdown" in hdrs_dnamd.get("content-type", "").lower()
+        assert "# Groxy Site DNA Export (0.4.0)" in dnamd_body
+
+        print("  [PASS] Gate 3B complete (live 4-layer GRAB + GrabLab CMS + Grex Builder + Groxy AI v0.4.0 verified 100%).")
     finally:
         for p in reversed(procs):
             terminate_process(p)
@@ -1130,7 +1413,7 @@ def main():
     gate_2_node_tests()
     gate_3a_grab_mcp_stdio(grab_bin)
     gate_3b_live_cross_layer(grab_bin)
-    print("\nALL GROXY AI v0.3.0 VERIFICATION GATES PASSED 100%.")
+    print("\nALL GROXY AI v0.4.0 VERIFICATION GATES PASSED 100%.")
 
 
 if __name__ == "__main__":

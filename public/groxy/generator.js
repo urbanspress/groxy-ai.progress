@@ -1,8 +1,9 @@
 /**
- * Groxy AI v0.3.0 — Autonomous `GRAB-DESIGN-SYSTEM.md`-Aware Visual Page & Section Generator
+ * Groxy AI v0.4.0 — Autonomous `GRAB-DESIGN-SYSTEM.md`-Aware Visual Page & Section Generator
  *
  * Pure zero-dependency ES module producing semantic 20-element `grex.elements.json` trees
- * with active `--grex-*` tokens, registered `.grex-c-*` utility classes, exact `GrabDecimal` /
+ * across 8 industry & goal-aware Style Packs and 5 Blueprints (40 combinations) with active
+ * `--grex-*` tokens, registered `.grex-c-*` utility classes, exact `GrabDecimal` /
  * `GrabInteger` wire string preservation (`ADR-025c`), strict `validateElementNode()` + WCAG AA
  * `auditAccessibility()` compliance, and pre-dispatch 4-pillar Grade A / A+ gating.
  */
@@ -30,6 +31,8 @@ const REQUIRED_STYLE_PACKS = [
     label: "Emerald Editorial",
     description:
       "High-contrast editorial typography, generous vertical rhythm (--grex-space-lg), emerald primary accents (--grex-primary), and structured Card callouts.",
+    industries: ["editorial", "media", "consulting", "nonprofit", "docs"],
+    conversion_goals: ["editorial", "lead_gen"],
     token_preferences: [
       "--grex-surface",
       "--grex-text",
@@ -64,6 +67,8 @@ const REQUIRED_STYLE_PACKS = [
     label: "Obsidian Developer Studio",
     description:
       "Crisp technical hierarchy, high-contrast dark/light surface cards (--grex-surface-elevated), compact feature Grids, and scannable metric badges.",
+    industries: ["developer_tools", "saas", "ai", "cloud", "devtools"],
+    conversion_goals: ["saas", "lead_gen"],
     token_preferences: [
       "--grex-surface-elevated",
       "--grex-text",
@@ -98,6 +103,8 @@ const REQUIRED_STYLE_PACKS = [
     label: "Warm Precision Commerce",
     description:
       "Conversion-focused product & pricing hierarchy, GrabDecimal-exact price callouts, trust Accordion FAQs, and clear primary/secondary Button pairs.",
+    industries: ["retail", "dtc", "specialty_goods", "ecommerce", "food_beverage"],
+    conversion_goals: ["ecommerce", "lead_gen"],
     token_preferences: [
       "--grex-surface",
       "--grex-text",
@@ -132,6 +139,8 @@ const REQUIRED_STYLE_PACKS = [
     label: "Swiss Grid Minimal",
     description:
       "Clean geometric Grid proportions, strong H1-H3 typographic scale, restrained borders (--grex-border), and distraction-free reading flow.",
+    industries: ["architecture", "design", "documentation", "agency", "editorial"],
+    conversion_goals: ["portfolio", "editorial"],
     token_preferences: [
       "--grex-bg",
       "--grex-text",
@@ -158,6 +167,150 @@ const REQUIRED_STYLE_PACKS = [
         on_primary: "#18181b",
         border: "#3f3f46",
         muted: "#d4d4d8",
+      },
+    },
+  },
+  {
+    id: "local-service-trust",
+    label: "Local Service Trust",
+    description:
+      "Authority-driven trust hierarchy with prominent booking CTAs, credential Badges, transparent Pricing Grids, and WCAG AA coastal slate/blue contrast.",
+    industries: ["home_services", "legal", "medical", "automotive", "real_estate"],
+    conversion_goals: ["lead_gen"],
+    token_preferences: [
+      "--grex-surface",
+      "--grex-text",
+      "--grex-primary",
+      "--grex-space-md",
+      "--grex-radius-md",
+    ],
+    class_hints: ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3", "cta-button"],
+    palette_defaults: {
+      light: {
+        bg: "#f8fafc",
+        surface: "#ffffff",
+        text: "#0f172a",
+        primary: "#0369a1",
+        on_primary: "#ffffff",
+        border: "#cbd5e1",
+        muted: "#334155",
+      },
+      dark: {
+        bg: "#0f172a",
+        surface: "#1e293b",
+        text: "#f8fafc",
+        primary: "#38bdf8",
+        on_primary: "#0f172a",
+        border: "#334155",
+        muted: "#cbd5e1",
+      },
+    },
+  },
+  {
+    id: "creative-studio-bold",
+    label: "Creative Studio Bold",
+    description:
+      "Expressive showcase proportions, crisp violet primary accents (--grex-primary), bold portfolio Grids, and effortless Light/Dark gallery presentation.",
+    industries: ["agency", "photography", "branding", "creative_studio", "design"],
+    conversion_goals: ["portfolio", "lead_gen"],
+    token_preferences: [
+      "--grex-surface",
+      "--grex-text",
+      "--grex-primary",
+      "--grex-space-lg",
+      "--grex-radius-lg",
+    ],
+    class_hints: ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3", "cta-button"],
+    palette_defaults: {
+      light: {
+        bg: "#fafafa",
+        surface: "#ffffff",
+        text: "#18181b",
+        primary: "#6d28d9",
+        on_primary: "#ffffff",
+        border: "#d4d4d8",
+        muted: "#3f3f46",
+      },
+      dark: {
+        bg: "#121216",
+        surface: "#1e1e26",
+        text: "#fafafa",
+        primary: "#c084fc",
+        on_primary: "#121216",
+        border: "#2e2e38",
+        muted: "#d4d4d8",
+      },
+    },
+  },
+  {
+    id: "creator-academy",
+    label: "Creator Academy",
+    description:
+      "Structured syllabus & cohort layout with scannable module cards, curriculum FAQ Accordions, and teal conversion accents built for educators and memberships.",
+    industries: ["courses", "newsletters", "coaching", "education", "membership"],
+    conversion_goals: ["ecommerce", "editorial", "lead_gen"],
+    token_preferences: [
+      "--grex-surface",
+      "--grex-text",
+      "--grex-primary",
+      "--grex-space-md",
+      "--grex-radius-md",
+    ],
+    class_hints: ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3", "cta-button"],
+    palette_defaults: {
+      light: {
+        bg: "#ffffff",
+        surface: "#f8fafc",
+        text: "#1e293b",
+        primary: "#0f766e",
+        on_primary: "#ffffff",
+        border: "#cbd5e1",
+        muted: "#334155",
+      },
+      dark: {
+        bg: "#0f172a",
+        surface: "#1e293b",
+        text: "#f1f5f9",
+        primary: "#2dd4bf",
+        on_primary: "#0f172a",
+        border: "#334155",
+        muted: "#cbd5e1",
+      },
+    },
+  },
+  {
+    id: "wellness-organic",
+    label: "Wellness Organic",
+    description:
+      "Calm botanical palette with soothing whitespace (--grex-space-lg), balanced treatment cards, and forest/mint WCAG AA accessible contrast pairs.",
+    industries: ["health", "spa", "fitness", "nutrition", "wellness"],
+    conversion_goals: ["lead_gen", "ecommerce"],
+    token_preferences: [
+      "--grex-surface",
+      "--grex-text",
+      "--grex-primary",
+      "--grex-space-lg",
+      "--grex-radius-lg",
+    ],
+    class_hints: ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3", "cta-button"],
+    palette_defaults: {
+      light: {
+        bg: "#f7faf7",
+        surface: "#ffffff",
+        text: "#14261c",
+        primary: "#15803d",
+        on_primary: "#ffffff",
+        border: "#bbf7d0",
+        muted: "#1f3a29",
+      },
+      dark: {
+        bg: "#0e1a14",
+        surface: "#15261d",
+        text: "#ecfdf5",
+        primary: "#4ade80",
+        on_primary: "#0e1a14",
+        border: "#224432",
+        muted: "#bbf7d0",
       },
     },
   },
@@ -251,19 +404,94 @@ export const DEFAULT_PRICING_TIERS = Object.freeze([
  * Return metadata for all supported Design Style Packs and Page/Section Blueprints.
  * @returns {{ schema_version: string, style_packs: Array<object>, blueprints: Array<object> }}
  */
-export function listStylePacks() {
+function buildStylePackTokens(palette) {
   return {
-    schema_version: "0.3.0",
-    style_packs: REQUIRED_STYLE_PACKS.map((p) => ({
+    "--grex-bg": palette.bg,
+    "--grex-surface": palette.surface,
+    "--grex-text": palette.text,
+    "--grex-primary": palette.primary,
+    "--grex-on-primary": palette.on_primary,
+    "--grex-border": palette.border,
+    "--grex-muted": palette.muted,
+  };
+}
+
+function buildContrastReport(paletteDefaults) {
+  const light = paletteDefaults.light;
+  const dark = paletteDefaults.dark;
+  const lightRatio = Number(computeContrastRatio(light.text, light.bg).toFixed(2));
+  const lightSurfaceRatio = Number(computeContrastRatio(light.text, light.surface).toFixed(2));
+  const lightPrimaryRatio = Number(computeContrastRatio(light.on_primary, light.primary).toFixed(2));
+  const lightLinkRatio = Number(computeContrastRatio(light.primary, light.bg).toFixed(2));
+  const darkRatio = Number(computeContrastRatio(dark.text, dark.bg).toFixed(2));
+  const darkSurfaceRatio = Number(computeContrastRatio(dark.text, dark.surface).toFixed(2));
+  const darkPrimaryRatio = Number(computeContrastRatio(dark.on_primary, dark.primary).toFixed(2));
+  const darkLinkRatio = Number(computeContrastRatio(dark.primary, dark.bg).toFixed(2));
+  const minRatio = Number(
+    Math.min(
+      lightRatio,
+      lightSurfaceRatio,
+      lightPrimaryRatio,
+      lightLinkRatio,
+      darkRatio,
+      darkSurfaceRatio,
+      darkPrimaryRatio,
+      darkLinkRatio
+    ).toFixed(2)
+  );
+  return {
+    light_ratio: lightRatio,
+    light_surface_ratio: lightSurfaceRatio,
+    light_primary_ratio: lightPrimaryRatio,
+    light_link_ratio: lightLinkRatio,
+    dark_ratio: darkRatio,
+    dark_surface_ratio: darkSurfaceRatio,
+    dark_primary_ratio: darkPrimaryRatio,
+    dark_link_ratio: darkLinkRatio,
+    min_ratio: minRatio,
+    wcag_aa: minRatio >= 4.5,
+  };
+}
+
+export function listStylePacks(filters = {}) {
+  const goalFilter = String(filters?.goal ?? filters?.conversion_goal ?? "").trim().toLowerCase();
+  const industryFilter = String(filters?.industry ?? "").trim().toLowerCase();
+
+  const matchingPacks = REQUIRED_STYLE_PACKS.filter((p) => {
+    if (goalFilter && !p.conversion_goals.some((g) => g.toLowerCase() === goalFilter)) {
+      return false;
+    }
+    if (industryFilter && !p.industries.some((ind) => ind.toLowerCase() === industryFilter)) {
+      return false;
+    }
+    return true;
+  });
+
+  return {
+    schema_version: "0.4.0",
+    total_style_packs: REQUIRED_STYLE_PACKS.length,
+    filters: {
+      goal: goalFilter || null,
+      industry: industryFilter || null,
+    },
+    style_packs: matchingPacks.map((p) => ({
       id: p.id,
       label: p.label,
       description: p.description,
+      industries: [...p.industries],
+      conversion_goals: [...p.conversion_goals],
       token_preferences: [...p.token_preferences],
       class_hints: [...p.class_hints],
+      reusable_classes: [...p.class_hints],
       palette_defaults: {
         light: { ...p.palette_defaults.light },
         dark: { ...p.palette_defaults.dark },
       },
+      tokens: {
+        light: buildStylePackTokens(p.palette_defaults.light),
+        dark: buildStylePackTokens(p.palette_defaults.dark),
+      },
+      contrast_report: buildContrastReport(p.palette_defaults),
     })),
     blueprints: LAYOUT_BLUEPRINTS.map((b) => ({ ...b })),
   };

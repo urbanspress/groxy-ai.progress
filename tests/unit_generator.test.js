@@ -109,22 +109,55 @@ function walkLayoutNodes(node, visitor) {
   }
 }
 
-test("listStylePacks exposes the 4 required Style Packs and 5 Blueprints", () => {
+test("listStylePacks exposes all 8 Industry & Goal-Aware Style Packs, 5 Blueprints, contrast >= 4.5:1, and supports goal/industry filtering", () => {
   const catalog = listStylePacks();
-  assert.equal(catalog.schema_version, "0.3.0");
+  assert.equal(catalog.schema_version, "0.4.0");
+  assert.equal(catalog.total_style_packs, 8);
   assert.deepEqual(
     catalog.style_packs.map((p) => p.id),
-    ["emerald-editorial", "obsidian-tech", "warm-commerce", "swiss-minimal"]
+    [
+      "emerald-editorial",
+      "obsidian-tech",
+      "warm-commerce",
+      "swiss-minimal",
+      "local-service-trust",
+      "creative-studio-bold",
+      "creator-academy",
+      "wellness-organic",
+    ]
   );
   assert.deepEqual(
     catalog.blueprints.map((b) => b.id),
     ["full_landing_page", "hero_section", "pricing_grid", "faq_accordion", "foreach_showcase"]
   );
+  for (const pack of catalog.style_packs) {
+    assert.ok(Array.isArray(pack.industries) && pack.industries.length > 0);
+    assert.ok(Array.isArray(pack.conversion_goals) && pack.conversion_goals.length > 0);
+    assert.ok(pack.tokens && pack.tokens.light && pack.tokens.dark);
+    assert.equal(pack.contrast_report.wcag_aa, true, `WCAG AA failed on pack ${pack.id}`);
+    assert.ok(
+      pack.contrast_report.min_ratio >= 4.5,
+      `Contrast ratio < 4.5 on ${pack.id}: ${pack.contrast_report.min_ratio}`
+    );
+  }
+
+  const saasPacks = listStylePacks({ goal: "saas" });
+  assert.deepEqual(
+    saasPacks.style_packs.map((p) => p.id),
+    ["obsidian-tech"]
+  );
+  const servicePacks = listStylePacks({ industry: "home_services" });
+  assert.deepEqual(
+    servicePacks.style_packs.map((p) => p.id),
+    ["local-service-trust"]
+  );
 });
 
-test("generatePageOrSection produces valid, WCAG AA, Grade A/A+ zero-div trees across all 20 blueprint x style-pack combinations", () => {
+test("generatePageOrSection produces valid, WCAG AA, Grade A/A+ zero-div trees across all 40 blueprint x style-pack combinations", () => {
+  let combos = 0;
   for (const blueprint of LAYOUT_BLUEPRINTS) {
     for (const stylePackId of Object.keys(STYLE_PACKS)) {
+      combos += 1;
       const res = generatePageOrSection({
         blueprint: blueprint.id,
         style_pack: stylePackId,
@@ -176,6 +209,7 @@ test("generatePageOrSection produces valid, WCAG AA, Grade A/A+ zero-div trees a
       });
     }
   }
+  assert.equal(combos, 40);
 });
 
 test("generator consumes live GRAB-DESIGN-SYSTEM.md tokens & .grex-c-* classes with zero unknown classes", () => {

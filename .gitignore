@@ -1,5 +1,7 @@
 dist/
 storage/*.db*
+storage/SITE-CONTEXT.md
+storage/*.json
 __pycache__/
 *.pyc
 .env

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Groxy AI v0.4.0 Walkthrough Guide</title>
+  <style>
+    @page { size: letter; margin: 0.65in; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      line-height: 1.48;
+      font-size: 10pt;
+      margin: 0;
+    }
+    header {
+      border-bottom: 3px solid #047857;
+      padding-bottom: 0.65rem;
+      margin-bottom: 0.9rem;
+    }
+    h1 { margin: 0 0 0.2rem 0; font-size: 19pt; color: #064e3b; }
+    .subtitle { margin: 0; color: #334155; font-size: 10.6pt; font-weight: 600; }
+    .meta { margin: 0.3rem 0 0 0; color: #475569; font-size: 9pt; }
+    h2 {
+      margin: 1rem 0 0.4rem 0;
+      font-size: 12.5pt;
+      color: #065f46;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 0.16rem;
+      page-break-after: avoid;
+    }
+    p { margin: 0.3rem 0 0.5rem 0; }
+    ul { margin: 0.2rem 0 0.6rem 1.2rem; padding: 0; }
+    li { margin-bottom: 0.22rem; }
+    .callout {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      border-left: 4px solid #047857;
+      border-radius: 6px;
+      padding: 0.6rem 0.8rem;
+      margin: 0.65rem 0;
+      page-break-inside: avoid;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.65rem 0 0.9rem 0;
+      font-size: 9pt;
+      page-break-inside: avoid;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 0.38rem 0.5rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #ecfdf5; color: #0f172a; font-weight: 700; }
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      background: #f1f5f9;
+      padding: 0.06rem 0.25rem;
+      border-radius: 4px;
+      font-size: 8.8pt;
+    }
+    footer {
+      margin-top: 1.2rem;
+      padding-top: 0.55rem;
+      border-top: 1px solid #e2e8f0;
+      color: #475569;
+      font-size: 8.8pt;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Groxy AI v0.4.0 Walkthrough Guide</h1>
+    <p class="subtitle">Site-Wide Internal Linking Graph, Schema.org JSON-LD, Media <code>alt</code>-Text Enrichment &amp; Non-Intrusive Background Snapshot Workflows</p>
+    <p class="meta">Release Series: Post-1.0 Step 4 &bull; Runtime: GRAB v1.1.0 + Grex JS v1.0.0 &bull; SemVer Tier: Pre-1.0 Feature Release</p>
+  </header>
+
+  <section class="callout">
+    <p><strong>What Groxy AI v0.4.0 Adds in Plain English:</strong> Groxy expands from single-page checks into <strong>calm, read-only site-wide intelligence</strong>. Designers get 8 industry &amp; goal-filtered Style Packs (<code>40</code> verified WCAG AA combinations), writers keep full control while Groxy builds a background <code>SITE-CONTEXT.md</code> map, discovers orphan pages and safe internal links (strictly excluding <code>301</code> redirect loops), generates XSS-safe <code>schema.org</code> JSON-LD with exact <code>GrabDecimal</code> prices, proposes descriptive Media Library <code>alt</code> text behind 1-click human approval, and delivers a quiet <strong>Morning Boost Report</strong> plus portable <strong>Site DNA</strong> export for Gashboard and <code>grabman</code>.</p>
+  </section>
+
+  <section>
+    <h2>1. 8 Industry &amp; Goal-Aware Design Style Packs (40 Verified Combinations)</h2>
+    <ul>
+      <li><strong>Backwards-Compatible Core 4:</strong> <code>emerald-editorial</code>, <code>obsidian-tech</code>, <code>warm-commerce</code>, and <code>swiss-minimal</code> remain intact.</li>
+      <li><strong>4 New Industry Packs:</strong> <code>local-service-trust</code>, <code>creative-studio-bold</code>, <code>creator-academy</code>, and <code>wellness-organic</code> with <code>industries</code>, <code>conversion_goals</code> (<code>lead_gen</code>, <code>ecommerce</code>, <code>editorial</code>, <code>saas</code>, <code>portfolio</code>), and Light/Dark WCAG AA <code>&ge; 4.5:1</code> tokens.</li>
+      <li><strong>API Filtering:</strong> <code>GET /api/groxy/style-packs?goal=&lt;goal&gt;&amp;industry=&lt;industry&gt;</code> filters packs cleanly across all 5 semantic Blueprints (<code>40</code> validated combinations).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>2. Site-Wide Intelligence &amp; Human-Gated Workflows</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Capability &amp; Route(s)</th>
+          <th>What It Does in Plain English</th>
+          <th>Safety / Ecosystem Guarantee</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Background <code>SITE-CONTEXT.md</code> Sync</strong><br /><code>POST /api/groxy/site-context/sync</code><br /><code>GET /api/groxy/site-context.md</code></td>
+          <td>Read-only background snapshot of live GrabLab entries, categories/tags, product prices, navigation menus (<code>primary</code>, <code>footer</code>, <code>mobile</code>), and <code>slug_history</code> <code>301</code> redirects stored in gitignored <code>storage/SITE-CONTEXT.md</code>.</td>
+          <td>Never interrupts active writers or mutates live CMS rows; preserves exact base-10 <code>ADR-025c</code> price strings.</td>
+        </tr>
+        <tr>
+          <td><strong>Site-Wide Internal Linking Graph</strong><br /><code>POST /api/groxy/links/analyze</code></td>
+          <td>Detects orphan pages, computes <code>0–100</code> link authority, flags broken links and multi-hop <code>301</code> redirect chains/cycles, and suggests natural descriptive internal links.</td>
+          <td>Strictly read-only (<code>GROXY-SAFE-001</code>); forbids generic <code>"click here"</code> anchors and excludes all <code>301</code> loop paths from suggestions.</td>
+        </tr>
+        <tr>
+          <td><strong>Deterministic <code>schema.org</code> JSON-LD</strong><br /><code>POST /api/groxy/schema/generate</code></td>
+          <td>Builds validated <code>Article</code>, <code>BlogPosting</code>, <code>Product</code>, <code>FAQPage</code>, <code>BreadcrumbList</code>, and <code>WebSite</code> structured data blocks.</td>
+          <td>Escapes <code>&lt;/&gt;/&amp;</code> to prevent <code>&lt;/script&gt;</code> XSS breakout; enforces exact base-10 prices and rejects JS floats with HTTP <code>422</code>.</td>
+        </tr>
+        <tr>
+          <td><strong>Media Library <code>alt</code>-Text Enrichment</strong><br /><code>POST /api/groxy/media/enrich-alt</code><br /><code>POST /api/groxy/media/enrich-alt/approve</code></td>
+          <td>Finds missing or raw-filename alt values (<code>IMG_1234.jpg</code>) and proposes concise <code>3–125</code> character WCAG AA descriptions.</td>
+          <td>Strictly preserves <code>decorative: true</code> images with <code>alt=""</code>; applies edits only with valid <code>X-CSRF-Token</code> + single-use <code>approval_token</code>.</td>
+        </tr>
+        <tr>
+          <td><strong>Nightly Watch &amp; Portable Site DNA</strong><br /><code>POST /api/groxy/watch/run</code><br /><code>GET /api/groxy/watch/digest</code><br /><code>GET /api/groxy/site-dna/export</code></td>
+          <td>Produces a calm <strong>Morning Boost Report</strong> with 1-click <strong>Let Groxy Boost This</strong> actions and exports JSON/Markdown <strong>Site DNA</strong> combining <code>GRAB-DESIGN-SYSTEM.md</code> + <code>SITE-CONTEXT.md</code> + Style Tokens.</td>
+          <td>Zero popups, zero silent edits; compatible with <strong>Gashboard + <code>grabman</code></strong>.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>3. Zero-<code>&lt;div&gt;</code> Studio UI &amp; Verification Summary</h2>
+    <ul>
+      <li><strong>Zero-<code>&lt;div&gt;</code> Semantic UI (<code>views/dashboard.grab.html</code>, <code>public/groxy/dashboard.js</code>):</strong> Style Pack industry/goal filters and all 5 Site Intelligence &amp; Morning Boost panels render with <code>divCount === 0</code> and <code>innerHTMLWriteCount === 0</code> on Grex JS v1.0.0.</li>
+      <li><strong>Static &amp; Canonical Format Gate:</strong> <code>grab check --platform-config grab.platform.json src/groxy.grab</code> and non-destructive byte-for-byte <code>grab format</code> comparison passed 100%.</li>
+      <li><strong>Automated Unit &amp; DOM Suite (<code>node --test tests/*.test.js</code>):</strong> <strong>35/35 tests passed</strong> across all 40 Style Pack &times; Blueprint combinations, link loop exclusion, <code>ADR-025c</code> JSON-LD safety, decorative media preservation, Morning Boost Digest, Site DNA export, and DOM accessibility assertions.</li>
+      <li><strong>Live 4-Layer Cross-Layer E2E (<code>python tests/integration_e2e.py</code>):</strong> Gates 1, 2, 3A (<code>grab mcp</code>), and 3B (GRAB v1.1.0 + GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v0.4.0) <strong>passed 100%</strong>.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <p>Groxy AI v0.4.0 &bull; Urban's Press / GRAB Ecosystem &bull; Human-in-the-Loop Safe &bull; Verified Zero-<code>&lt;div&gt;</code> Semantic Architecture</p>
+  </footer>
+</body>
+</html>

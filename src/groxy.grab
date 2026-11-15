@@ -70,6 +70,14 @@ make copy_to_map using rec
   give back out
 end
 
+make cache_get_opt using c, k
+  set cached to cache.get using c, k
+  if cached.found
+    give back cached.value
+  end
+  give back nothing
+end
+
 make get_or_create_csrf using c
   set cached to cache.get using c, "groxy_csrf"
   if cached.found
@@ -2125,11 +2133,80 @@ end
 # Groxy AI v0.3.0 — Autonomous GRAB-DESIGN-SYSTEM.md Visual Generator Engine
 # ---------------------------------------------------------------------------
 
-make list_style_packs_doc
-  set sp1 to record {id: "emerald-editorial", label: "Emerald Editorial", description: "High-contrast editorial typography, generous vertical rhythm (--grex-space-lg), emerald primary accents (--grex-primary), and structured Card callouts.", token_preferences: ["--grex-surface", "--grex-text", "--grex-primary", "--grex-space-lg", "--grex-radius-md"], class_hints: ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3", "cta-button"]}
-  set sp2 to record {id: "obsidian-tech", label: "Obsidian Developer Studio", description: "Crisp technical hierarchy, high-contrast dark/light surface cards (--grex-surface-elevated), compact feature Grids, and scannable metric badges.", token_preferences: ["--grex-surface-elevated", "--grex-text", "--grex-primary", "--grex-space-md", "--grex-radius-sm"], class_hints: ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3"]}
-  set sp3 to record {id: "warm-commerce", label: "Warm Precision Commerce", description: "Conversion-focused product & pricing hierarchy, GrabDecimal-exact price callouts, trust Accordion FAQs, and clear primary/secondary Button pairs.", token_preferences: ["--grex-surface", "--grex-text", "--grex-primary", "--grex-space-md", "--grex-radius-lg"], class_hints: ["hero", "card", "btn-primary", "badge-pill", "grid-3", "cta-button"]}
-  set sp4 to record {id: "swiss-minimal", label: "Swiss Grid Minimal", description: "Clean geometric Grid proportions, strong H1-H3 typographic scale, restrained borders (--grex-border), and distraction-free reading flow.", token_preferences: ["--grex-bg", "--grex-text", "--grex-primary", "--grex-border", "--grex-space-lg"], class_hints: ["hero", "card", "btn-primary", "grid-3"]}
+make all_style_pack_specs
+  set p1_light to record {bg: "#ffffff", surface: "#f8fafc", text: "#0f172a", primary: "#047857", on_primary: "#ffffff", border: "#cbd5e1", muted: "#475569"}
+  set p1_dark to record {bg: "#0f172a", surface: "#1e293b", text: "#f8fafc", primary: "#34d399", on_primary: "#064e3b", border: "#334155", muted: "#cbd5e1"}
+  set sp1 to record {id: "emerald-editorial", label: "Emerald Editorial", description: "High-contrast editorial typography, generous vertical rhythm (--grex-space-lg), emerald primary accents (--grex-primary), and structured Card callouts.", industries: ["editorial", "media", "consulting", "nonprofit", "docs"], conversion_goals: ["editorial", "lead_gen"], token_preferences: ["--grex-surface", "--grex-text", "--grex-primary", "--grex-space-lg", "--grex-radius-md"], class_hints: ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3", "cta-button"], light: p1_light, dark: p1_dark, space: "1.5rem", radius: "0.75rem"}
+
+  set p2_light to record {bg: "#f8fafc", surface: "#ffffff", text: "#09090b", primary: "#1d4ed8", on_primary: "#ffffff", border: "#cbd5e1", muted: "#334155"}
+  set p2_dark to record {bg: "#09090b", surface: "#18181b", text: "#fafafa", primary: "#60a5fa", on_primary: "#09090b", border: "#27272a", muted: "#d4d4d8"}
+  set sp2 to record {id: "obsidian-tech", label: "Obsidian Developer Studio", description: "Crisp technical hierarchy, high-contrast dark/light surface cards (--grex-surface-elevated), compact feature Grids, and scannable metric badges.", industries: ["developer_tools", "saas", "ai", "cloud", "devtools"], conversion_goals: ["saas", "lead_gen"], token_preferences: ["--grex-surface-elevated", "--grex-text", "--grex-primary", "--grex-space-md", "--grex-radius-sm"], class_hints: ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3"], light: p2_light, dark: p2_dark, space: "1.25rem", radius: "0.5rem"}
+
+  set p3_light to record {bg: "#fffbeb", surface: "#ffffff", text: "#1c1917", primary: "#92400e", on_primary: "#ffffff", border: "#fde68a", muted: "#44403c"}
+  set p3_dark to record {bg: "#1c1917", surface: "#292524", text: "#fafaf9", primary: "#fbbf24", on_primary: "#1c1917", border: "#44403c", muted: "#d6d3d1"}
+  set sp3 to record {id: "warm-commerce", label: "Warm Precision Commerce", description: "Conversion-focused product & pricing hierarchy, GrabDecimal-exact price callouts, trust Accordion FAQs, and clear primary/secondary Button pairs.", industries: ["retail", "dtc", "specialty_goods", "ecommerce", "food_beverage"], conversion_goals: ["ecommerce", "lead_gen"], token_preferences: ["--grex-surface", "--grex-text", "--grex-primary", "--grex-space-md", "--grex-radius-lg"], class_hints: ["hero", "card", "btn-primary", "badge-pill", "grid-3", "cta-button"], light: p3_light, dark: p3_dark, space: "1.25rem", radius: "0.875rem"}
+
+  set p4_light to record {bg: "#ffffff", surface: "#f4f4f5", text: "#18181b", primary: "#b91c1c", on_primary: "#ffffff", border: "#d4d4d8", muted: "#3f3f46"}
+  set p4_dark to record {bg: "#18181b", surface: "#27272a", text: "#fafafa", primary: "#f87171", on_primary: "#18181b", border: "#3f3f46", muted: "#d4d4d8"}
+  set sp4 to record {id: "swiss-minimal", label: "Swiss Grid Minimal", description: "Clean geometric Grid proportions, strong H1-H3 typographic scale, restrained borders (--grex-border), and distraction-free reading flow.", industries: ["architecture", "design", "documentation", "agency", "editorial"], conversion_goals: ["portfolio", "editorial"], token_preferences: ["--grex-bg", "--grex-text", "--grex-primary", "--grex-border", "--grex-space-lg"], class_hints: ["hero", "card", "btn-primary", "grid-3"], light: p4_light, dark: p4_dark, space: "1.5rem", radius: "0.25rem"}
+
+  set p5_light to record {bg: "#f8fafc", surface: "#ffffff", text: "#0f172a", primary: "#0369a1", on_primary: "#ffffff", border: "#cbd5e1", muted: "#334155"}
+  set p5_dark to record {bg: "#0f172a", surface: "#1e293b", text: "#f8fafc", primary: "#38bdf8", on_primary: "#0f172a", border: "#334155", muted: "#cbd5e1"}
+  set sp5 to record {id: "local-service-trust", label: "Local Service Trust", description: "Authority-driven trust hierarchy with prominent booking CTAs, credential Badges, transparent Pricing Grids, and WCAG AA coastal slate/blue contrast.", industries: ["home_services", "legal", "medical", "automotive", "real_estate"], conversion_goals: ["lead_gen"], token_preferences: ["--grex-surface", "--grex-text", "--grex-primary", "--grex-space-md", "--grex-radius-md"], class_hints: ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3", "cta-button"], light: p5_light, dark: p5_dark, space: "1.25rem", radius: "0.625rem"}
+
+  set p6_light to record {bg: "#fafafa", surface: "#ffffff", text: "#18181b", primary: "#6d28d9", on_primary: "#ffffff", border: "#d4d4d8", muted: "#3f3f46"}
+  set p6_dark to record {bg: "#121216", surface: "#1e1e26", text: "#fafafa", primary: "#c084fc", on_primary: "#121216", border: "#2e2e38", muted: "#d4d4d8"}
+  set sp6 to record {id: "creative-studio-bold", label: "Creative Studio Bold", description: "Expressive showcase proportions, crisp violet primary accents (--grex-primary), bold portfolio Grids, and effortless Light/Dark gallery presentation.", industries: ["agency", "photography", "branding", "creative_studio", "design"], conversion_goals: ["portfolio", "lead_gen"], token_preferences: ["--grex-surface", "--grex-text", "--grex-primary", "--grex-space-lg", "--grex-radius-lg"], class_hints: ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3", "cta-button"], light: p6_light, dark: p6_dark, space: "1.5rem", radius: "1rem"}
+
+  set p7_light to record {bg: "#ffffff", surface: "#f8fafc", text: "#1e293b", primary: "#0f766e", on_primary: "#ffffff", border: "#cbd5e1", muted: "#334155"}
+  set p7_dark to record {bg: "#0f172a", surface: "#1e293b", text: "#f1f5f9", primary: "#2dd4bf", on_primary: "#0f172a", border: "#334155", muted: "#cbd5e1"}
+  set sp7 to record {id: "creator-academy", label: "Creator Academy", description: "Structured syllabus & cohort layout with scannable module cards, curriculum FAQ Accordions, and teal conversion accents built for educators and memberships.", industries: ["courses", "newsletters", "coaching", "education", "membership"], conversion_goals: ["ecommerce", "editorial", "lead_gen"], token_preferences: ["--grex-surface", "--grex-text", "--grex-primary", "--grex-space-md", "--grex-radius-md"], class_hints: ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3", "cta-button"], light: p7_light, dark: p7_dark, space: "1.25rem", radius: "0.75rem"}
+
+  set p8_light to record {bg: "#f7faf7", surface: "#ffffff", text: "#14261c", primary: "#15803d", on_primary: "#ffffff", border: "#bbf7d0", muted: "#1f3a29"}
+  set p8_dark to record {bg: "#0e1a14", surface: "#15261d", text: "#ecfdf5", primary: "#4ade80", on_primary: "#0e1a14", border: "#224432", muted: "#bbf7d0"}
+  set sp8 to record {id: "wellness-organic", label: "Wellness Organic", description: "Calm botanical palette with soothing whitespace (--grex-space-lg), balanced treatment cards, and forest/mint WCAG AA accessible contrast pairs.", industries: ["health", "spa", "fitness", "nutrition", "wellness"], conversion_goals: ["lead_gen", "ecommerce"], token_preferences: ["--grex-surface", "--grex-text", "--grex-primary", "--grex-space-lg", "--grex-radius-lg"], class_hints: ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3", "cta-button"], light: p8_light, dark: p8_dark, space: "1.5rem", radius: "1rem"}
+
+  give back [sp1, sp2, sp3, sp4, sp5, sp6, sp7, sp8]
+end
+
+make make_pack_tokens using pal
+  give back {"--grex-bg": pal.bg, "--grex-surface": pal.surface, "--grex-text": pal.text, "--grex-primary": pal.primary, "--grex-on-primary": pal.on_primary, "--grex-border": pal.border, "--grex-muted": pal.muted}
+end
+
+make make_pack_contrast_report using pal_light, pal_dark
+  set lr to compute_contrast_ratio using pal_light.text, pal_light.bg
+  set lsr to compute_contrast_ratio using pal_light.text, pal_light.surface
+  set lpr to compute_contrast_ratio using pal_light.on_primary, pal_light.primary
+  set llr to compute_contrast_ratio using pal_light.primary, pal_light.bg
+  set dr to compute_contrast_ratio using pal_dark.text, pal_dark.bg
+  set dsr to compute_contrast_ratio using pal_dark.text, pal_dark.surface
+  set dpr to compute_contrast_ratio using pal_dark.on_primary, pal_dark.primary
+  set dlr to compute_contrast_ratio using pal_dark.primary, pal_dark.bg
+  set min_r to math.min using (math.min using (math.min using lr, lsr), (math.min using lpr, llr)), (math.min using (math.min using dr, dsr), (math.min using dpr, dlr))
+  give back record {light_ratio: lr, light_surface_ratio: lsr, light_primary_ratio: lpr, light_link_ratio: llr, dark_ratio: dr, dark_surface_ratio: dsr, dark_primary_ratio: dpr, dark_link_ratio: dlr, min_ratio: min_r, wcag_aa: (min_r is at least 4.5)}
+end
+
+make list_style_packs_filtered using goal_filter, industry_filter
+  set gf to text.lower using (text.trim using goal_filter)
+  set indf to text.lower using (text.trim using industry_filter)
+  set all_packs to call all_style_pack_specs
+  set out_packs to []
+  for each sp in all_packs
+    set ok_goal to yes
+    if gf is not ""
+      set ok_goal to list_contains using sp.conversion_goals, gf
+    end
+    set ok_ind to yes
+    if indf is not ""
+      set ok_ind to list_contains using sp.industries, indf
+    end
+    if ok_goal and ok_ind
+      set tok_map to record {light: (make_pack_tokens using sp.light), dark: (make_pack_tokens using sp.dark)}
+      set pal_map to record {light: sp.light, dark: sp.dark}
+      set crep to make_pack_contrast_report using sp.light, sp.dark
+      set out_packs to collections.append using out_packs, record {id: sp.id, label: sp.label, description: sp.description, industries: sp.industries, conversion_goals: sp.conversion_goals, token_preferences: sp.token_preferences, class_hints: sp.class_hints, reusable_classes: sp.class_hints, palette_defaults: pal_map, tokens: tok_map, contrast_report: crep}
+    end
+  end
 
   set bp1 to record {id: "full_landing_page", label: "Full Landing Page", default_slot: "main", description: "Multi-section page combining Nav header, Hero Section (H1), Value Grid, GrabDecimal Pricing Grid, ForEach showcase, and FAQ Accordion."}
   set bp2 to record {id: "hero_section", label: "Hero Section", default_slot: "hero", description: "Landmark Section hero with H1 headline, keyword-aligned lead Text, primary/secondary actions, and accessible feature Image Card."}
@@ -2137,18 +2214,27 @@ make list_style_packs_doc
   set bp4 to record {id: "faq_accordion", label: "FAQ Accordion", default_slot: "main", description: "Sequential H2 -> H3 semantic Accordion populated with topic-aligned Q&A items and internal canonical links."}
   set bp5 to record {id: "foreach_showcase", label: "ForEach Content Showcase", default_slot: "main", description: "Dynamic ForEach collection showcase bound to GrabLab CMS content_type items with semantic Card layout and safe media alt text."}
 
-  give back record {schema_version: "0.3.0", style_packs: [sp1, sp2, sp3, sp4], blueprints: [bp1, bp2, bp3, bp4, bp5]}
+  set filt_rec to {"goal": (nothing), "industry": (nothing)}
+  if gf is not ""
+    set filt_rec to collections.put using filt_rec, "goal", gf
+  end
+  if indf is not ""
+    set filt_rec to collections.put using filt_rec, "industry", indf
+  end
+
+  give back record {schema_version: "0.4.0", total_style_packs: (collections.length using all_packs), filters: filt_rec, style_packs: out_packs, blueprints: [bp1, bp2, bp3, bp4, bp5]}
+end
+
+make list_style_packs_doc
+  give back list_style_packs_filtered using "", ""
 end
 
 make get_style_pack_def using pack_id
-  if pack_id is "emerald-editorial"
-    give back record {id: "emerald-editorial", label: "Emerald Editorial", bg: "#ffffff", surface: "#f8fafc", text: "#0f172a", primary: "#047857", on_primary: "#ffffff", border: "#cbd5e1", muted: "#475569", space: "1.5rem", radius: "0.75rem"}
-  otherwise if pack_id is "obsidian-tech"
-    give back record {id: "obsidian-tech", label: "Obsidian Developer Studio", bg: "#f8fafc", surface: "#ffffff", text: "#09090b", primary: "#1d4ed8", on_primary: "#ffffff", border: "#cbd5e1", muted: "#334155", space: "1.25rem", radius: "0.5rem"}
-  otherwise if pack_id is "warm-commerce"
-    give back record {id: "warm-commerce", label: "Warm Precision Commerce", bg: "#fffbeb", surface: "#ffffff", text: "#1c1917", primary: "#92400e", on_primary: "#ffffff", border: "#fde68a", muted: "#44403c", space: "1.25rem", radius: "0.875rem"}
-  otherwise if pack_id is "swiss-minimal"
-    give back record {id: "swiss-minimal", label: "Swiss Grid Minimal", bg: "#ffffff", surface: "#f4f4f5", text: "#18181b", primary: "#b91c1c", on_primary: "#ffffff", border: "#d4d4d8", muted: "#3f3f46", space: "1.5rem", radius: "0.25rem"}
+  set all_packs to call all_style_pack_specs
+  for each sp in all_packs
+    if sp.id is pack_id
+      give back record {id: sp.id, label: sp.label, bg: sp.light.bg, surface: sp.light.surface, text: sp.light.text, primary: sp.light.primary, on_primary: sp.light.on_primary, border: sp.light.border, muted: sp.light.muted, space: sp.space, radius: sp.radius}
+    end
   end
   give back nothing
 end
@@ -2685,8 +2771,1481 @@ make compose_generated_layout using payload, pb
   give back record {ok: yes, status: 200, result: result_doc, error: ""}
 end
 
+# ---------------------------------------------------------------------------
+# Groxy AI v0.4.0 — Site Context, Internal Link Graph, JSON-LD, Media Alt & Digest
+# ---------------------------------------------------------------------------
+
+make is_list_value using val
+  if val is nothing
+    give back no
+  end
+  give back text.starts_with using (text.trim using (json.stringify using val)), "["
+end
+
+make is_truthy_flag using val
+  if val is yes or val is 1
+    give back yes
+  end
+  if val is no or val is nothing or val is 0
+    give back no
+  end
+  set s to text.lower using (text.trim using (text.from using val))
+  give back (s is "true" or s is "yes" or s is "1")
+end
+
+make is_strict_decimal_wire_str using raw_val
+  if raw_val is nothing
+    give back no
+  end
+  set js_repr to json.stringify using raw_val
+  if not (text.starts_with using js_repr, "\"")
+    give back no
+  end
+  set s to text.trim using (text.from using raw_val)
+  if s is "" or (text.starts_with using s, "-")
+    give back no
+  end
+  give back is_exact_decimal_wire using s
+end
+
+make resolve_env_opt using key_name
+  try
+    if env.has using key_name
+      give back text.trim using (env.get using key_name)
+    end
+  catch e
+    set ignored_e to e.message
+  end
+  give back ""
+end
+
+make call_cms_mcp_tool using cms_url, cms_token, tool_name, args_rec, rpc_id
+  if cms_url is ""
+    give back record {ok: no, error: "Empty CMS URL"}
+  end
+  try
+    set hdrs to {"Content-Type": "application/json"}
+    if cms_token is not ""
+      set hdrs to collections.put using hdrs, "Authorization", ("Bearer " joined with cms_token)
+    end
+    set rpc_body to json.stringify using (record {jsonrpc: "2.0", id: rpc_id, method: "tools/call", params: (record {name: tool_name, arguments: args_rec})})
+    set resp to http.post using (cms_url joined with "/api/mcp"), rpc_body, record {headers: hdrs}
+    if not resp.ok
+      give back record {ok: no, error: ("HTTP " joined with (text.from using resp.status))}
+    end
+    set parsed to json.parse using resp.body
+    if has_map_key using parsed, "result"
+      set r to parsed at "result"
+      if has_map_key using r, "structuredContent"
+        give back record {ok: yes, data: (r at "structuredContent")}
+      end
+      give back record {ok: yes, data: r}
+    end
+    give back record {ok: yes, data: parsed}
+  catch err
+    give back record {ok: no, error: err.message}
+  end
+end
+
+make canonical_internal_path using raw_url, site_url
+  set s to text.trim using (text.from using raw_url)
+  if s is "" or (text.starts_with using s, "#")
+    give back ""
+  end
+  set low to text.lower using s
+  set low_site to text.lower using (text.trim using (text.from using site_url))
+  if (text.starts_with using low, "http://") or (text.starts_with using low, "https://")
+    set matched_path to ""
+    if low_site is not "" and (text.starts_with using low, low_site)
+      set slen to text.length using low_site
+      set chars to text.split using s, ""
+      set matched_path to text.join using (collections.slice using chars, slen, (collections.length using chars)), ""
+    otherwise
+      set parts to text.split using s, "://"
+      if (collections.length using parts) is at least 2
+        set rest to parts at 1
+        set slash_parts to text.split using rest, "/"
+        if (collections.length using slash_parts) is at least 2
+          set matched_path to "/" joined with (text.join using (collections.slice using slash_parts, 1, (collections.length using slash_parts)), "/")
+        otherwise
+          set matched_path to "/"
+        end
+      end
+    end
+    set s to matched_path
+  otherwise
+    if text.contains using low, ":"
+      give back ""
+    end
+  end
+  if s is ""
+    set s to "/"
+  end
+  if not (text.starts_with using s, "/")
+    set s to "/" joined with s
+  end
+  while text.contains using s, "//"
+    set s to text.replace using s, "//", "/"
+  end
+  give back normalize_path using s
+end
+
+make is_same_site_link using raw_url, site_url
+  set s to text.trim using (text.from using raw_url)
+  if s is "" or (text.starts_with using s, "#") or (text.starts_with using s, "//")
+    give back no
+  end
+  if text.starts_with using s, "/"
+    give back yes
+  end
+  set low to text.lower using s
+  set low_site to text.lower using (text.trim using (text.from using site_url))
+  if low_site is not "" and ((text.starts_with using low, "http://") or (text.starts_with using low, "https://"))
+    set site_parts to text.split using low_site, "/"
+    set url_parts to text.split using low, "/"
+    if (collections.length using site_parts) is at least 3 and (collections.length using url_parts) is at least 3
+      give back ((site_parts at 2) is (url_parts at 2))
+    end
+  end
+  give back no
+end
+
+make extract_href_attr_val using attr_raw
+  set norm to text.replace using attr_raw, "HREF", "href"
+  set norm to text.replace using norm, "Href", "href"
+  set norm to text.replace using norm, "href =", "href="
+  set norm to text.replace using norm, "href= ", "href="
+  if not (text.contains using norm, "href=")
+    give back ""
+  end
+  set hp to text.split using norm, "href="
+  if (collections.length using hp) is less than 2
+    give back ""
+  end
+  set tail to text.trim using (hp at 1)
+  if text.starts_with using tail, "\""
+    set qp to text.split using tail, "\""
+    if (collections.length using qp) is at least 2
+      give back qp at 1
+    end
+  end
+  if text.starts_with using tail, "'"
+    set qp2 to text.split using tail, "'"
+    if (collections.length using qp2) is at least 2
+      give back qp2 at 1
+    end
+  end
+  set sp to text.split using tail, " "
+  give back sp at 0
+end
+
+make extract_html_links_grab using raw_html, site_url, seen_acc, links_acc
+  set html to text.from using raw_html
+  if html is ""
+    give back record {seen: seen_acc, links: links_acc}
+  end
+  set chunks to text.split using html, "<"
+  set in_a to no
+  set cur_href to ""
+  set cur_text to ""
+  set idx to 0
+  for each ch in chunks
+    if idx is greater than 0
+      set trim_c to text.trim using ch
+      set low_c to text.lower using trim_c
+      if (text.starts_with using low_c, "a ") or (text.starts_with using low_c, "a\t") or (text.starts_with using low_c, "a\n") or (text.starts_with using low_c, "a>")
+        set gp to text.split using ch, ">"
+        if (collections.length using gp) is at least 2
+          set href_raw to extract_href_attr_val using (gp at 0)
+          set rest_txt to text.join using (collections.slice using gp, 1, (collections.length using gp)), ">"
+          if is_same_site_link using href_raw, site_url
+            set norm_t to canonical_internal_path using href_raw, site_url
+            if norm_t is not ""
+              set in_a to yes
+              set cur_href to norm_t
+              set cur_text to rest_txt
+            end
+          end
+        end
+      otherwise if in_a
+        if text.starts_with using low_c, "/a>"
+          set clean_anch to text.trim using cur_text
+          set dedupe_k to cur_href joined with "::" joined with (text.lower using clean_anch)
+          if not (has_map_key using seen_acc, dedupe_k)
+            set seen_acc to collections.put using seen_acc, dedupe_k, yes
+            set links_acc to collections.append using links_acc, record {target_path: cur_href, anchor_text: clean_anch}
+          end
+          set in_a to no
+          set cur_href to ""
+          set cur_text to ""
+        otherwise
+          set gp2 to text.split using ch, ">"
+          if (collections.length using gp2) is at least 2
+            set cur_text to cur_text joined with " " joined with (text.join using (collections.slice using gp2, 1, (collections.length using gp2)), ">")
+          end
+        end
+      end
+    end
+    set idx to idx plus 1
+  end
+  give back record {seen: seen_acc, links: links_acc}
+end
+
+make extract_layout_links_grab using node, depth, site_url, seen_acc, links_acc
+  if node is nothing or depth is greater than 24 or (not (is_record_value using node))
+    give back record {seen: seen_acc, links: links_acc}
+  end
+  set ntype to map_get_str using node, "type", ""
+  set ntag to map_get_str using node, "tag", ""
+  if (has_map_key using node, "props") and (is_record_value using (node at "props"))
+    set props to node at "props"
+    set href to map_get_str using props, "href", ""
+    if href is ""
+      set href to map_get_str using props, "to", ""
+    end
+    if href is ""
+      set href to map_get_str using props, "url", ""
+    end
+    if href is not "" and (ntype is "Link" or ntype is "Button" or ntag is "a")
+      if is_same_site_link using href, site_url
+        set tp to canonical_internal_path using href, site_url
+        if tp is not ""
+          set anch to map_get_str using props, "label", ""
+          if anch is ""
+            set anch to map_get_str using props, "text", (map_get_str using node, "text", "")
+          end
+          set anch to text.trim using anch
+          set dk to tp joined with "::" joined with (text.lower using anch)
+          if not (has_map_key using seen_acc, dk)
+            set seen_acc to collections.put using seen_acc, dk, yes
+            set links_acc to collections.append using links_acc, record {target_path: tp, anchor_text: anch}
+          end
+        end
+      end
+    end
+  end
+  if (has_map_key using node, "children") and (is_list_value using (node at "children"))
+    for each ch in (node at "children")
+      set sub_r to extract_layout_links_grab using ch, (depth plus 1), site_url, seen_acc, links_acc
+      set seen_acc to sub_r.seen
+      set links_acc to sub_r.links
+    end
+  end
+  give back record {seen: seen_acc, links: links_acc}
+end
+
+make walk_menu_items_grab using items_list, loc_str, slug_str, site_url, depth, acc_items
+  if depth is greater than 4 or (not (is_list_value using items_list))
+    give back acc_items
+  end
+  for each mi in items_list
+    if is_record_value using mi
+      set raw_u to map_get_str using mi, "url", ""
+      if raw_u is ""
+        set raw_u to map_get_str using mi, "external_url", (map_get_str using mi, "path", "")
+      end
+      set tp to ""
+      if is_same_site_link using raw_u, site_url
+        set tp to canonical_internal_path using raw_u, site_url
+      end
+      set lbl to text.trim using (map_get_str using mi, "label", (map_get_str using mi, "title", ""))
+      if lbl is ""
+        set lbl to tp
+      end
+      if lbl is not "" or raw_u is not ""
+        set acc_items to collections.append using acc_items, record {menu_slug: slug_str, location: loc_str, label: lbl, url: raw_u, target_path: tp, is_internal: (tp is not "")}
+      end
+      if (has_map_key using mi, "children") and (is_list_value using (mi at "children"))
+        set acc_items to walk_menu_items_grab using (mi at "children"), loc_str, slug_str, site_url, (depth plus 1), acc_items
+      end
+    end
+  end
+  give back acc_items
+end
+
+make is_filename_alt_grab using raw_alt
+  set clean to text.trim using (text.from using raw_alt)
+  if clean is ""
+    give back no
+  end
+  set low to text.lower using clean
+  for each ext in [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg", ".avif", ".bmp"]
+    if text.ends_with using low, ext
+      give back yes
+    end
+  end
+  for each pfx in ["img_", "img-", "dsc_", "dsc-", "pxl_", "screenshot", "photo_", "image_"]
+    if text.starts_with using low, pfx
+      give back yes
+    end
+  end
+  for each ph in ["image", "photo", "picture", "untitled", "alt", "placeholder", "img"]
+    if low is ph
+      give back yes
+    end
+  end
+  give back no
+end
+
+make build_site_context_snap using payload
+  set src to payload
+  if (has_map_key using payload, "site_context") and (is_record_value using (payload at "site_context"))
+    set src to payload at "site_context"
+  end
+  set site_name to text.trim using (map_get_str using src, "site_name", (map_get_str using src, "site_title", "GrabLab Site"))
+  if site_name is ""
+    set site_name to "GrabLab Site"
+  end
+  set site_url to text.trim using (map_get_str using src, "site_url", (map_get_str using src, "base_url", "https://example.com"))
+  if site_url is ""
+    set site_url to "https://example.com"
+  end
+  set active_theme to text.trim using (map_get_str using src, "active_theme", "grex-builder")
+  set now_r to call dates.now_utc
+  set gen_at to map_get_str using src, "generated_at", now_r.iso
+
+  set cat_map to {}
+  set tag_map to {}
+  if (has_map_key using src, "categories") and (is_list_value using (src at "categories"))
+    for each c in (src at "categories")
+      set cs to ""
+      if is_record_value using c
+        set cs to text.trim using (map_get_str using c, "name", (map_get_str using c, "slug", ""))
+      otherwise
+        set cs to text.trim using (text.from using c)
+      end
+      if cs is not ""
+        set cat_map to collections.put using cat_map, cs, yes
+      end
+    end
+  end
+  if (has_map_key using src, "tags") and (is_list_value using (src at "tags"))
+    for each t in (src at "tags")
+      set ts to ""
+      if is_record_value using t
+        set ts to text.trim using (map_get_str using t, "name", (map_get_str using t, "slug", ""))
+      otherwise
+        set ts to text.trim using (text.from using t)
+      end
+      if ts is not ""
+        set tag_map to collections.put using tag_map, ts, yes
+      end
+    end
+  end
+
+  set redir_map to {}
+  set prod_list to []
+  set prod_seen to {}
+  set entries_out to []
+  set pub_cnt to 0
+
+  if (has_map_key using src, "entries") and (is_list_value using (src at "entries"))
+    for each re in (src at "entries")
+      if is_record_value using re
+        set raw_fp to map_get_str using re, "full_path", (map_get_str using re, "path", "")
+        set slug to text.trim using (map_get_str using re, "slug", "")
+        if raw_fp is ""
+          if slug is not ""
+            set raw_fp to "/" joined with slug
+          otherwise
+            set raw_fp to "/"
+          end
+        end
+        set fp to canonical_internal_path using raw_fp, site_url
+        if fp is ""
+          set fp to "/"
+        end
+        if slug is ""
+          set slug to "home"
+        end
+        set ct to text.lower using (text.trim using (map_get_str using re, "content_type", (map_get_str using re, "content_type_slug", "page")))
+        set st to text.lower using (text.trim using (map_get_str using re, "status", "published"))
+        if st is "published"
+          set pub_cnt to pub_cnt plus 1
+        end
+        set title to text.trim using (map_get_str using re, "title", slug)
+        set cf to {}
+        if (has_map_key using re, "custom_fields") and (is_record_value using (re at "custom_fields"))
+          set cf to copy_to_map using (re at "custom_fields")
+        end
+
+        set e_cats to []
+        set e_tags to []
+        if (has_map_key using re, "categories") and (is_list_value using (re at "categories"))
+          for each ec in (re at "categories")
+            set ecs to text.trim using (text.from using ec)
+            if ecs is not ""
+              set e_cats to collections.append using e_cats, ecs
+              set cat_map to collections.put using cat_map, ecs, yes
+            end
+          end
+        end
+        if (has_map_key using re, "tags") and (is_list_value using (re at "tags"))
+          for each et in (re at "tags")
+            set ets to text.trim using (text.from using et)
+            if ets is not ""
+              set e_tags to collections.append using e_tags, ets
+              set tag_map to collections.put using tag_map, ets, yes
+            end
+          end
+        end
+        if (has_map_key using re, "terms") and (is_list_value using (re at "terms"))
+          for each tm in (re at "terms")
+            if is_record_value using tm
+              set tname to text.trim using (map_get_str using tm, "name", (map_get_str using tm, "slug", ""))
+              set ttax to text.lower using (map_get_str using tm, "taxonomy", (map_get_str using tm, "taxonomy_slug", "category"))
+              if tname is not ""
+                if text.contains using ttax, "tag"
+                  set e_tags to collections.append using e_tags, tname
+                  set tag_map to collections.put using tag_map, tname, yes
+                otherwise
+                  set e_cats to collections.append using e_cats, tname
+                  set cat_map to collections.put using cat_map, tname, yes
+                end
+              end
+            end
+          end
+        end
+
+        if (has_map_key using re, "slug_history") and (is_list_value using (re at "slug_history"))
+          for each sh in (re at "slug_history")
+            set sh_old to ""
+            set sh_tgt to fp
+            if is_record_value using sh
+              set sh_old to canonical_internal_path using (map_get_str using sh, "old_path", (map_get_str using sh, "from", "")), site_url
+              set cand_tgt to map_get_str using sh, "target_path", ""
+              if cand_tgt is not ""
+                set sh_tgt to canonical_internal_path using cand_tgt, site_url
+              end
+            otherwise
+              set sh_old to canonical_internal_path using (text.from using sh), site_url
+            end
+            if sh_old is not "" and sh_tgt is not ""
+              set redir_map to collections.put using redir_map, sh_old, (record {old_path: sh_old, target_path: sh_tgt, status_code: 301})
+            end
+          end
+        end
+
+        set has_p to no
+        set raw_price to nothing
+        if (has_map_key using cf, "price") and ((cf at "price") is not nothing)
+          set has_p to yes
+          set raw_price to cf at "price"
+        otherwise if (has_map_key using cf, "featured_price") and ((cf at "featured_price") is not nothing)
+          set has_p to yes
+          set raw_price to cf at "featured_price"
+        otherwise if (has_map_key using cf, "sale_price") and ((cf at "sale_price") is not nothing)
+          set has_p to yes
+          set raw_price to cf at "sale_price"
+        end
+        if has_p and ((text.from using raw_price) is not "")
+          if not (is_strict_decimal_wire_str using raw_price)
+            give back record {ok: no, status: 422, error: ("ADR-025c violation: price on \"" joined with fp joined with "\" must be an exact base-10 GrabDecimal wire string.")}
+          end
+          set p_sku to map_get_str using cf, "sku", (text.upper using slug)
+          set pk to fp joined with "::" joined with p_sku
+          if not (has_map_key using prod_seen, pk)
+            set prod_seen to collections.put using prod_seen, pk, yes
+            set prod_list to collections.append using prod_list, record {title: title, path: fp, sku: p_sku, price: (text.from using raw_price), currency: (text.upper using (map_get_str using cf, "currency", "USD")), availability: (map_get_str using cf, "availability", "InStock")}
+          end
+        end
+
+        set seen_lk to {}
+        set links_out to []
+        if (has_map_key using re, "internal_links") and (is_list_value using (re at "internal_links"))
+          for each lk in (re at "internal_links")
+            set raw_tp to ""
+            set anch_t to ""
+            if is_record_value using lk
+              set raw_tp to map_get_str using lk, "target_path", (map_get_str using lk, "url", (map_get_str using lk, "href", ""))
+              set anch_t to text.trim using (map_get_str using lk, "anchor_text", (map_get_str using lk, "anchor", ""))
+            otherwise
+              set raw_tp to text.from using lk
+            end
+            set tp_norm to canonical_internal_path using raw_tp, site_url
+            if tp_norm is not ""
+              set dk to tp_norm joined with "::" joined with (text.lower using anch_t)
+              if not (has_map_key using seen_lk, dk)
+                set seen_lk to collections.put using seen_lk, dk, yes
+                set links_out to collections.append using links_out, record {target_path: tp_norm, anchor_text: anch_t}
+              end
+            end
+          end
+        end
+
+        set body_html to map_get_str using re, "body_html", (map_get_str using re, "body", "")
+        if body_html is not ""
+          set hres to extract_html_links_grab using body_html, site_url, seen_lk, links_out
+          set seen_lk to hres.seen
+          set links_out to hres.links
+        end
+        if (has_map_key using re, "grex_layout") and (is_record_value using (re at "grex_layout"))
+          set lres to extract_layout_links_grab using (re at "grex_layout"), 0, site_url, seen_lk, links_out
+          set seen_lk to lres.seen
+          set links_out to lres.links
+        end
+
+        set plain to strip_html_tags using (map_get_str using re, "excerpt", body_html)
+        set meta_t to map_get_str using re, "meta_title", title
+        set meta_d to map_get_str using re, "meta_description", (trim_window using plain, 0, 155, "")
+        set rec_anch to map_get_str using re, "recommended_anchor", title
+        set eid to nothing
+        if has_map_key using re, "id"
+          set eid to re at "id"
+        end
+        set entries_out to collections.append using entries_out, record {id: eid, title: title, slug: slug, full_path: fp, content_type: ct, status: st, meta_title: meta_t, meta_description: meta_d, excerpt: (trim_window using plain, 0, 180, ""), categories: e_cats, tags: e_tags, custom_fields: cf, internal_links: links_out, recommended_anchor: rec_anch}
+      end
+    end
+  end
+
+  if (has_map_key using src, "products") and (is_list_value using (src at "products"))
+    for each pr in (src at "products")
+      if is_record_value using pr
+        set raw_pr_p to nothing
+        if has_map_key using pr, "price"
+          set raw_pr_p to pr at "price"
+        end
+        if not (is_strict_decimal_wire_str using raw_pr_p)
+          give back record {ok: no, status: 422, error: "ADR-025c violation: product price must be an exact base-10 GrabDecimal wire string."}
+        end
+        set pr_title to text.trim using (map_get_str using pr, "title", (map_get_str using pr, "name", "Product"))
+        set pr_slug to text.trim using (map_get_str using pr, "slug", "item")
+        set pr_path to canonical_internal_path using (map_get_str using pr, "path", (map_get_str using pr, "full_path", ("/products/" joined with pr_slug))), site_url
+        set pr_sku to text.trim using (map_get_str using pr, "sku", (text.upper using pr_slug))
+        set dk to pr_path joined with "::" joined with pr_sku
+        if not (has_map_key using prod_seen, dk)
+          set prod_seen to collections.put using prod_seen, dk, yes
+          set prod_list to collections.append using prod_list, record {title: pr_title, path: pr_path, sku: pr_sku, price: (text.from using raw_pr_p), currency: (text.upper using (map_get_str using pr, "currency", "USD")), availability: (map_get_str using pr, "availability", "InStock")}
+        end
+      end
+    end
+  end
+
+  for each r_field in ["redirects", "slug_history"]
+    if (has_map_key using src, r_field) and (is_list_value using (src at r_field))
+      for each rr in (src at r_field)
+        if is_record_value using rr
+          set ro to canonical_internal_path using (map_get_str using rr, "old_path", (map_get_str using rr, "from", "")), site_url
+          set rt to canonical_internal_path using (map_get_str using rr, "target_path", (map_get_str using rr, "to", "")), site_url
+          if ro is not "" and rt is not ""
+            set redir_map to collections.put using redir_map, ro, (record {old_path: ro, target_path: rt, status_code: 301})
+          end
+        end
+      end
+    end
+  end
+
+  set menu_items to []
+  set loc_seen to {}
+  if has_map_key using src, "menus"
+    set raw_menus to src at "menus"
+    if is_list_value using raw_menus
+      for each m in raw_menus
+        if is_record_value using m
+          set mloc to text.lower using (text.trim using (map_get_str using m, "location", "primary"))
+          if mloc is ""
+            set mloc to "primary"
+          end
+          set loc_seen to collections.put using loc_seen, mloc, yes
+          set mslug to map_get_str using m, "slug", mloc
+          if (has_map_key using m, "items") and (is_list_value using (m at "items"))
+            set menu_items to walk_menu_items_grab using (m at "items"), mloc, mslug, site_url, 1, menu_items
+          end
+        end
+      end
+    otherwise if is_record_value using raw_menus
+      for each mloc_k in (collections.keys using raw_menus)
+        set mval to raw_menus at mloc_k
+        set mloc to text.lower using (text.trim using mloc_k)
+        set loc_seen to collections.put using loc_seen, mloc, yes
+        if is_list_value using mval
+          set menu_items to walk_menu_items_grab using mval, mloc, mloc, site_url, 1, menu_items
+        otherwise if (is_record_value using mval) and (has_map_key using mval, "items")
+          set menu_items to walk_menu_items_grab using (mval at "items"), mloc, mloc, site_url, 1, menu_items
+        end
+      end
+    end
+  end
+
+  set redir_list to []
+  for each rk in (collections.keys using redir_map)
+    set redir_list to collections.append using redir_list, (redir_map at rk)
+  end
+
+  set raw_media to []
+  set m_dec to 0
+  set m_miss to 0
+  set m_fname to 0
+  set m_valid to 0
+  if (has_map_key using src, "media") and (is_list_value using (src at "media"))
+    set raw_media to src at "media"
+    for each med in raw_media
+      if is_record_value using med
+        set dec_flag to (has_map_key using med, "decorative") and (is_truthy_flag using (med at "decorative"))
+        if (not dec_flag) and (has_map_key using med, "is_decorative") and (is_truthy_flag using (med at "is_decorative"))
+          set dec_flag to yes
+        end
+        if dec_flag
+          set m_dec to m_dec plus 1
+        otherwise
+          set malt to text.trim using (map_get_str using med, "alt_text", (map_get_str using med, "alt", ""))
+          if malt is ""
+            set m_miss to m_miss plus 1
+          otherwise if is_filename_alt_grab using malt
+            set m_fname to m_fname plus 1
+          otherwise
+            set m_valid to m_valid plus 1
+          end
+        end
+      end
+    end
+  end
+
+  set cat_keys to collections.keys using cat_map
+  set tag_keys to collections.keys using tag_map
+  set loc_keys to collections.keys using loc_seen
+  set counts_rec to record {entries: (collections.length using entries_out), published_entries: pub_cnt, categories: (collections.length using cat_keys), tags: (collections.length using tag_keys), products: (collections.length using prod_list), menus: (collections.length using loc_keys), menu_links: (collections.length using menu_items), redirects: (collections.length using redir_list), media: (collections.length using raw_media)}
+  set media_sum to record {total: (collections.length using raw_media), decorative: m_dec, missing_alt: m_miss, filename_alt: m_fname, valid_alt: m_valid}
+
+  set snap_out to record {schema_version: "0.4.0", read_only: yes, site_name: site_name, site_url: site_url, generated_at: gen_at, active_theme: active_theme, entries: entries_out, categories: cat_keys, tags: tag_keys, products: prod_list, menus: (record {locations: loc_keys, items: menu_items}), redirects: redir_list, media_summary: media_sum, media: raw_media, counts: counts_rec, decimal_integrity_verified: yes}
+  give back record {ok: yes, status: 200, snapshot: snap_out, error: ""}
+end
+
+make render_site_context_md using snap
+  set lines to ["# SITE-CONTEXT.md — " joined with snap.site_name, ""]
+  set lines to collections.append using lines, ("- **Site URL:** " joined with snap.site_url)
+  set lines to collections.append using lines, ("- **Active Theme:** " joined with snap.active_theme)
+  set lines to collections.append using lines, ("- **Synced At:** " joined with snap.generated_at)
+  set lines to collections.append using lines, "- **ADR-025c Decimal Integrity:** Verified (exact base-10 wire strings)"
+  set c to snap.counts
+  set cnt_line to "- **Counts:** " joined with (text.from using c.entries) joined with " entries (" joined with (text.from using c.published_entries) joined with " published), " joined with (text.from using c.products) joined with " products, " joined with (text.from using c.categories) joined with " categories, " joined with (text.from using c.tags) joined with " tags, " joined with (text.from using c.menu_links) joined with " menu links, " joined with (text.from using c.redirects) joined with " 301 redirects, " joined with (text.from using c.media) joined with " media items"
+  set lines to collections.append using lines, cnt_line
+  set lines to collections.append using lines, ""
+  set lines to collections.append using lines, "## Navigation Menus (Primary, Footer, Mobile)"
+  if (collections.length using snap.menus.items) is 0
+    set lines to collections.append using lines, "- _(No navigation menu links indexed)_"
+  otherwise
+    for each mi in snap.menus.items
+      set m_tgt to mi.target_path
+      if m_tgt is ""
+        set m_tgt to mi.url
+      end
+      set lines to collections.append using lines, ("- [" joined with mi.label joined with "](" joined with m_tgt joined with ") (location: `" joined with mi.location joined with "`)")
+    end
+  end
+
+  set lines to collections.append using lines, ""
+  set lines to collections.append using lines, "## Entries & Landing Pages Index"
+  if (collections.length using snap.entries) is 0
+    set lines to collections.append using lines, "- _(No entries indexed)_"
+  otherwise
+    for each e in snap.entries
+      set tax_bit to ""
+      if (collections.length using e.categories) is greater than 0
+        set tax_bit to " | categories: " joined with (text.join using e.categories, ", ")
+      end
+      if (collections.length using e.tags) is greater than 0
+        set tax_bit to tax_bit joined with " | tags: " joined with (text.join using e.tags, ", ")
+      end
+      set lines to collections.append using lines, ("- `" joined with e.full_path joined with "` — **" joined with e.title joined with "** (" joined with e.content_type joined with ", status: " joined with e.status joined with tax_bit joined with ")")
+    end
+  end
+
+  set lines to collections.append using lines, ""
+  set lines to collections.append using lines, "## Categories & Tags"
+  if (collections.length using snap.categories) is greater than 0
+    set lines to collections.append using lines, ("- **Categories:** " joined with (text.join using snap.categories, ", "))
+  otherwise
+    set lines to collections.append using lines, "- **Categories:** None"
+  end
+  if (collections.length using snap.tags) is greater than 0
+    set lines to collections.append using lines, ("- **Tags:** " joined with (text.join using snap.tags, ", "))
+  otherwise
+    set lines to collections.append using lines, "- **Tags:** None"
+  end
+
+  set lines to collections.append using lines, ""
+  set lines to collections.append using lines, "## Products & Exact Pricing Catalog (ADR-025c)"
+  if (collections.length using snap.products) is 0
+    set lines to collections.append using lines, "- _(No products with GrabDecimal prices indexed)_"
+  otherwise
+    for each pr in snap.products
+      set lines to collections.append using lines, ("- **" joined with pr.title joined with "** (`" joined with pr.path joined with "`, SKU: `" joined with pr.sku joined with "`) — Price: `\"" joined with pr.price joined with "\"` " joined with pr.currency joined with " (" joined with pr.availability joined with ")")
+    end
+  end
+
+  set lines to collections.append using lines, ""
+  set lines to collections.append using lines, "## 301 Redirects & Slug History"
+  if (collections.length using snap.redirects) is 0
+    set lines to collections.append using lines, "- _(No slug_history 301 redirects indexed)_"
+  otherwise
+    for each rd in snap.redirects
+      set lines to collections.append using lines, ("- `" joined with rd.old_path joined with "` -> `" joined with rd.target_path joined with "` (" joined with (text.from using rd.status_code) joined with ")")
+    end
+  end
+
+  set lines to collections.append using lines, ""
+  set lines to collections.append using lines, "## Media Inventory Summary"
+  set ms to snap.media_summary
+  set lines to collections.append using lines, ("- Total: " joined with (text.from using ms.total) joined with " | Valid Alt: " joined with (text.from using ms.valid_alt) joined with " | Missing Alt: " joined with (text.from using ms.missing_alt) joined with " | Filename Alt: " joined with (text.from using ms.filename_alt) joined with " | Decorative Preserved (`alt=\"\"`): " joined with (text.from using ms.decorative))
+  give back text.join using lines, "\n"
+end
+
+make analyze_redirect_topology_grab using redirects
+  set forward to {}
+  for each r in redirects
+    if is_record_value using r
+      set op to map_get_str using r, "old_path", ""
+      set tp to map_get_str using r, "target_path", ""
+      if op is not "" and tp is not ""
+        set forward to collections.put using forward, op, tp
+      end
+    end
+  end
+
+  set loop_paths to {}
+  set loops to []
+  set chains to []
+  set rec_sigs to {}
+
+  for each start_p in (collections.keys using forward)
+    set chain to [start_p]
+    set visited to collections.put using {}, start_p, 0
+    set cur to start_p
+    set loop_hit to no
+    while (has_map_key using forward, cur) and (not loop_hit) and ((collections.length using chain) is less than 20)
+      set nxt to forward at cur
+      if has_map_key using visited, nxt
+        set loop_hit to yes
+        set cstart to visited at nxt
+        set cycle_nodes to collections.append using (collections.slice using chain, cstart, (collections.length using chain)), nxt
+        for each cp in chain
+          set loop_paths to collections.put using loop_paths, cp, yes
+        end
+        for each cn in cycle_nodes
+          set loop_paths to collections.put using loop_paths, cn, yes
+        end
+        set sig to text.join using cycle_nodes, "->"
+        if not (has_map_key using rec_sigs, sig)
+          set rec_sigs to collections.put using rec_sigs, sig, yes
+          set loops to collections.append using loops, record {cycle: cycle_nodes, status_code: 301, reason: ("301 redirect loop detected: " joined with sig joined with ". Excluded from internal link suggestions.")}
+        end
+      otherwise
+        set visited to collections.put using visited, nxt, (collections.length using chain)
+        set chain to collections.append using chain, nxt
+        set cur to nxt
+      end
+    end
+    if (not loop_hit) and ((collections.length using chain) is at least 3)
+      set term_t to chain at ((collections.length using chain) minus 1)
+      set chains to collections.append using chains, record {source_path: start_p, hops: chain, terminal_target: term_t, hop_count: ((collections.length using chain) minus 1), reason: ("301 redirect chain detected: update links directly to " joined with term_t)}
+    end
+  end
+
+  give back record {forward: forward, loop_paths: loop_paths, loops: loops, chains: chains}
+end
+
+make analyze_internal_links_grab using snap, max_per_page
+  set topo to analyze_redirect_topology_grab using snap.redirects
+  set forward to topo.forward
+  set loop_paths to topo.loop_paths
+
+  set entry_by_path to {}
+  set in_content to {}
+  set in_menu to {}
+  set out_valid to {}
+  for each e in snap.entries
+    set ep to e.full_path
+    set entry_by_path to collections.put using entry_by_path, ep, e
+    set in_content to collections.put using in_content, ep, {}
+    set in_menu to collections.put using in_menu, ep, {}
+    set out_valid to collections.put using out_valid, ep, {}
+  end
+
+  set generic_list to ["click here", "here", "read more", "learn more", "more", "more info", "details", "link", "this", "this page", "view", "go", "see more"]
+  set broken_links to []
+  set generic_anchors to []
+  set loop_refs to []
+  set chain_refs to []
+
+  for each e in snap.entries
+    set src_p to e.full_path
+    for each lk in e.internal_links
+      set tgt to lk.target_path
+      set anch to lk.anchor_text
+      set alow to text.lower using (text.trim using anch)
+      if alow is not "" and (list_contains using generic_list, alow)
+        set generic_anchors to collections.append using generic_anchors, record {source_path: src_p, target_path: tgt, anchor_text: anch, issue: "generic_anchor_text", recommendation: ("Replace vague \"" joined with anch joined with "\" anchor with descriptive topic keywords.")}
+      end
+
+      if has_map_key using loop_paths, tgt
+        set loop_refs to collections.append using loop_refs, record {source_path: src_p, target_path: tgt, issue: "redirect_loop", recommendation: ("Remove link to 301 loop target \"" joined with tgt joined with "\".")}
+      otherwise if has_map_key using forward, tgt
+        set res_t to tgt
+        set h_vis to collections.put using {}, res_t, yes
+        set hops to 0
+        set stop_h to no
+        while (has_map_key using forward, res_t) and (not stop_h) and (hops is less than 12)
+          set nxt_t to forward at res_t
+          if has_map_key using h_vis, nxt_t
+            set stop_h to yes
+          otherwise
+            set h_vis to collections.put using h_vis, nxt_t, yes
+            set res_t to nxt_t
+            set hops to hops plus 1
+          end
+        end
+        if hops is at least 2
+          set chain_refs to collections.append using chain_refs, record {source_path: src_p, target_path: tgt, terminal_target: res_t, issue: "redirect_chain", recommendation: ("Update multi-hop 301 link directly to canonical \"" joined with res_t joined with "\".")}
+        end
+        if has_map_key using entry_by_path, res_t
+          if res_t is not src_p
+            set cur_in to collections.put using (in_content at res_t), src_p, yes
+            set in_content to collections.put using in_content, res_t, cur_in
+            set cur_out to collections.put using (out_valid at src_p), res_t, yes
+            set out_valid to collections.put using out_valid, src_p, cur_out
+          end
+        otherwise
+          set broken_links to collections.append using broken_links, record {source_path: src_p, target_path: tgt, resolved_target: res_t, issue: "broken_internal_link", recommendation: ("Target \"" joined with res_t joined with "\" does not match any active entry.")}
+        end
+      otherwise if has_map_key using entry_by_path, tgt
+        if tgt is not src_p
+          set cur_in2 to collections.put using (in_content at tgt), src_p, yes
+          set in_content to collections.put using in_content, tgt, cur_in2
+          set cur_out2 to collections.put using (out_valid at src_p), tgt, yes
+          set out_valid to collections.put using out_valid, src_p, cur_out2
+        end
+      otherwise
+        if (not (text.starts_with using tgt, "/assets/")) and (not (text.starts_with using tgt, "/media/"))
+          set broken_links to collections.append using broken_links, record {source_path: src_p, target_path: tgt, issue: "broken_internal_link", recommendation: ("Fix or redirect missing internal link target \"" joined with tgt joined with "\" referenced in \"" joined with src_p joined with "\".")}
+        end
+      end
+    end
+  end
+
+  for each mi in snap.menus.items
+    if mi.is_internal and mi.target_path is not ""
+      set mt to mi.target_path
+      if has_map_key using loop_paths, mt
+        set loop_refs to collections.append using loop_refs, record {source_path: ("menu:" joined with mi.location), target_path: mt, issue: "redirect_loop", recommendation: ("Menu link \"" joined with mi.label joined with "\" points to 301 loop \"" joined with mt joined with "\".")}
+      otherwise if has_map_key using entry_by_path, mt
+        set mk_in to collections.put using (in_menu at mt), ("menu:" joined with mi.location), yes
+        set in_menu to collections.put using in_menu, mt, mk_in
+      otherwise if (not (has_map_key using forward, mt)) and (not (text.starts_with using mt, "/assets/"))
+        set broken_links to collections.append using broken_links, record {source_path: ("menu:" joined with mi.location), target_path: mt, issue: "broken_internal_link", recommendation: ("Menu \"" joined with mi.location joined with "\" links to missing route \"" joined with mt joined with "\".")}
+      end
+    end
+  end
+
+  set paths to collections.keys using entry_by_path
+  set scores to {}
+  for each p in paths
+    set scores to collections.put using scores, p, 1.0
+  end
+  for each iter_n in [1, 2, 3, 4]
+    set nxt_sc to {}
+    for each p in paths
+      set nxt_sc to collections.put using nxt_sc, p, 0.15
+    end
+    for each sp_k in paths
+      set out_map to out_valid at sp_k
+      set out_keys to collections.keys using out_map
+      set ocnt to collections.length using out_keys
+      if ocnt is greater than 0
+        set share to ((scores at sp_k) times 0.85) divided by (ocnt times 1.0)
+        for each dst in out_keys
+          set nxt_sc to collections.put using nxt_sc, dst, ((nxt_sc at dst) plus share)
+        end
+      end
+    end
+    for each p in paths
+      set mcnt to collections.length using (collections.keys using (in_menu at p))
+      set hub_b to 0.0
+      if p is "/"
+        set hub_b to 0.35
+      end
+      set scores to collections.put using scores, p, ((nxt_sc at p) plus ((mcnt times 0.25) plus hub_b))
+    end
+  end
+
+  set max_sc to 1.0
+  for each p in paths
+    if (scores at p) is greater than max_sc
+      set max_sc to scores at p
+    end
+  end
+
+  set nodes to []
+  set orphans to []
+  set in_totals to {}
+  for each e in snap.entries
+    set p to e.full_path
+    set ic to collections.length using (collections.keys using (in_content at p))
+    set im to collections.length using (collections.keys using (in_menu at p))
+    set itot to ic plus im
+    set in_totals to collections.put using in_totals, p, itot
+    set oc to collections.length using (collections.keys using (out_valid at p))
+    set is_orp to (p is not "/") and (itot is 0)
+    set auth_val to math.clamp using (math.floor using ((((scores at p) divided by max_sc) times 100.0) plus 0.5)), 5, 100
+    set nd to record {path: p, title: e.title, content_type: e.content_type, status: e.status, inbound_content_links: ic, inbound_menu_links: im, inbound_links: itot, outbound_links: oc, is_orphan: is_orp, authority_score: auth_val}
+    set nodes to collections.append using nodes, nd
+    if is_orp
+      set orphans to collections.append using orphans, nd
+    end
+  end
+
+  set kw_stop to ["the", "and", "for", "with", "that", "this", "from", "your", "into", "about", "our", "how", "why", "all", "can", "use", "page", "post", "guide"]
+  set tok_by_path to {}
+  for each e in snap.entries
+    set joined_src to e.title joined with " " joined with (text.join using e.categories, " ") joined with " " joined with (text.join using e.tags, " ") joined with " " joined with e.excerpt joined with " " joined with (text.replace using e.slug, "-", " ")
+    set raw_toks to tokenize_words using joined_src
+    set filtered to []
+    for each wt in raw_toks
+      if ((text.length using wt) is at least 3) and (not (list_contains using kw_stop, wt)) and (not (list_contains using filtered, wt))
+        set filtered to collections.append using filtered, wt
+      end
+    end
+    set tok_by_path to collections.put using tok_by_path, e.full_path, filtered
+  end
+
+  set suggestions to []
+  for each src_e in snap.entries
+    set sp to src_e.full_path
+    if not (has_map_key using loop_paths, sp)
+      set linked_map to out_valid at sp
+      set src_toks to tok_by_path at sp
+      set added_for_src to 0
+      for each tgt_e in snap.entries
+        set tp to tgt_e.full_path
+        if (tp is not sp) and (tgt_e.status is "published" or tgt_e.status is "") and (not (has_map_key using loop_paths, tp)) and (not (has_map_key using linked_map, tp))
+          set tgt_toks to tok_by_path at tp
+          set shared to []
+          for each st_w in src_toks
+            if list_contains using tgt_toks, st_w
+              set shared to collections.append using shared, st_w
+            end
+          end
+          set tgt_orp to (tp is not "/") and ((in_totals at tp) is 0)
+          if ((collections.length using shared) is greater than 0) or tgt_orp
+            if added_for_src is less than max_per_page
+              set anch_rec to text.trim using tgt_e.recommended_anchor
+              if anch_rec is "" or (list_contains using generic_list, (text.lower using anch_rec)) or ((text.length using anch_rec) is less than 4)
+                set anch_rec to "Explore " joined with tgt_e.title
+              end
+              set orp_b to 0
+              set reason_s to "Strengthens topical cluster with descriptive anchor text."
+              if tgt_orp
+                set orp_b to 25
+                set reason_s to "Connects orphan page \"" joined with tgt_e.title joined with "\" using descriptive anchor text."
+              end
+              set rel_sc to ((collections.length using shared) times 18) plus orp_b plus 5
+              set suggestions to collections.append using suggestions, record {source_path: sp, source_title: src_e.title, target_path: tp, target_title: tgt_e.title, anchor_text: anch_rec, shared_topics: shared, target_is_orphan: tgt_orp, relevance_score: rel_sc, reason: reason_s, read_only_preview: yes}
+              set added_for_src to added_for_src plus 1
+            end
+          end
+        end
+      end
+    end
+  end
+
+  set all_chains to []
+  for each tc in topo.chains
+    set all_chains to collections.append using all_chains, tc
+  end
+  for each cr in chain_refs
+    set all_chains to collections.append using all_chains, cr
+  end
+  set excl_loops to collections.keys using loop_paths
+
+  set summary to record {total_pages: (collections.length using nodes), orphan_count: (collections.length using orphans), redirect_chain_count: (collections.length using all_chains), redirect_loop_count: (collections.length using topo.loops), broken_link_count: (collections.length using broken_links), generic_anchor_count: (collections.length using generic_anchors), suggestion_count: (collections.length using suggestions)}
+
+  give back record {ok: yes, schema_version: "0.4.0", read_only: yes, mutates_live_cms: no, summary: summary, nodes: nodes, orphan_pages: orphans, redirect_chains: all_chains, redirect_loops: topo.loops, loop_references: loop_refs, excluded_loop_targets: excl_loops, broken_links: broken_links, generic_anchors: generic_anchors, suggestions: suggestions}
+end
+
+make escape_jsonld_for_script using raw_json
+  set s to text.replace using raw_json, "<", "\\u003c"
+  set s to text.replace using s, ">", "\\u003e"
+  set s to text.replace using s, "&", "\\u0026"
+  give back s
+end
+
+make extract_faq_from_layout_grab using node, depth, out_list
+  if node is nothing or depth is greater than 24 or (not (is_record_value using node))
+    give back out_list
+  end
+  set ntype to map_get_str using node, "type", ""
+  if ntype is "Accordion"
+    if (has_map_key using node, "props") and (is_record_value using (node at "props"))
+      set props to node at "props"
+      if (has_map_key using props, "items") and (is_list_value using (props at "items"))
+        for each itm in (props at "items")
+          if is_record_value using itm
+            set q to text.trim using (map_get_str using itm, "title", (map_get_str using itm, "question", ""))
+            set a to text.trim using (map_get_str using itm, "content", (map_get_str using itm, "answer", ""))
+            if q is not "" and a is not ""
+              set out_list to collections.append using out_list, record {question: q, answer: a}
+            end
+          end
+        end
+      end
+    end
+  end
+  if (has_map_key using node, "children") and (is_list_value using (node at "children"))
+    set kids to node at "children"
+    set klen to collections.length using kids
+    set idx to 0
+    while idx is less than klen
+      set kc to kids at idx
+      if is_record_value using kc
+        set ktype to map_get_str using kc, "type", ""
+        if ntype is "Accordion" and (ktype is "Heading" or ktype is "Card")
+          set kq to ""
+          set ka to ""
+          if (has_map_key using kc, "props") and (is_record_value using (kc at "props"))
+            set kp to kc at "props"
+            set kq to text.trim using (map_get_str using kp, "title", (map_get_str using kc, "text", ""))
+            set ka to text.trim using (map_get_str using kp, "content", "")
+          otherwise
+            set kq to text.trim using (map_get_str using kc, "text", "")
+          end
+          if ka is "" and ((idx plus 1) is less than klen)
+            set nxt_k to kids at (idx plus 1)
+            if is_record_value using nxt_k
+              set ka to text.trim using (map_get_str using nxt_k, "text", "")
+            end
+          end
+          if kq is not "" and ka is not ""
+            set out_list to collections.append using out_list, record {question: kq, answer: ka}
+          end
+        otherwise
+          set out_list to extract_faq_from_layout_grab using kc, (depth plus 1), out_list
+        end
+      end
+      set idx to idx plus 1
+    end
+  end
+  give back out_list
+end
+
+make generate_schema_org_grab using payload
+  set entry to payload
+  if (has_map_key using payload, "entry") and (is_record_value using (payload at "entry"))
+    set entry to payload at "entry"
+  end
+  set site_ctx to {}
+  if (has_map_key using payload, "site_context") and (is_record_value using (payload at "site_context"))
+    set site_ctx to payload at "site_context"
+  end
+  set site_url to text.trim using (map_get_str using payload, "site_url", (map_get_str using site_ctx, "site_url", "https://example.com"))
+  if not (is_safe_url using site_url)
+    give back record {ok: no, status: 400, error: "Unsafe site_url rejected in schema.org generator."}
+  end
+  if text.ends_with using site_url, "/"
+    set chars_u to text.split using site_url, ""
+    set site_url to text.join using (collections.slice using chars_u, 0, ((collections.length using chars_u) minus 1)), ""
+  end
+  set site_name to text.trim using (map_get_str using payload, "site_name", (map_get_str using site_ctx, "site_name", "GrabLab Site"))
+  set ep to canonical_internal_path using (map_get_str using entry, "full_path", (map_get_str using entry, "path", ("/" joined with (map_get_str using entry, "slug", "")))), site_url
+  if ep is ""
+    set ep to "/"
+  end
+  set canonical_u to site_url
+  if ep is not "/"
+    set canonical_u to site_url joined with ep
+  end
+  set custom_canon to text.trim using (map_get_str using entry, "canonical_url", "")
+  if custom_canon is not "" and (is_safe_url using custom_canon)
+    set canonical_u to custom_canon
+  end
+
+  set title_s to text.trim using (map_get_str using entry, "meta_title", (map_get_str using entry, "title", site_name))
+  set desc_s to trim_window using (strip_html_tags using (map_get_str using entry, "meta_description", (map_get_str using entry, "excerpt", (map_get_str using entry, "body_html", "")))), 0, 320, ""
+
+  set cf to {}
+  if (has_map_key using entry, "custom_fields") and (is_record_value using (entry at "custom_fields"))
+    set cf to entry at "custom_fields"
+  end
+
+  set req_types to []
+  set explicit_t to no
+  if (has_map_key using payload, "schema_types") and (is_list_value using (payload at "schema_types")) and ((collections.length using (payload at "schema_types")) is greater than 0)
+    set explicit_t to yes
+    for each st_i in (payload at "schema_types")
+      set req_types to collections.append using req_types, (text.trim using (text.from using st_i))
+    end
+  otherwise if (has_map_key using payload, "schema_type") and (text.trim using (map_get_str using payload, "schema_type", "")) is not ""
+    set explicit_t to yes
+    set req_types to [text.trim using (map_get_str using payload, "schema_type", "")]
+  otherwise
+    set ct to text.lower using (map_get_str using entry, "content_type", (map_get_str using entry, "content_type_slug", ""))
+    set has_pr to (has_map_key using payload, "product") or (has_map_key using cf, "price") or (has_map_key using cf, "featured_price")
+    if ct is "product" or has_pr
+      set req_types to ["Product"]
+    otherwise if ct is "post" or ct is "blog"
+      set req_types to ["BlogPosting"]
+    otherwise
+      set req_types to ["Article"]
+    end
+  end
+
+  set faq_list to []
+  if (has_map_key using payload, "faq_items") and (is_list_value using (payload at "faq_items"))
+    set faq_list to payload at "faq_items"
+  otherwise if (has_map_key using entry, "grex_layout") and (is_record_value using (entry at "grex_layout"))
+    set faq_list to extract_faq_from_layout_grab using (entry at "grex_layout"), 0, []
+  otherwise if (has_map_key using payload, "grex_layout") and (is_record_value using (payload at "grex_layout"))
+    set faq_list to extract_faq_from_layout_grab using (payload at "grex_layout"), 0, []
+  end
+
+  if (not explicit_t) and ((collections.length using faq_list) is greater than 0) and (not (list_contains using req_types, "FAQPage"))
+    set req_types to collections.append using req_types, "FAQPage"
+  end
+  if (has_map_key using payload, "include_breadcrumbs") and (is_truthy_flag using (payload at "include_breadcrumbs")) and (not (list_contains using req_types, "BreadcrumbList"))
+    set req_types to collections.append using req_types, "BreadcrumbList"
+  end
+  if (has_map_key using payload, "include_website") and (is_truthy_flag using (payload at "include_website")) and (not (list_contains using req_types, "WebSite"))
+    set req_types to collections.append using req_types, "WebSite"
+  end
+
+  set entities to []
+  set types_gen to []
+  for each tname in req_types
+    if tname is "Article" or tname is "BlogPosting"
+      set ent to {"@type": tname, "headline": title_s, "description": desc_s, "url": canonical_u, "mainEntityOfPage": {"@type": "WebPage", "@id": canonical_u}, "author": {"@type": "Person", "name": (map_get_str using entry, "author_name", (map_get_str using entry, "author", site_name))}, "publisher": {"@type": "Organization", "name": site_name}}
+      set pub_at to map_get_str using entry, "published_at", ""
+      if pub_at is not ""
+        set ent to collections.put using ent, "datePublished", pub_at
+      end
+      set mod_at to map_get_str using entry, "updated_at", ""
+      if mod_at is not ""
+        set ent to collections.put using ent, "dateModified", mod_at
+      end
+      set entities to collections.append using entities, ent
+      set types_gen to collections.append using types_gen, tname
+    otherwise if tname is "Product"
+      set prod to {}
+      if (has_map_key using payload, "product") and (is_record_value using (payload at "product"))
+        set prod to payload at "product"
+      end
+      set raw_p to "0.00"
+      if (has_map_key using prod, "price") and ((prod at "price") is not nothing)
+        set raw_p to prod at "price"
+      otherwise if (has_map_key using entry, "offers") and (is_record_value using (entry at "offers")) and (has_map_key using (entry at "offers"), "price")
+        set raw_p to (entry at "offers") at "price"
+      otherwise if (has_map_key using cf, "price") and ((cf at "price") is not nothing)
+        set raw_p to cf at "price"
+      otherwise if (has_map_key using cf, "featured_price") and ((cf at "featured_price") is not nothing)
+        set raw_p to cf at "featured_price"
+      otherwise if (has_map_key using cf, "sale_price") and ((cf at "sale_price") is not nothing)
+        set raw_p to cf at "sale_price"
+      end
+      if not (is_strict_decimal_wire_str using raw_p)
+        give back record {ok: no, status: 422, error: "ADR-025c violation: Product offers.price must be an exact base-10 GrabDecimal wire string, not a JavaScript number/float."}
+      end
+      set p_curr to text.upper using (map_get_str using prod, "currency", (map_get_str using cf, "currency", "USD"))
+      set p_sku to text.trim using (map_get_str using prod, "sku", (map_get_str using cf, "sku", (map_get_str using entry, "slug", "SKU-DEFAULT")))
+      set p_avail to text.trim using (map_get_str using prod, "availability", (map_get_str using cf, "availability", "InStock"))
+      if not (text.starts_with using p_avail, "http")
+        set p_avail to "https://schema.org/" joined with p_avail
+      end
+      set pent to {"@type": "Product", "name": (map_get_str using prod, "name", (map_get_str using prod, "title", title_s)), "description": (map_get_str using prod, "description", desc_s), "sku": p_sku, "url": canonical_u, "offers": {"@type": "Offer", "priceCurrency": p_curr, "price": (text.from using raw_p), "availability": p_avail, "url": canonical_u}}
+      set entities to collections.append using entities, pent
+      set types_gen to collections.append using types_gen, "Product"
+    otherwise if tname is "FAQPage"
+      set faq_ents to []
+      for each fi in faq_list
+        if is_record_value using fi
+          set fq to text.trim using (map_get_str using fi, "question", (map_get_str using fi, "title", ""))
+          set fa to text.trim using (map_get_str using fi, "answer", (map_get_str using fi, "content", ""))
+          if fq is not "" and fa is not ""
+            set faq_ents to collections.append using faq_ents, {"@type": "Question", "name": fq, "acceptedAnswer": {"@type": "Answer", "text": fa}}
+          end
+        end
+      end
+      set entities to collections.append using entities, {"@type": "FAQPage", "mainEntity": faq_ents}
+      set types_gen to collections.append using types_gen, "FAQPage"
+    otherwise if tname is "BreadcrumbList"
+      set crumbs to []
+      if (has_map_key using payload, "breadcrumbs") and (is_list_value using (payload at "breadcrumbs")) and ((collections.length using (payload at "breadcrumbs")) is greater than 0)
+        set pos to 1
+        for each b in (payload at "breadcrumbs")
+          if is_record_value using b
+            set bp to canonical_internal_path using (map_get_str using b, "url", (map_get_str using b, "path", "/")), site_url
+            set bu to site_url
+            if bp is not "/" and bp is not ""
+              set bu to site_url joined with bp
+            end
+            set crumbs to collections.append using crumbs, {"@type": "ListItem", "position": pos, "name": (map_get_str using b, "name", (map_get_str using b, "label", "Step")), "item": bu}
+            set pos to pos plus 1
+          end
+        end
+      otherwise
+        set crumbs to collections.append using crumbs, {"@type": "ListItem", "position": 1, "name": "Home", "item": site_url}
+        set segs_raw to text.split using ep, "/"
+        set clean_segs to []
+        for each sg in segs_raw
+          if sg is not ""
+            set clean_segs to collections.append using clean_segs, sg
+          end
+        end
+        set acc_p to ""
+        set slen to collections.length using clean_segs
+        set idx to 0
+        for each sg in clean_segs
+          set acc_p to acc_p joined with "/" joined with sg
+          set cname to title_case_str using (text.replace using sg, "-", " ")
+          if idx is (slen minus 1)
+            set cname to title_s
+          end
+          set crumbs to collections.append using crumbs, {"@type": "ListItem", "position": (idx plus 2), "name": cname, "item": (site_url joined with acc_p)}
+          set idx to idx plus 1
+        end
+      end
+      set entities to collections.append using entities, {"@type": "BreadcrumbList", "itemListElement": crumbs}
+      set types_gen to collections.append using types_gen, "BreadcrumbList"
+    otherwise if tname is "WebSite"
+      set entities to collections.append using entities, {"@type": "WebSite", "name": site_name, "url": site_url, "potentialAction": {"@type": "SearchAction", "target": (site_url joined with "/?search={search_term_string}"), "query-input": "required name=search_term_string"}}
+      set types_gen to collections.append using types_gen, "WebSite"
+    otherwise
+      give back record {ok: no, status: 422, error: ("Unsupported schema.org type: " joined with tname)}
+    end
+  end
+
+  set json_ld_obj to {"@context": "https://schema.org"}
+  if (collections.length using entities) is 1
+    set single_e to entities at 0
+    for each k in (collections.keys using single_e)
+      set json_ld_obj to collections.put using json_ld_obj, k, (single_e at k)
+    end
+  otherwise
+    set json_ld_obj to collections.put using json_ld_obj, "@graph", entities
+  end
+
+  set raw_s to json.stringify_pretty using json_ld_obj
+  set esc_s to escape_jsonld_for_script using raw_s
+  set tag_s to "<script type=\"application/ld+json\">\n" joined with esc_s joined with "\n</script>"
+
+  give back record {ok: yes, status: 200, result: (record {ok: yes, schema_version: "0.4.0", read_only: yes, types_generated: types_gen, decimal_integrity_verified: yes, xss_safe: yes, json_ld: json_ld_obj, json_ld_escaped: esc_s, script_tag_payload: tag_s}), error: ""}
+end
+
+make synthesize_alt_text_grab using med
+  set cap to text.trim using (map_get_str using med, "caption", "")
+  if (text.length using cap) is at least 12
+    give back trim_window using cap, 0, 125, ""
+  end
+  set ctx_t to text.trim using (map_get_str using med, "context_entry_title", (map_get_str using med, "entry_title", ""))
+  set raw_fn to text.trim using (map_get_str using med, "original_name", (map_get_str using med, "filename", "media asset"))
+  set base_n to raw_fn
+  for each ext in [".jpeg", ".jpg", ".png", ".webp", ".gif", ".svg", ".avif", ".JPEG", ".JPG", ".PNG", ".WEBP"]
+    set base_n to text.replace using base_n, ext, ""
+  end
+  set base_n to text.replace using base_n, "_", " "
+  set base_n to text.replace using base_n, "-", " "
+  set base_n to text.trim using base_n
+  set low_b to text.lower using base_n
+  for each pfx in ["img ", "dsc ", "pxl ", "screenshot "]
+    if text.starts_with using low_b, pfx
+      set base_n to text.trim using (text.join using (collections.slice using (text.split using base_n, " "), 1, (collections.length using (text.split using base_n, " "))), " ")
+    end
+  end
+  set only_digits to (base_n is not "") and (is_exact_decimal_wire using base_n)
+  set cand to "High-resolution editorial product and layout photograph"
+  if ctx_t is not "" and base_n is not "" and (not only_digits)
+    set cand to ctx_t joined with " — " joined with (title_case_str using base_n)
+  otherwise if ctx_t is not ""
+    set cand to "Editorial photograph illustrating " joined with ctx_t
+  otherwise if base_n is not "" and (not only_digits)
+    set cand to "Visual asset showing " joined with (title_case_str using base_n)
+  end
+  give back trim_window using cand, 12, 125, "photography"
+end
+
+make analyze_media_alt_grab using media_list
+  set items_out to []
+  set need_cnt to 0
+  set dec_cnt to 0
+  set ok_cnt to 0
+  set prop_by_id to {}
+
+  for each m in media_list
+    if is_record_value using m
+      set mid to map_get_str using m, "id", (map_get_str using m, "media_id", (map_get_str using m, "filename", ""))
+      if mid is ""
+        set mid to "media-" joined with (text.from using (collections.length using items_out))
+      end
+      set mid_val to mid
+      if (has_map_key using m, "id") and ((m at "id") is not nothing)
+        set mid_val to m at "id"
+      end
+      set fname to text.trim using (map_get_str using m, "filename", (map_get_str using m, "original_name", ("media-" joined with mid)))
+      set murl to map_get_str using m, "url", ""
+      set calt to text.trim using (map_get_str using m, "alt_text", (map_get_str using m, "alt", ""))
+      set is_dec to no
+      for each dk in ["decorative", "is_decorative", "isDecorative"]
+        if (has_map_key using m, dk) and (is_truthy_flag using (m at dk))
+          set is_dec to yes
+        end
+      end
+
+      if is_dec
+        set dec_cnt to dec_cnt plus 1
+        set item_rec to record {media_id: mid_val, filename: fname, url: murl, decorative: yes, is_decorative: yes, current_alt: "", proposed_alt: "", aria_hidden: "true", status: "decorative_preserved", needs_enrichment: no, reason: "Decorative image intentionally preserves empty alt=\"\" and aria-hidden=\"true\" per WCAG AA."}
+        set items_out to collections.append using items_out, item_rec
+        set prop_by_id to collections.put using prop_by_id, (text.from using mid_val), item_rec
+      otherwise
+        set is_fn to is_filename_alt_grab using calt
+        set alen to text.length using calt
+        if calt is "" or is_fn or (alen is less than 3) or (alen is greater than 125)
+          set need_cnt to need_cnt plus 1
+          set prop_alt to synthesize_alt_text_grab using m
+          set issue_k to "missing_alt_text"
+          set reason_k to "Image \"" joined with fname joined with "\" has empty alt text."
+          if is_fn
+            set issue_k to "filename_as_alt_text"
+            set reason_k to "Current alt text \"" joined with calt joined with "\" exposes a raw filename instead of descriptive content."
+          otherwise if calt is not ""
+            set issue_k to "alt_length_out_of_range"
+            set reason_k to "Alt text length violates 3-125 character guideline."
+          end
+          set item_rec2 to record {media_id: mid_val, filename: fname, url: murl, decorative: no, is_decorative: no, current_alt: calt, proposed_alt: prop_alt, status: "needs_approval", needs_enrichment: yes, approval_required: yes, issue: issue_k, reason: reason_k}
+          set items_out to collections.append using items_out, item_rec2
+          set prop_by_id to collections.put using prop_by_id, (text.from using mid_val), item_rec2
+        otherwise
+          set ok_cnt to ok_cnt plus 1
+          set item_rec3 to record {media_id: mid_val, filename: fname, url: murl, decorative: no, is_decorative: no, current_alt: calt, proposed_alt: calt, status: "ok", needs_enrichment: no}
+          set items_out to collections.append using items_out, item_rec3
+          set prop_by_id to collections.put using prop_by_id, (text.from using mid_val), item_rec3
+        end
+      end
+    end
+  end
+
+  set app_tok to nothing
+  if need_cnt is greater than 0
+    set app_tok to "altok_" joined with (crypto.random_urlsafe using 16)
+  end
+  set summary to record {total_scanned: (collections.length using items_out), needs_enrichment: need_cnt, decorative_preserved: dec_cnt, already_valid: ok_cnt}
+  give back record {ok: yes, schema_version: "0.4.0", read_only: yes, mutates_live_cms: no, approval_required: (need_cnt is greater than 0), approval_token: app_tok, summary: summary, items: items_out, proposals_by_id: prop_by_id}
+end
+
+make build_nightly_watch_digest_grab using snap, links_res, media_res
+  set miss_meta to 0
+  for each e in snap.entries
+    if (text.length using (text.trim using e.meta_description)) is less than 50
+      set miss_meta to miss_meta plus 1
+    end
+  end
+  set orp_c to links_res.summary.orphan_count
+  set loop_c to links_res.summary.redirect_loop_count
+  set chn_c to links_res.summary.redirect_chain_count
+  set brk_c to links_res.summary.broken_link_count
+  set med_c to media_res.summary.needs_enrichment
+
+  set penalty to (orp_c times 7) plus (loop_c times 15) plus (chn_c times 4) plus (brk_c times 10) plus (med_c times 6) plus (miss_meta times 4)
+  set score_val to math.clamp using (100 minus penalty), 0, 100
+  set grade_val to score_to_grade using score_val, ((score_val is at least 90) and (loop_c is 0) and (brk_c is 0))
+
+  set opps to []
+  if orp_c is greater than 0
+    set opps to collections.append using opps, record {id: "boost-orphan-links", category: "internal_linking", priority: "high", title: ("Connect " joined with (text.from using orp_c) joined with " orphan page(s) with internal links"), plain_english: ((text.from using orp_c) joined with " published route(s) have 0 incoming links. Adding contextual descriptive links transfers authority safely."), cta_label: "🚀 Let Groxy Boost This", action_endpoint: "/api/groxy/links/analyze", non_intrusive: yes}
+  end
+  if med_c is greater than 0
+    set opps to collections.append using opps, record {id: "boost-media-alt", category: "accessibility", priority: "high", title: ("Enrich " joined with (text.from using med_c) joined with " image alt attribute(s)"), plain_english: ((text.from using med_c) joined with " non-decorative asset(s) need descriptive alt text."), cta_label: "🚀 Let Groxy Boost This", action_endpoint: "/api/groxy/media/enrich-alt", non_intrusive: yes}
+  end
+  if (loop_c is greater than 0) or (brk_c is greater than 0) or (chn_c is greater than 0)
+    set prio_s to "medium"
+    if loop_c is greater than 0 or brk_c is greater than 0
+      set prio_s to "critical"
+    end
+    set opps to collections.append using opps, record {id: "boost-redirects-links", category: "technical_seo", priority: prio_s, title: ("Resolve " joined with (text.from using loop_c) joined with " 301 loop(s), " joined with (text.from using brk_c) joined with " broken link(s), " joined with (text.from using chn_c) joined with " chain(s)"), plain_english: "Repairing broken internal paths and cyclic 301 redirects protects crawl equity.", cta_label: "🚀 Let Groxy Boost This", action_endpoint: "/api/groxy/links/analyze", non_intrusive: yes}
+  end
+  if (miss_meta is greater than 0) or ((collections.length using snap.entries) is greater than 0)
+    set prio_m to "low"
+    if miss_meta is greater than 0
+      set prio_m to "medium"
+    end
+    set opps to collections.append using opps, record {id: "boost-schema-meta", category: "structured_data", priority: prio_m, title: ("Generate XSS-safe schema.org JSON-LD across " joined with (text.from using (collections.length using snap.entries)) joined with " indexed entries"), plain_english: "Add deterministic Article, Product (ADR-025c exact price), and FAQPage JSON-LD previews.", cta_label: "🚀 Let Groxy Boost This", action_endpoint: "/api/groxy/schema/generate", non_intrusive: yes}
+  end
+
+  set now_r to call dates.now_utc
+  set metrics_rec to record {indexed_entries: snap.counts.entries, orphan_pages: orp_c, redirect_loops: loop_c, redirect_chains: chn_c, broken_links: brk_c, generic_anchors: links_res.summary.generic_anchor_count, missing_or_filename_alt_media: med_c, decorative_media_preserved: media_res.summary.decorative_preserved, entries_needing_meta_description: miss_meta}
+
+  give back record {ok: yes, schema_version: "0.4.0", digest_name: "Morning Boost Report", generated_at: now_r.iso, notification_mode: "quiet_digest", popups: no, silent_edits: no, mutates_live_cms: no, site_name: snap.site_name, site_health_score: score_val, overall_grade: grade_val, metrics: metrics_rec, boost_opportunities: opps}
+end
+
+make build_portable_site_dna_grab using c, req_pack_id, req_builder_url
+  set snap to cache_get_opt using c, "site:context_snap"
+  if snap is nothing
+    set init_s to build_site_context_snap using {}
+    set snap to init_s.snapshot
+  end
+  set md_ctx to cache_get_opt using c, "site:context_md"
+  if md_ctx is nothing
+    set md_ctx to render_site_context_md using snap
+  end
+  set ds_raw to cache_get_opt using c, "site:design_system_md"
+  if ds_raw is nothing
+    set ds_raw to ""
+  end
+  if ds_raw is "" and req_builder_url is not ""
+    try
+      set dsr to http.get using (req_builder_url joined with "/api/design-system.md")
+      if dsr.ok
+        set ds_raw to dsr.body
+        call cache.set using c, "site:design_system_md", ds_raw, 3600000
+      end
+    catch derr
+      set ign_d to derr.message
+    end
+  end
+  set parsed_ds to parse_design_system_md using ds_raw
+
+  set packs_doc to call list_style_packs_doc
+  set active_sp to (packs_doc.style_packs) at 0
+  set pid to text.trim using req_pack_id
+  if pid is not ""
+    for each sp in packs_doc.style_packs
+      if sp.id is pid
+        set active_sp to sp
+      end
+    end
+  end
+
+  set digest to cache_get_opt using c, "site:watch_digest"
+  if digest is nothing
+    set lres to analyze_internal_links_grab using snap, 3
+    set mres to analyze_media_alt_grab using snap.media
+    set digest to build_nightly_watch_digest_grab using snap, lres, mres
+  end
+
+  set now_r to call dates.now_utc
+  set ds_out to record {raw_markdown: ds_raw, tokens_loaded: parsed_ds.tokens_loaded, reusable_classes_loaded: parsed_ds.reusable_classes_loaded, tokens: parsed_ds.token_map, reusable_classes: parsed_ds.registered_classes}
+  set sc_out to record {counts: snap.counts, products: snap.products, redirects: snap.redirects, markdown: md_ctx}
+
+  give back record {ok: yes, schema_version: "0.4.0", bundle_name: "groxy-site-dna-v0.4.0", exported_at: now_r.iso, read_only_snapshot: yes, compatible_consumers: ["gashboard", "grabman", "grex-builder", "grablab-cms"], site_name: snap.site_name, site_url: snap.site_url, active_style_pack: active_sp, design_system: ds_out, site_context: sc_out, nightly_watch_digest: digest, decimal_integrity_verified: snap.decimal_integrity_verified}
+end
+
+make render_site_dna_md_grab using dna
+  set lines to ["# Groxy Site DNA Export (" joined with dna.schema_version joined with ")", ""]
+  set lines to collections.append using lines, ("- **Site:** " joined with dna.site_name joined with " (" joined with dna.site_url joined with ")")
+  set lines to collections.append using lines, ("- **Active Style Pack:** `" joined with dna.active_style_pack.id joined with "` (" joined with dna.active_style_pack.label joined with ")")
+  set lines to collections.append using lines, ("- **Health Score:** " joined with (text.from using dna.nightly_watch_digest.site_health_score) joined with "/100 (Grade " joined with dna.nightly_watch_digest.overall_grade joined with ")")
+  set lines to collections.append using lines, ("- **Compatible Consumers:** " joined with (text.join using dna.compatible_consumers, ", "))
+  set lines to collections.append using lines, ""
+  set lines to collections.append using lines, "---"
+  set lines to collections.append using lines, ""
+  set lines to collections.append using lines, dna.site_context.markdown
+  if dna.design_system.raw_markdown is not ""
+    set lines to collections.append using lines, ""
+    set lines to collections.append using lines, "---"
+    set lines to collections.append using lines, ""
+    set lines to collections.append using lines, dna.design_system.raw_markdown
+  end
+  give back text.join using lines, "\n"
+end
+
 route "GET" "/_health"
-  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "0.3.0"}
+  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "0.4.0"}
 end
 
 route "GET" "/_ready"
@@ -2696,7 +4255,7 @@ route "GET" "/_ready"
     if rule_cnt is not 22
       give back server.json using 503, record {status: "not_ready", error: "Playbook rule count mismatch"}
     end
-    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "0.3.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt}
+    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "0.4.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt}
   catch err
     give back server.json using 503, record {status: "not_ready", error: err.message}
   end
@@ -2811,7 +4370,7 @@ route "POST" "/api/groxy/mcp/inspect" using req
       end
     end
 
-    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "0.3.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
+    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "0.4.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
   catch err
     give back server.json using 400, record {ok: no, error: err.message}
   end
@@ -2958,8 +4517,22 @@ route "POST" "/api/groxy/boost/approve" using req
   end
 end
 
-route "GET" "/api/groxy/style-packs"
-  set sp_doc to call list_style_packs_doc
+route "GET" "/api/groxy/style-packs" using req
+  set g_filt to ""
+  set i_filt to ""
+  try
+    if has_map_key using req.query, "goal"
+      set g_filt to text.from using (req.query at "goal")
+    otherwise if has_map_key using req.query, "conversion_goal"
+      set g_filt to text.from using (req.query at "conversion_goal")
+    end
+    if has_map_key using req.query, "industry"
+      set i_filt to text.from using (req.query at "industry")
+    end
+  catch qerr
+    set ign_q to qerr.message
+  end
+  set sp_doc to list_style_packs_filtered using g_filt, i_filt
   give back server.json using 200, sp_doc
 end
 
@@ -3204,4 +4777,365 @@ route "POST" "/api/groxy/generate-layout/apply" using req
   catch err
     give back server.json using 400, record {ok: no, error: err.message}
   end
+end
+
+# ---------------------------------------------------------------------------
+# Groxy AI v0.4.0 Routes — Site Context, Link Graph, JSON-LD, Media Alt & Digest
+# ---------------------------------------------------------------------------
+
+route "POST" "/api/groxy/site-context/sync" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set payload to server.parse_json using req
+    set raw_ctx to {}
+    if (has_map_key using payload, "site_context") and (is_record_value using (payload at "site_context"))
+      set raw_ctx to copy_to_map using (payload at "site_context")
+    otherwise
+      set raw_ctx to copy_to_map using payload
+    end
+
+    set cms_url to text.trim using (map_get_str using payload, "grablab_url", (map_get_str using payload, "cms_url", (resolve_env_opt using "GROXY_CMS_URL")))
+    set cms_tok to text.trim using (map_get_str using payload, "mcp_token", (map_get_str using payload, "cms_token", (resolve_env_opt using "GROXY_CMS_MCP_TOKEN")))
+    set builder_url to text.trim using (map_get_str using payload, "builder_url", (resolve_env_opt using "GROXY_BUILDER_URL"))
+
+    if cms_url is not "" and (not (has_map_key using raw_ctx, "entries"))
+      set qres to call_cms_mcp_tool using cms_url, cms_tok, "query_entries", {"per_page": 100, "status": "all"}, 101
+      if qres.ok and (has_map_key using qres.data, "items")
+        set raw_ctx to collections.put using raw_ctx, "entries", (qres.data at "items")
+      end
+    end
+    if cms_url is not "" and (not (has_map_key using raw_ctx, "menus"))
+      set mres to call_cms_mcp_tool using cms_url, cms_tok, "list_menus", {}, 102
+      if mres.ok and (has_map_key using mres.data, "menus")
+        set raw_ctx to collections.put using raw_ctx, "menus", (mres.data at "menus")
+      end
+    end
+    if cms_url is not "" and (not (has_map_key using raw_ctx, "media"))
+      set med_res to call_cms_mcp_tool using cms_url, cms_tok, "list_media", {"limit": 100}, 103
+      if med_res.ok and (has_map_key using med_res.data, "media")
+        set raw_ctx to collections.put using raw_ctx, "media", (med_res.data at "media")
+      end
+    end
+    if builder_url is not ""
+      try
+        set dsr to http.get using (builder_url joined with "/api/design-system.md")
+        if dsr.ok
+          call cache.set using groxy_cache, "site:design_system_md", dsr.body, 3600000
+        end
+      catch d_err
+        set ign_de to d_err.message
+      end
+    end
+
+    set built to build_site_context_snap using raw_ctx
+    if not built.ok
+      give back server.json using built.status, record {ok: no, error: built.error}
+    end
+    set snap to built.snapshot
+    set md_text to render_site_context_md using snap
+    call cache.set using groxy_cache, "site:context_snap", snap, 3600000
+    call cache.set using groxy_cache, "site:context_md", md_text, 3600000
+    call cache.set using groxy_cache, "site:media_items", snap.media, 3600000
+
+    set disk_ok to no
+    try
+      call files.write_text using "storage/SITE-CONTEXT.md", md_text
+      set disk_ok to yes
+    catch w_err
+      set ign_w to w_err.message
+    end
+
+    give back server.json using 200, record {ok: yes, schema_version: "0.4.0", read_only: yes, mutates_live_cms: no, persisted_to_cache: yes, persisted_to_disk: disk_ok, counts: snap.counts, decimal_integrity_verified: yes, snapshot: snap, markdown: md_text}
+  catch err
+    give back server.json using 400, record {ok: no, error: err.message}
+  end
+end
+
+route "GET" "/api/groxy/site-context.md" using req
+  set md_text to cache_get_opt using groxy_cache, "site:context_md"
+  if md_text is nothing
+    try
+      if files.exists using "storage/SITE-CONTEXT.md"
+        set md_text to files.read_text using "storage/SITE-CONTEXT.md"
+      end
+    catch r_err
+      set ign_r to r_err.message
+    end
+  end
+  if md_text is nothing
+    set empty_s to build_site_context_snap using {}
+    set md_text to render_site_context_md using empty_s.snapshot
+  end
+  give back server.response using record {status: 200, headers: {"Content-Type": "text/markdown; charset=utf-8", "Cache-Control": "no-store"}, body: md_text}
+end
+
+route "POST" "/api/groxy/links/analyze" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set payload to server.parse_json using req
+    set snap to nothing
+    if (has_map_key using payload, "site_context") or (has_map_key using payload, "entries")
+      set built to build_site_context_snap using payload
+      if not built.ok
+        give back server.json using built.status, record {ok: no, error: built.error}
+      end
+      set snap to built.snapshot
+    otherwise
+      set snap to cache_get_opt using groxy_cache, "site:context_snap"
+      if snap is nothing
+        set init_s to build_site_context_snap using {}
+        set snap to init_s.snapshot
+      end
+    end
+    set max_per to 3
+    if (has_map_key using payload, "max_suggestions_per_page") and ((payload at "max_suggestions_per_page") is not nothing)
+      set max_per to math.clamp using (text.to_integer using (text.from using (payload at "max_suggestions_per_page"))), 1, 10
+    end
+    set link_report to analyze_internal_links_grab using snap, max_per
+    give back server.json using 200, link_report
+  catch err
+    give back server.json using 400, record {ok: no, error: err.message}
+  end
+end
+
+route "POST" "/api/groxy/schema/generate" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set payload to server.parse_json using req
+    set gen to generate_schema_org_grab using payload
+    if not gen.ok
+      give back server.json using gen.status, record {ok: no, error: gen.error}
+    end
+    give back server.json using 200, gen.result
+  catch err
+    give back server.json using 400, record {ok: no, error: err.message}
+  end
+end
+
+route "POST" "/api/groxy/media/enrich-alt" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set payload to server.parse_json using req
+    set med_list to []
+    if (has_map_key using payload, "media") and (is_list_value using (payload at "media"))
+      set med_list to payload at "media"
+    otherwise
+      set cms_url to text.trim using (map_get_str using payload, "grablab_url", (map_get_str using payload, "cms_url", (resolve_env_opt using "GROXY_CMS_URL")))
+      set cms_tok to text.trim using (map_get_str using payload, "mcp_token", (map_get_str using payload, "cms_token", (resolve_env_opt using "GROXY_CMS_MCP_TOKEN")))
+      if cms_url is not ""
+        set lm to call_cms_mcp_tool using cms_url, cms_tok, "list_media", {"limit": 100}, 104
+        if lm.ok and (has_map_key using lm.data, "media")
+          set med_list to lm.data at "media"
+        end
+      end
+      if (collections.length using med_list) is 0
+        set cached_m to cache_get_opt using groxy_cache, "site:media_items"
+        if cached_m is not nothing
+          set med_list to cached_m
+        end
+      end
+    end
+
+    set plan to analyze_media_alt_grab using med_list
+    if plan.approval_token is not nothing
+      set tok_rec to {"used": no, "proposals_by_id": plan.proposals_by_id, "media_list": med_list}
+      call cache.set using groxy_cache, ("altok:" joined with plan.approval_token), tok_rec, 3600000
+    end
+    give back server.json using 200, record {ok: yes, schema_version: "0.4.0", read_only: yes, mutates_live_cms: no, approval_required: plan.approval_required, approval_token: plan.approval_token, summary: plan.summary, items: plan.items}
+  catch err
+    give back server.json using 400, record {ok: no, error: err.message}
+  end
+end
+
+route "POST" "/api/groxy/media/enrich-alt/approve" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set payload to server.parse_json using req
+    set tok to text.trim using (map_get_str using payload, "approval_token", "")
+    if tok is ""
+      give back server.json using 403, record {ok: no, error: "approval_token is required"}
+    end
+    set cache_k to "altok:" joined with tok
+    set cached_rec to cache_get_opt using groxy_cache, cache_k
+    if cached_rec is nothing
+      give back server.json using 403, record {ok: no, error: "Invalid or expired approval_token"}
+    end
+    if is_truthy_flag using (cached_rec at "used")
+      give back server.json using 409, record {ok: no, error: "approval_token has already been consumed"}
+    end
+
+    set updates to []
+    if (has_map_key using payload, "updates") and (is_list_value using (payload at "updates"))
+      set updates to payload at "updates"
+    otherwise if (has_map_key using payload, "items") and (is_list_value using (payload at "items"))
+      set updates to payload at "items"
+    end
+    if (collections.length using updates) is 0
+      give back server.json using 400, record {ok: no, error: "At least one approved media item update is required"}
+    end
+
+    set props_map to cached_rec at "proposals_by_id"
+    set approved_out to []
+    set pres_dec to 0
+    set approved_alt_map to {}
+    for each u in updates
+      if is_record_value using u
+        set uid to text.from using (map_get_str using u, "media_id", (map_get_str using u, "id", ""))
+        if has_map_key using props_map, uid
+          set prop_i to props_map at uid
+          if is_truthy_flag using prop_i.decorative
+            set pres_dec to pres_dec plus 1
+            set approved_out to collections.append using approved_out, record {media_id: prop_i.media_id, filename: prop_i.filename, decorative: yes, alt_text: "", aria_hidden: "true", status: "decorative_preserved"}
+          otherwise
+            set falt to text.trim using (map_get_str using u, "alt_text", (map_get_str using u, "proposed_alt", prop_i.proposed_alt))
+            set flen to text.length using falt
+            if (flen is less than 3) or (flen is greater than 125) or (is_filename_alt_grab using falt)
+              give back server.json using 422, record {ok: no, error: ("Rejected invalid alt_text for \"" joined with prop_i.filename joined with "\" (must be descriptive, 3-125 chars).")}
+            end
+            set approved_out to collections.append using approved_out, record {media_id: prop_i.media_id, filename: prop_i.filename, decorative: no, alt_text: falt, status: "approved"}
+            set approved_alt_map to collections.put using approved_alt_map, uid, falt
+          end
+        end
+      end
+    end
+
+    set consumed to copy_to_map using cached_rec
+    set consumed to collections.put using consumed, "used", yes
+    call cache.set using groxy_cache, cache_k, consumed, 3600000
+
+    set cms_synced to no
+    set cms_url to text.trim using (map_get_str using payload, "grablab_url", (map_get_str using payload, "cms_url", ""))
+    set cms_cookie to text.trim using (map_get_str using payload, "grablab_cookie", "")
+    set cms_csrf to text.trim using (map_get_str using payload, "grablab_csrf", "")
+    if cms_url is not "" and cms_cookie is not "" and cms_csrf is not ""
+      for each app_i in approved_out
+        if not app_i.decorative
+          try
+            set phdrs to {"Content-Type": "application/json", "Cookie": cms_cookie, "X-CSRF-Token": cms_csrf}
+            set pbody to json.stringify using {"alt_text": app_i.alt_text}
+            set presp to http.patch using (cms_url joined with "/api/admin/media/" joined with (text.from using app_i.media_id)), pbody, record {headers: phdrs}
+            if presp.ok
+              set cms_synced to yes
+            end
+          catch perr
+            set ign_p to perr.message
+          end
+        end
+      end
+    end
+
+    set cached_media to cache_get_opt using groxy_cache, "site:media_items"
+    if cached_media is not nothing and (is_list_value using cached_media)
+      set next_media to []
+      for each cm in cached_media
+        if is_record_value using cm
+          set cm_id to text.from using (map_get_str using cm, "id", (map_get_str using cm, "media_id", (map_get_str using cm, "filename", "")))
+          if has_map_key using approved_alt_map, cm_id
+            set cm_copy to copy_to_map using cm
+            set cm_copy to collections.put using cm_copy, "alt_text", (approved_alt_map at cm_id)
+            set next_media to collections.append using next_media, cm_copy
+          otherwise
+            set next_media to collections.append using next_media, cm
+          end
+        end
+      end
+      call cache.set using groxy_cache, "site:media_items", next_media, 3600000
+    end
+
+    set app_only_cnt to (collections.length using approved_out) minus pres_dec
+    give back server.json using 200, record {ok: yes, status: 200, approval_token: tok, single_use_consumed: yes, cms_synced: cms_synced, approved_count: app_only_cnt, preserved_decorative_count: pres_dec, approved_items: approved_out}
+  catch err
+    give back server.json using 400, record {ok: no, error: err.message}
+  end
+end
+
+route "POST" "/api/groxy/watch/run" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set payload to server.parse_json using req
+    set snap to nothing
+    if (has_map_key using payload, "site_context") or (has_map_key using payload, "entries")
+      set built to build_site_context_snap using payload
+      if not built.ok
+        give back server.json using built.status, record {ok: no, error: built.error}
+      end
+      set snap to built.snapshot
+    otherwise
+      set snap to cache_get_opt using groxy_cache, "site:context_snap"
+      if snap is nothing
+        set init_s to build_site_context_snap using {}
+        set snap to init_s.snapshot
+      end
+    end
+
+    set med_in to snap.media
+    if (has_map_key using payload, "media") and (is_list_value using (payload at "media"))
+      set med_in to payload at "media"
+    otherwise
+      set cm_cached to cache_get_opt using groxy_cache, "site:media_items"
+      if cm_cached is not nothing
+        set med_in to cm_cached
+      end
+    end
+
+    set links_r to analyze_internal_links_grab using snap, 3
+    set media_r to analyze_media_alt_grab using med_in
+    set digest to build_nightly_watch_digest_grab using snap, links_r, media_r
+    call cache.set using groxy_cache, "site:watch_digest", digest, 3600000
+    give back server.json using 200, digest
+  catch err
+    give back server.json using 400, record {ok: no, error: err.message}
+  end
+end
+
+route "GET" "/api/groxy/watch/digest" using req
+  set digest to cache_get_opt using groxy_cache, "site:watch_digest"
+  if digest is nothing
+    set snap to cache_get_opt using groxy_cache, "site:context_snap"
+    if snap is nothing
+      set init_s to build_site_context_snap using {}
+      set snap to init_s.snapshot
+    end
+    set links_r to analyze_internal_links_grab using snap, 3
+    set media_r to analyze_media_alt_grab using snap.media
+    set digest to build_nightly_watch_digest_grab using snap, links_r, media_r
+  end
+  give back server.json using 200, digest
+end
+
+route "GET" "/api/groxy/site-dna/export" using req
+  set fmt to "json"
+  set sp_id to ""
+  set b_url to resolve_env_opt using "GROXY_BUILDER_URL"
+  try
+    if has_map_key using req.query, "format"
+      set fmt to text.lower using (text.trim using (text.from using (req.query at "format")))
+    end
+    if has_map_key using req.query, "style_pack"
+      set sp_id to text.trim using (text.from using (req.query at "style_pack"))
+    end
+    if has_map_key using req.query, "builder_url"
+      set b_url to text.trim using (text.from using (req.query at "builder_url"))
+    end
+  catch qerr
+    set ign_qe to qerr.message
+  end
+  set dna to build_portable_site_dna_grab using groxy_cache, sp_id, b_url
+  if fmt is "markdown" or fmt is "md"
+    set dna_md to render_site_dna_md_grab using dna
+    give back server.response using record {status: 200, headers: {"Content-Type": "text/markdown; charset=utf-8", "Cache-Control": "no-store"}, body: dna_md}
+  end
+  give back server.json using 200, dna
 end

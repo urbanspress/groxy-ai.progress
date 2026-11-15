@@ -1,5 +1,6 @@
 /**
- * Groxy AI v0.3.0 — Zero-<div> Visual Generator Studio, Pre-Publish Grade Gate & Boost Diff UI.
+ * Groxy AI v0.4.0 — Zero-<div> Visual Generator Studio, Site-Wide Intelligence,
+ * Schema.org JSON-LD, Media alt-Text Enrichment, Morning Boost Digest & Diff UI.
  * Built strictly with Grex JS v1.0.0 signals and semantic HTML5 elements.
  * Zero innerHTML writes, zero eval(), zero wrapper <div> elements.
  */
@@ -21,6 +22,16 @@ import {
   LAYOUT_BLUEPRINTS,
   listStylePacks,
 } from "./generator.js";
+import {
+  analyzeInternalLinkingGraph,
+  analyzeMediaAltText,
+  approveMediaAltEnrichment,
+  buildNightlyWatchDigest,
+  buildPortableSiteDna,
+  buildSiteContextSnapshot,
+  generateSchemaOrgJsonLd,
+  renderSiteContextMarkdown,
+} from "./site-context.js";
 
 export const SAMPLE_AUDIT_PRESETS = Object.freeze({
   clean: {
@@ -175,6 +186,139 @@ export const SAMPLE_AUDIT_PRESETS = Object.freeze({
   },
 });
 
+export const SAMPLE_SITE_CONTEXT = Object.freeze({
+  site_name: "Urban Press Studio",
+  site_url: "https://studio.urbanpress.example",
+  active_theme: "grex-builder",
+  categories: ["Engineering", "Design Systems", "Commerce"],
+  tags: ["grab", "grex-js", "wcag-aa", "seo"],
+  menus: [
+    {
+      slug: "main-nav",
+      location: "primary",
+      items: [
+        { label: "Home", url: "/" },
+        { label: "Semantic Themes Guide", url: "/blog/semantic-themes-guide" },
+        { label: "Pro Studio Plan", url: "/products/pro-studio-plan" },
+      ],
+    },
+    {
+      slug: "footer-nav",
+      location: "footer",
+      items: [{ label: "Docs & Guides", url: "/docs" }],
+    },
+    {
+      slug: "mobile-nav",
+      location: "mobile",
+      items: [{ label: "Home", url: "/" }],
+    },
+  ],
+  redirects: [
+    { old_path: "/old-seo-guide", target_path: "/v2-seo-guide", status_code: 301 },
+    { old_path: "/v2-seo-guide", target_path: "/blog/semantic-themes-guide", status_code: 301 },
+    { old_path: "/loop-alpha", target_path: "/loop-beta", status_code: 301 },
+    { old_path: "/loop-beta", target_path: "/loop-alpha", status_code: 301 },
+  ],
+  entries: [
+    {
+      id: 1,
+      title: "Semantic Web Architecture Hub",
+      slug: "home",
+      full_path: "/",
+      content_type: "page",
+      status: "published",
+      categories: ["Engineering"],
+      tags: ["grab", "grex-js", "seo"],
+      excerpt: "Explore semantic themes, internal linking, and fast GRAB rendering.",
+      body_html:
+        '<p>Start with our <a href="/blog/semantic-themes-guide">Semantic Themes Guide</a> and review <a href="/products/pro-studio-plan">Pro Studio Pricing</a>.</p>',
+    },
+    {
+      id: 2,
+      title: "Semantic Themes Guide",
+      slug: "semantic-themes-guide",
+      full_path: "/blog/semantic-themes-guide",
+      content_type: "post",
+      status: "published",
+      categories: ["Design Systems"],
+      tags: ["grex-js", "wcag-aa", "seo"],
+      meta_description:
+        "Learn how Grex JS v1.0.0 builds WCAG AA semantic pages with zero wrapper divs and deterministic SEO audits.",
+      body_html:
+        '<p>Compare <a href="/docs">documentation hubs</a> or <a href="/missing-route">check missing page</a>.</p>',
+    },
+    {
+      id: 3,
+      title: "Pro Studio Plan",
+      slug: "pro-studio-plan",
+      full_path: "/products/pro-studio-plan",
+      content_type: "product",
+      status: "published",
+      categories: ["Commerce"],
+      tags: ["grab", "seo"],
+      custom_fields: { price: "149.95", currency: "USD", sku: "GRX-STUDIO-149" },
+      excerpt: "Pro Studio Plan with ADR-025c exact pricing and automatic Nightly Watch reports.",
+      body_html: '<p>Includes full <a href="/blog/semantic-themes-guide">semantic theme documentation</a>.</p>',
+    },
+    {
+      id: 4,
+      title: "Documentation Hub",
+      slug: "docs",
+      full_path: "/docs",
+      content_type: "page",
+      status: "published",
+      categories: ["Engineering"],
+      tags: ["grab", "wcag-aa"],
+      excerpt: "Complete GRAB v1.1.0 and Grex JS v1.0.0 reference guides.",
+      body_html: '<p>See also <a href="/">home studio overview</a>.</p>',
+    },
+    {
+      id: 5,
+      title: "Internal Linking & WCAG AA Audit Playbook",
+      slug: "internal-linking-audit-playbook",
+      full_path: "/blog/internal-linking-audit-playbook",
+      content_type: "post",
+      status: "published",
+      categories: ["Design Systems"],
+      tags: ["wcag-aa", "seo"],
+      excerpt: "Contextual internal linking playbook for orphan semantic themes pages.",
+      body_html: "<p>Orphan playbook awaiting its first internal link.</p>",
+    },
+  ],
+  media: [
+    {
+      id: 201,
+      filename: "IMG_1234.jpg",
+      original_name: "IMG_1234.jpg",
+      url: "/media/201/IMG_1234.jpg",
+      mime_type: "image/jpeg",
+      alt_text: "IMG_1234.jpg",
+      is_decorative: false,
+      context_entry_title: "Semantic Themes Guide Hero",
+    },
+    {
+      id: 202,
+      filename: "studio-banner-missing.webp",
+      original_name: "studio-banner-missing.webp",
+      url: "/media/202/studio-banner-missing.webp",
+      mime_type: "image/webp",
+      alt_text: "",
+      is_decorative: false,
+      caption: "Clean semantic dashboard displaying light and dark WCAG AA contrast metrics",
+    },
+    {
+      id: 203,
+      filename: "ambient-wave-divider.svg",
+      original_name: "ambient-wave-divider.svg",
+      url: "/media/203/ambient-wave-divider.svg",
+      mime_type: "image/svg+xml",
+      alt_text: "",
+      decorative: true,
+      is_decorative: true,
+    },
+  ],
+});
+
 function createEl(doc, tag, attrs = {}, text = "") {
   if (String(tag).toLowerCase() === "div") {
     throw new Error("Wrapper <div> creation is strictly forbidden in Groxy AI UI.");
@@ -251,9 +395,35 @@ export function mountGroxyDashboard(options = {}) {
   const genProPriceSig = signal(DEFAULT_PRICING_TIERS[1].price);
   const genEntPriceSig = signal(DEFAULT_PRICING_TIERS[2].price);
   const genCollectionSig = signal("posts");
+  const genGoalFilterSig = signal("");
+  const genIndustryFilterSig = signal("");
   const genCandidateSig = signal(null);
   const genNoticeSig = signal("");
   const genErrorSig = signal("");
+  const siteSnapshotSig = signal(buildSiteContextSnapshot(SAMPLE_SITE_CONTEXT));
+  const siteContextMdSig = signal(renderSiteContextMarkdown(buildSiteContextSnapshot(SAMPLE_SITE_CONTEXT)));
+  const siteDnaSig = signal(null);
+  const linkGraphSig = signal(analyzeInternalLinkingGraph({ site_context: SAMPLE_SITE_CONTEXT }));
+  const schemaTypeSig = signal("Product");
+  const schemaOutputSig = signal(
+    generateSchemaOrgJsonLd({
+      entry: SAMPLE_SITE_CONTEXT.entries[2],
+      site_context: SAMPLE_SITE_CONTEXT,
+      schema_type: "Product",
+    })
+  );
+  const schemaErrorSig = signal("");
+  const mediaTokenStore = new Map();
+  const mediaPlanSig = signal(analyzeMediaAltText({ media: SAMPLE_SITE_CONTEXT.media }, mediaTokenStore));
+  const mediaSelectedIdsSig = signal(
+    new Set(
+      analyzeMediaAltText({ media: SAMPLE_SITE_CONTEXT.media })
+        .items.filter((i) => i.needs_enrichment)
+        .map((i) => String(i.media_id))
+    )
+  );
+  const mediaApprovalResultSig = signal(null);
+  const watchDigestSig = signal(buildNightlyWatchDigest({ site_context: SAMPLE_SITE_CONTEXT }));
   const mcpStatusSig = signal({
     loading: false,
     summary: "Click Inspect MCP Bridge to verify live GrabLab CMS, Grex Theme Builder, and GRAB CLI capabilities.",
@@ -754,6 +924,13 @@ export function mountGroxyDashboard(options = {}) {
   const packMeta = listStylePacks();
   const genForm = createEl(doc, "form", { id: "groxy-generator-form" });
 
+  const allGoals = Array.from(
+    new Set(packMeta.style_packs.flatMap((s) => s.conversion_goals || []))
+  ).sort();
+  const allIndustries = Array.from(
+    new Set(packMeta.style_packs.flatMap((s) => s.industries || []))
+  ).sort();
+
   const genGridTop = createEl(doc, "section", { class: "groxy-grid-3", "aria-label": "Generator Blueprint Settings" });
 
   const addSelectField = (parent, id, labelText, opts, sig) => {
@@ -783,6 +960,23 @@ export function mountGroxyDashboard(options = {}) {
     return inp;
   };
 
+  const genFilterRow = createEl(doc, "section", { class: "groxy-grid-2", "aria-label": "Industry and Goal Style Pack Filters" });
+  addSelectField(
+    genFilterRow,
+    "groxy-gen-goal-filter",
+    "Filter Style Packs by Conversion Goal",
+    [{ value: "", label: "All Conversion Goals (8 Packs)" }, ...allGoals.map((g) => ({ value: g, label: g }))],
+    genGoalFilterSig
+  );
+  addSelectField(
+    genFilterRow,
+    "groxy-gen-industry-filter",
+    "Filter Style Packs by Industry",
+    [{ value: "", label: "All Industries" }, ...allIndustries.map((ind) => ({ value: ind, label: ind }))],
+    genIndustryFilterSig
+  );
+  genForm.appendChild(genFilterRow);
+
   addSelectField(
     genGridTop,
     "groxy-gen-blueprint",
@@ -790,7 +984,7 @@ export function mountGroxyDashboard(options = {}) {
     LAYOUT_BLUEPRINTS.map((b) => ({ value: b.id, label: b.label })),
     genBlueprintSig
   );
-  addSelectField(
+  const stylePackSel = addSelectField(
     genGridTop,
     "groxy-gen-style-pack",
     "Design Style Pack",
@@ -811,6 +1005,35 @@ export function mountGroxyDashboard(options = {}) {
     genSlotSig
   );
   genForm.appendChild(genGridTop);
+
+  const packMetaLine = createEl(doc, "p", { id: "groxy-gen-pack-meta", class: "groxy-muted" }, "");
+  genForm.appendChild(packMetaLine);
+
+  const disposePackFilterEffect = effect(() => {
+    const goal = genGoalFilterSig.get();
+    const industry = genIndustryFilterSig.get();
+    const filtered = listStylePacks({ goal, industry }).style_packs;
+    const effectiveList = filtered.length > 0 ? filtered : packMeta.style_packs;
+    clearChildren(stylePackSel);
+    const curPackId = genStylePackSig.peek();
+    let hasCurrent = false;
+    for (const sp of effectiveList) {
+      const optEl = createEl(doc, "option", { value: sp.id }, sp.label);
+      if (sp.id === curPackId) {
+        optEl.setAttribute("selected", "selected");
+        hasCurrent = true;
+      }
+      stylePackSel.appendChild(optEl);
+    }
+    const chosenId = hasCurrent ? curPackId : effectiveList[0].id;
+    if (!hasCurrent) genStylePackSig.set(chosenId);
+    stylePackSel.value = chosenId;
+    const activeInfo = effectiveList.find((p) => p.id === genStylePackSig.get()) || effectiveList[0];
+    setSafeText(
+      packMetaLine,
+      `${activeInfo.label} (${effectiveList.length}/${packMeta.style_packs.length} packs shown) — Goals: ${activeInfo.conversion_goals.join(", ")} | Industries: ${activeInfo.industries.join(", ")} | WCAG AA Contrast Min: ${activeInfo.contrast_report.min_ratio}:1`
+    );
+  });
 
   const genGridMeta = createEl(doc, "section", { class: "groxy-grid-2", "aria-label": "Topic and Audience Inputs" });
   addTextField(genGridMeta, "groxy-gen-keyword", "Focus Keyword", genKeywordSig);
@@ -1054,7 +1277,306 @@ export function mountGroxyDashboard(options = {}) {
     return ul;
   }
 
-  // 7. MCP Bridge Diagnostic Card
+  // 7. Site-Wide Context Snapshot & Portable Site DNA Card (v0.4.0)
+  async function postOrFallback(endpoint, payload, fallbackFn) {
+    if (fetchFn) {
+      try {
+        const res = await fetchFn(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": csrfToken || "",
+          },
+          body: JSON.stringify(payload || {}),
+        });
+        if (res && res.ok) {
+          return await res.json();
+        }
+        if (res && (res.status === 422 || res.status === 403 || res.status === 409)) {
+          const errDoc = await res.json().catch(() => ({}));
+          return { ok: false, status: res.status, error: errDoc.error || `HTTP ${res.status}` };
+        }
+      } catch {
+        // Fallback cleanly in offline unit DOM tests
+      }
+    }
+    return fallbackFn();
+  }
+
+  async function syncSiteContext() {
+    const res = await postOrFallback("/api/groxy/site-context/sync", { site_context: SAMPLE_SITE_CONTEXT }, () => {
+      const snap = buildSiteContextSnapshot(SAMPLE_SITE_CONTEXT);
+      return { ok: true, snapshot: snap, markdown: renderSiteContextMarkdown(snap) };
+    });
+    if (res && res.snapshot) {
+      siteSnapshotSig.set(res.snapshot);
+      siteContextMdSig.set(res.markdown || renderSiteContextMarkdown(res.snapshot));
+    }
+    return res;
+  }
+
+  async function exportSiteDna() {
+    if (fetchFn) {
+      try {
+        const res = await fetchFn(
+          `/api/groxy/site-dna/export?style_pack=${encodeURIComponent(genStylePackSig.peek())}`
+        );
+        if (res && res.ok) {
+          const dna = await res.json();
+          siteDnaSig.set(dna);
+          return dna;
+        }
+      } catch {
+        // Offline fallback
+      }
+    }
+    const dna = buildPortableSiteDna({
+      snapshot: siteSnapshotSig.peek(),
+      site_context_md: siteContextMdSig.peek(),
+      style_pack: genStylePackSig.peek(),
+      nightly_watch_digest: watchDigestSig.peek(),
+    });
+    siteDnaSig.set(dna);
+    return dna;
+  }
+
+  async function analyzeLinks() {
+    const res = await postOrFallback(
+      "/api/groxy/links/analyze",
+      { site_context: SAMPLE_SITE_CONTEXT },
+      () => analyzeInternalLinkingGraph({ snapshot: siteSnapshotSig.peek() })
+    );
+    if (res && res.summary) {
+      linkGraphSig.set(res);
+    }
+    return res;
+  }
+
+  async function generateSchemaPreview() {
+    schemaErrorSig.set("");
+    const selectedType = schemaTypeSig.peek();
+    const curPayload = buildCurrentPayload();
+    const priceStr = String(priceSig.peek() ?? "").trim();
+    const reqBody = {
+      schema_type: selectedType,
+      site_name: siteSnapshotSig.peek()?.site_name || "Urban Press Studio",
+      site_url: siteSnapshotSig.peek()?.site_url || "https://studio.urbanpress.example",
+      entry: {
+        ...curPayload.entry,
+        full_path: `/${curPayload.entry.slug || "entry"}`,
+        custom_fields: {
+          ...(curPayload.entry.custom_fields || {}),
+          price: priceStr || "49.99",
+          currency: "USD",
+          sku: curPayload.entry.custom_fields?.sku || "GRX-SKU-01",
+        },
+        grex_layout: curPayload.grex_layout,
+      },
+      include_breadcrumbs: true,
+    };
+    const res = await postOrFallback("/api/groxy/schema/generate", reqBody, () => {
+      try {
+        return generateSchemaOrgJsonLd(reqBody);
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    });
+    if (res && res.ok === false) {
+      schemaErrorSig.set(res.error || "Schema generation rejected.");
+      return res;
+    }
+    schemaOutputSig.set(res);
+    return res;
+  }
+
+  async function scanMediaAlt() {
+    mediaApprovalResultSig.set(null);
+    const res = await postOrFallback(
+      "/api/groxy/media/enrich-alt",
+      { media: SAMPLE_SITE_CONTEXT.media },
+      () => analyzeMediaAltText({ media: SAMPLE_SITE_CONTEXT.media }, mediaTokenStore)
+    );
+    if (res && Array.isArray(res.items)) {
+      mediaPlanSig.set(res);
+      mediaSelectedIdsSig.set(new Set(res.items.filter((i) => i.needs_enrichment).map((i) => String(i.media_id))));
+    }
+    return res;
+  }
+
+  async function approveSelectedMediaAlt() {
+    const plan = mediaPlanSig.peek();
+    const selIds = mediaSelectedIdsSig.peek();
+    if (!plan || !plan.approval_token) {
+      return { ok: false, error: "No pending alt-text enrichment token." };
+    }
+    const updates = (plan.items || [])
+      .filter((it) => selIds.has(String(it.media_id)) && !it.decorative)
+      .map((it) => ({ media_id: it.media_id, alt_text: it.proposed_alt }));
+
+    const res = await postOrFallback(
+      "/api/groxy/media/enrich-alt/approve",
+      { approval_token: plan.approval_token, updates },
+      () => approveMediaAltEnrichment({ approval_token: plan.approval_token, updates }, mediaTokenStore)
+    );
+    mediaApprovalResultSig.set(res);
+    return res;
+  }
+
+  async function runNightlyWatch() {
+    const res = await postOrFallback(
+      "/api/groxy/watch/run",
+      { site_context: SAMPLE_SITE_CONTEXT, media: SAMPLE_SITE_CONTEXT.media },
+      () => buildNightlyWatchDigest({ snapshot: siteSnapshotSig.peek(), media: SAMPLE_SITE_CONTEXT.media })
+    );
+    if (res && res.digest_name) {
+      watchDigestSig.set(res);
+    }
+    return res;
+  }
+
+  const siteContextCard = createEl(doc, "section", {
+    id: "groxy-site-context-panel",
+    class: "groxy-card",
+    "aria-label": "Live Site Context and Portable Site DNA",
+  });
+  siteContextCard.appendChild(createEl(doc, "h2", {}, "Live SITE-CONTEXT.md & Portable Site DNA"));
+  siteContextCard.appendChild(
+    createEl(
+      doc,
+      "p",
+      { class: "groxy-muted" },
+      "Read-only background map of entries, taxonomies, ADR-025c exact prices, navigation menus, and slug_history 301 redirects for Gashboard and grabman."
+    )
+  );
+  const ctxBtns = createEl(doc, "p", { class: "groxy-actions" });
+  const syncCtxBtn = createEl(
+    doc,
+    "button",
+    { id: "groxy-sync-context-btn", type: "button", class: "groxy-btn" },
+    "🔄 Sync Live Site Context"
+  );
+  const exportDnaBtn = createEl(
+    doc,
+    "button",
+    { id: "groxy-export-dna-btn", type: "button", class: "groxy-btn groxy-btn-secondary" },
+    "📦 Export Portable Site DNA"
+  );
+  syncCtxBtn.addEventListener("click", () => void syncSiteContext());
+  exportDnaBtn.addEventListener("click", () => void exportSiteDna());
+  ctxBtns.appendChild(syncCtxBtn);
+  ctxBtns.appendChild(exportDnaBtn);
+  siteContextCard.appendChild(ctxBtns);
+  const siteCtxSummaryOut = createEl(doc, "output", { id: "groxy-site-context-summary", "aria-live": "polite" });
+  const siteCtxPre = createEl(doc, "pre", { id: "groxy-site-context-preview", class: "groxy-code-preview" });
+  const siteDnaPre = createEl(doc, "pre", { id: "groxy-site-dna-preview", class: "groxy-code-preview" });
+  siteContextCard.appendChild(siteCtxSummaryOut);
+  siteContextCard.appendChild(createEl(doc, "h3", {}, "Compact SITE-CONTEXT.md Snapshot"));
+  siteContextCard.appendChild(siteCtxPre);
+  siteContextCard.appendChild(createEl(doc, "h3", {}, "Portable Site DNA Output"));
+  siteContextCard.appendChild(siteDnaPre);
+  root.appendChild(siteContextCard);
+
+  const linksCard = createEl(doc, "section", {
+    id: "groxy-links-panel",
+    class: "groxy-card",
+    "aria-label": "Site-Wide Internal Linking Graph",
+  });
+  linksCard.appendChild(createEl(doc, "h2", {}, "Site-Wide Internal Linking Graph (Read-Only)"));
+  const analyzeLinksBtn = createEl(
+    doc,
+    "button",
+    { id: "groxy-analyze-links-btn", type: "button", class: "groxy-btn" },
+    "🕸️ Analyze Internal Links Graph"
+  );
+  analyzeLinksBtn.addEventListener("click", () => void analyzeLinks());
+  const linksBody = createEl(doc, "section", { id: "groxy-links-body", "aria-label": "Internal Link Analysis Results" });
+  linksCard.appendChild(createEl(doc, "p", { class: "groxy-actions" })).appendChild(analyzeLinksBtn);
+  linksCard.appendChild(linksBody);
+  root.appendChild(linksCard);
+
+  const schemaCard = createEl(doc, "section", {
+    id: "groxy-schema-panel",
+    class: "groxy-card",
+    "aria-label": "Deterministic Schema.org JSON-LD Previewer",
+  });
+  schemaCard.appendChild(createEl(doc, "h2", {}, "Deterministic Schema.org JSON-LD Previewer"));
+  const schemaControls = createEl(doc, "section", { class: "groxy-grid-2", "aria-label": "Schema.org Options" });
+  const schemaField = createEl(doc, "p", { class: "groxy-field" });
+  schemaField.appendChild(createEl(doc, "label", { for: "groxy-schema-type" }, "Schema.org Entity Type"));
+  const schemaTypeSel = createEl(doc, "select", { id: "groxy-schema-type", name: "groxy-schema-type" });
+  for (const st of ["Product", "Article", "BlogPosting", "FAQPage", "BreadcrumbList", "WebSite"]) {
+    const opt = createEl(doc, "option", { value: st }, st);
+    if (st === schemaTypeSig.peek()) opt.setAttribute("selected", "selected");
+    schemaTypeSel.appendChild(opt);
+  }
+  schemaTypeSel.value = schemaTypeSig.peek();
+  schemaTypeSel.addEventListener("change", () => schemaTypeSig.set(schemaTypeSel.value));
+  schemaField.appendChild(schemaTypeSel);
+  schemaControls.appendChild(schemaField);
+  const schemaBtnP = createEl(doc, "p", { class: "groxy-actions" });
+  const genSchemaBtn = createEl(
+    doc,
+    "button",
+    { id: "groxy-generate-schema-btn", type: "button", class: "groxy-btn" },
+    "🧬 Generate JSON-LD Preview"
+  );
+  genSchemaBtn.addEventListener("click", () => void generateSchemaPreview());
+  schemaBtnP.appendChild(genSchemaBtn);
+  schemaControls.appendChild(schemaBtnP);
+  schemaCard.appendChild(schemaControls);
+  const schemaStatusOut = createEl(doc, "output", { id: "groxy-schema-status", "aria-live": "polite" });
+  const schemaPre = createEl(doc, "pre", { id: "groxy-schema-preview", class: "groxy-code-preview" });
+  schemaCard.appendChild(schemaStatusOut);
+  schemaCard.appendChild(schemaPre);
+  root.appendChild(schemaCard);
+
+  const mediaCard = createEl(doc, "section", {
+    id: "groxy-media-alt-panel",
+    class: "groxy-card",
+    "aria-label": "Media Library alt-Text Enrichment Queue",
+  });
+  mediaCard.appendChild(createEl(doc, "h2", {}, "Media Library alt-Text Enrichment Queue"));
+  const mediaActs = createEl(doc, "p", { class: "groxy-actions" });
+  const scanMediaBtn = createEl(
+    doc,
+    "button",
+    { id: "groxy-scan-media-btn", type: "button", class: "groxy-btn" },
+    "🖼️ Scan Media Library alt Text"
+  );
+  const approveMediaBtn = createEl(
+    doc,
+    "button",
+    { id: "groxy-approve-media-btn", type: "button", class: "groxy-btn groxy-btn-approve" },
+    "✅ Approve Selected alt Text"
+  );
+  scanMediaBtn.addEventListener("click", () => void scanMediaAlt());
+  approveMediaBtn.addEventListener("click", () => void approveSelectedMediaAlt());
+  mediaActs.appendChild(scanMediaBtn);
+  mediaActs.appendChild(approveMediaBtn);
+  const mediaQueueArea = createEl(doc, "section", { id: "groxy-media-alt-queue", "aria-label": "Media alt Proposals" });
+  mediaCard.appendChild(mediaActs);
+  mediaCard.appendChild(mediaQueueArea);
+  root.appendChild(mediaCard);
+
+  const watchCard = createEl(doc, "section", {
+    id: "groxy-watch-panel",
+    class: "groxy-card",
+    "aria-label": "Groxy Nightly Watch Morning Boost Report",
+  });
+  watchCard.appendChild(createEl(doc, "h2", {}, "Groxy Nightly Watch — Morning Boost Report"));
+  const runWatchBtn = createEl(
+    doc,
+    "button",
+    { id: "groxy-run-watch-btn", type: "button", class: "groxy-btn groxy-btn-boost" },
+    "🌅 Run Quiet Nightly Watch"
+  );
+  runWatchBtn.addEventListener("click", () => void runNightlyWatch());
+  const watchBody = createEl(doc, "section", { id: "groxy-watch-body", "aria-label": "Morning Boost Digest" });
+  watchCard.appendChild(createEl(doc, "p", { class: "groxy-actions" })).appendChild(runWatchBtn);
+  watchCard.appendChild(watchBody);
+  root.appendChild(watchCard);
+
+  // 12. MCP Bridge Diagnostic Card
   const mcpCard = createEl(doc, "section", {
     id: "groxy-mcp-panel",
     class: "groxy-card",
@@ -1434,6 +1956,174 @@ export function mountGroxyDashboard(options = {}) {
     genPreviewArea.appendChild(actRow);
   });
 
+  const disposeSiteContextEffect = effect(() => {
+    const snap = siteSnapshotSig.get();
+    const mdText = siteContextMdSig.get();
+    const dna = siteDnaSig.get();
+    setSafeText(
+      siteCtxSummaryOut,
+      `Synced ${snap.counts.entries} entries, ${snap.counts.products} ADR-025c products, ${snap.counts.menu_links} menu links, ${snap.counts.redirects} 301 redirects (read-only cache).`
+    );
+    setSafeText(siteCtxPre, mdText);
+    setSafeText(
+      siteDnaPre,
+      dna
+        ? JSON.stringify({ bundle_name: dna.bundle_name, compatible_consumers: dna.compatible_consumers, active_style_pack: dna.active_style_pack?.id, health_score: dna.nightly_watch_digest?.site_health_score }, null, 2)
+        : "Click \"Export Portable Site DNA\" to package GRAB-DESIGN-SYSTEM.md + SITE-CONTEXT.md + Morning Digest."
+    );
+  });
+
+  const disposeLinksEffect = effect(() => {
+    const rep = linkGraphSig.get();
+    clearChildren(linksBody);
+    linksBody.appendChild(
+      createEl(
+        doc,
+        "p",
+        { id: "groxy-links-summary", class: "groxy-muted" },
+        `Pages: ${rep.summary.total_pages} | Orphans: ${rep.summary.orphan_count} | 301 Loops Excluded: ${rep.summary.redirect_loop_count} (${(rep.excluded_loop_targets || []).join(", ") || "none"}) | 301 Chains: ${rep.summary.redirect_chain_count} | Broken Links: ${rep.summary.broken_link_count}`
+      )
+    );
+    linksBody.appendChild(createEl(doc, "h3", {}, "Contextual Internal Link Suggestions (Read-Only Preview)"));
+    const suggUl = createEl(doc, "ul", { class: "groxy-digest-list" });
+    for (const s of rep.suggestions || []) {
+      const li = createEl(doc, "li", { class: "groxy-digest-item" });
+      li.appendChild(
+        createEl(
+          doc,
+          "p",
+          {},
+          `${s.source_path} -> ${s.target_path} | Anchor: "${s.anchor_text}" (${s.target_is_orphan ? "Orphan Rescue" : "Topic Cluster"})`
+        )
+      );
+      li.appendChild(createEl(doc, "p", { class: "groxy-muted" }, s.reason));
+      const boostBtn = createEl(
+        doc,
+        "button",
+        { type: "button", class: "groxy-btn groxy-btn-boost" },
+        "🚀 Let Groxy Boost This"
+      );
+      boostBtn.addEventListener("click", () => {
+        publishNoticeSig.set(
+          `Prepared read-only link suggestion preview: "${s.anchor_text}" -> ${s.target_path} (no live entry mutated).`
+        );
+      });
+      li.appendChild(boostBtn);
+      suggUl.appendChild(li);
+    }
+    linksBody.appendChild(suggUl);
+  });
+
+  const disposeSchemaEffect = effect(() => {
+    const out = schemaOutputSig.get();
+    const err = schemaErrorSig.get();
+    clearChildren(schemaStatusOut);
+    if (err) {
+      schemaStatusOut.appendChild(createEl(doc, "p", { class: "groxy-alert-danger" }, err));
+      setSafeText(schemaPre, "");
+      return;
+    }
+    if (out) {
+      schemaStatusOut.appendChild(
+        createEl(
+          doc,
+          "p",
+          { class: "groxy-alert-pass" },
+          `Generated ${(out.types_generated || []).join(", ")} | ADR-025c Price Verified: ${out.decimal_integrity_verified ? "Yes" : "No"} | XSS Escaped (GREX-SEC-003): ${out.xss_safe ? "Yes" : "No"}`
+        )
+      );
+      setSafeText(schemaPre, out.script_tag_payload || out.json_ld_escaped || "");
+    }
+  });
+
+  const disposeMediaEffect = effect(() => {
+    const plan = mediaPlanSig.get();
+    const appRes = mediaApprovalResultSig.get();
+    const selIds = mediaSelectedIdsSig.get();
+    clearChildren(mediaQueueArea);
+    if (appRes) {
+      const cls = appRes.ok ? "groxy-alert-pass" : "groxy-alert-danger";
+      const msg = appRes.ok
+        ? `Approved ${appRes.approved_count} alt text update(s); preserved ${appRes.preserved_decorative_count} decorative asset(s) (alt=""). Single-use token consumed.`
+        : appRes.error || "Approval failed.";
+      mediaQueueArea.appendChild(createEl(doc, "p", { id: "groxy-media-approval-status", class: cls }, msg));
+    }
+    mediaQueueArea.appendChild(
+      createEl(
+        doc,
+        "p",
+        { id: "groxy-media-summary", class: "groxy-muted" },
+        `Scanned: ${plan.summary.total_scanned} | Needs Approval: ${plan.summary.needs_enrichment} | Decorative Preserved (alt=""): ${plan.summary.decorative_preserved}`
+      )
+    );
+    const listEl = createEl(doc, "ul", { class: "groxy-digest-list" });
+    for (const item of plan.items || []) {
+      const li = createEl(doc, "li", { class: "groxy-digest-item" });
+      if (item.decorative) {
+        li.appendChild(
+          createEl(
+            doc,
+            "p",
+            {},
+            `${item.filename} — Decorative image preserved (alt="", aria-hidden="true"). Excluded from enrichment.`
+          )
+        );
+      } else if (item.needs_enrichment) {
+        const chkId = `groxy-media-chk-${item.media_id}`;
+        const rowP = createEl(doc, "p", { class: "groxy-check-row" });
+        const chk = createEl(doc, "input", { type: "checkbox", id: chkId });
+        chk.checked = selIds.has(String(item.media_id));
+        chk.addEventListener("change", () => {
+          const next = new Set(mediaSelectedIdsSig.peek());
+          if (chk.checked) next.add(String(item.media_id));
+          else next.delete(String(item.media_id));
+          mediaSelectedIdsSig.set(next);
+        });
+        rowP.appendChild(chk);
+        rowP.appendChild(createEl(doc, "label", { for: chkId }, `${item.filename}: "${item.proposed_alt}"`));
+        li.appendChild(rowP);
+        li.appendChild(createEl(doc, "p", { class: "groxy-muted" }, item.reason || ""));
+      } else {
+        li.appendChild(createEl(doc, "p", {}, `${item.filename} — Valid alt: "${item.current_alt}"`));
+      }
+      listEl.appendChild(li);
+    }
+    mediaQueueArea.appendChild(listEl);
+  });
+
+  const disposeWatchEffect = effect(() => {
+    const dig = watchDigestSig.get();
+    clearChildren(watchBody);
+    watchBody.appendChild(
+      createEl(
+        doc,
+        "p",
+        { id: "groxy-watch-score", class: "groxy-alert-pass" },
+        `${dig.digest_name}: Site Health ${dig.site_health_score}/100 (Grade ${dig.overall_grade}) — Mode: ${dig.notification_mode} (popups: ${dig.popups}, silent_edits: ${dig.silent_edits})`
+      )
+    );
+    const oppList = createEl(doc, "ul", { class: "groxy-digest-list" });
+    for (const opp of dig.boost_opportunities || []) {
+      const li = createEl(doc, "li", { class: "groxy-digest-item" });
+      li.appendChild(createEl(doc, "h3", {}, `[${opp.priority.toUpperCase()}] ${opp.title}`));
+      li.appendChild(createEl(doc, "p", { class: "groxy-muted" }, opp.plain_english));
+      const oppBtn = createEl(
+        doc,
+        "button",
+        { type: "button", class: "groxy-btn groxy-btn-boost" },
+        opp.cta_label || "🚀 Let Groxy Boost This"
+      );
+      oppBtn.addEventListener("click", () => {
+        if (opp.action_endpoint === "/api/groxy/links/analyze") void analyzeLinks();
+        else if (opp.action_endpoint === "/api/groxy/media/enrich-alt") void scanMediaAlt();
+        else if (opp.action_endpoint === "/api/groxy/schema/generate") void generateSchemaPreview();
+      });
+      li.appendChild(oppBtn);
+      oppList.appendChild(li);
+    }
+    watchBody.appendChild(oppList);
+  });
+
   return {
     auditDomSafety() {
       return {
@@ -1453,6 +2143,28 @@ export function mountGroxyDashboard(options = {}) {
     getGeneratorState() {
       return genCandidateSig.peek();
     },
+    getSiteContextState() {
+      return {
+        snapshot: siteSnapshotSig.peek(),
+        markdown: siteContextMdSig.peek(),
+        site_dna: siteDnaSig.peek(),
+      };
+    },
+    getLinkGraphState() {
+      return linkGraphSig.peek();
+    },
+    getSchemaState() {
+      return schemaOutputSig.peek();
+    },
+    getMediaAltState() {
+      return {
+        plan: mediaPlanSig.peek(),
+        approval: mediaApprovalResultSig.peek(),
+      };
+    },
+    getWatchDigestState() {
+      return watchDigestSig.peek();
+    },
     runAudit: executeAudit,
     triggerPrePublishReview,
     triggerBoost,
@@ -1461,13 +2173,26 @@ export function mountGroxyDashboard(options = {}) {
     triggerGeneratePreview,
     approveGeneratedLayout,
     discardGeneratedPreview,
+    syncSiteContext,
+    exportSiteDna,
+    analyzeLinks,
+    generateSchemaPreview,
+    scanMediaAlt,
+    approveSelectedMediaAlt,
+    runNightlyWatch,
     dispose() {
       disposePrePublishEffect();
       disposeBoostEffect();
       disposeReportEffect();
       disposePlaybookEffect();
       disposeMcpEffect();
+      disposePackFilterEffect();
       disposeGeneratorEffect();
+      disposeSiteContextEffect();
+      disposeLinksEffect();
+      disposeSchemaEffect();
+      disposeMediaEffect();
+      disposeWatchEffect();
     },
   };
 }

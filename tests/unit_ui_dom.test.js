@@ -380,3 +380,70 @@ test("Visual Generator Studio renders Style Packs, Blueprint previews, exact Gra
 
   handle.dispose();
 });
+
+test("v0.4.0 Semantic Studio UI Panels render Site Context, Link Graph, JSON-LD, Media Alt Queue, and Morning Digest with zero divs and full a11y", async () => {
+  const { doc, root } = createDomDocument({ csrfToken: "csrf-v040-ui" });
+
+  const handle = mountGroxyDashboard({
+    root,
+    document: doc,
+    csrfToken: "csrf-v040-ui",
+  });
+
+  // All 8 Style Packs listed by default; filtering narrows dynamically
+  const packSel = root.querySelector("#groxy-gen-style-pack");
+  assert.equal(packSel.children.length, 8);
+  const goalSel = root.querySelector("#groxy-gen-goal-filter");
+  goalSel.value = "saas";
+  goalSel.dispatchEvent({ type: "change" });
+  assert.equal(packSel.children.length, 1);
+  assert.equal(packSel.value, "obsidian-tech");
+  goalSel.value = "";
+  goalSel.dispatchEvent({ type: "change" });
+  assert.equal(packSel.children.length, 8);
+
+  // Verify Site Context sync & Site DNA export
+  const syncRes = await handle.syncSiteContext();
+  assert.equal(syncRes.ok, true);
+  assert.ok(root.querySelector("#groxy-site-context-preview").textContent.includes("# SITE-CONTEXT.md"));
+  const dna = await handle.exportSiteDna();
+  assert.equal(dna.schema_version, "0.4.0");
+  assert.ok(dna.compatible_consumers.includes("gashboard"));
+  assert.ok(root.querySelector("#groxy-site-dna-preview").textContent.includes("groxy-site-dna-v0.4.0"));
+
+  // Verify Read-Only Link Graph Panel excludes 301 loops
+  const linkRep = await handle.analyzeLinks();
+  assert.equal(linkRep.mutates_live_cms, false);
+  const linksSummary = root.querySelector("#groxy-links-summary").textContent;
+  assert.ok(linksSummary.includes("301 Loops Excluded"));
+  assert.ok(linksSummary.includes("/loop-alpha"));
+
+  // Verify Schema.org JSON-LD Preview Panel (exact price + XSS escaping)
+  const schemaPreview = await handle.generateSchemaPreview();
+  assert.equal(schemaPreview.xss_safe, true);
+  assert.ok(root.querySelector("#groxy-schema-preview").textContent.includes('"@type": "Product"'));
+  assert.ok(root.querySelector("#groxy-schema-status").textContent.includes("ADR-025c Price Verified: Yes"));
+
+  // Verify Media Alt Queue + single-use approval + decorative preservation
+  const app1 = await handle.approveSelectedMediaAlt();
+  assert.equal(app1.ok, true);
+  assert.equal(app1.approved_count, 2);
+  assert.ok(root.querySelector("#groxy-media-approval-status").textContent.includes("Single-use token consumed"));
+
+  // Verify Nightly Watch Digest
+  const dig = await handle.runNightlyWatch();
+  assert.equal(dig.popups, false);
+  assert.equal(dig.silent_edits, false);
+  assert.ok(root.querySelector("#groxy-watch-score").textContent.includes("Morning Boost Report"));
+
+  const domAudit = auditDom(root, doc);
+  assert.equal(domAudit.divCount, 0);
+  assert.equal(domAudit.innerHTMLWriteCount, 0);
+  assert.deepEqual(domAudit.unlabeledControls, []);
+  assert.equal(domAudit.headingOrderOk, true);
+  assert.equal(domAudit.missingAltImages, 0);
+  assert.deepEqual(domAudit.unsafeUrls, []);
+  assert.deepEqual(domAudit.inlineHandlers, []);
+
+  handle.dispose();
+});

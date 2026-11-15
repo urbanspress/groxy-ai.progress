@@ -3,6 +3,26 @@
 All notable changes to **Groxy AI** (`urbanspress/groxy-ai`) are documented in this file.
 Versioning follows `MAJOR.MINOR.PATCH` SemVer rules per [`AGENTS.md`](AGENTS.md).
 
+## [v0.4.0] — 2026-11-15
+
+### Added
+- **Expanded 8 Industry & Goal-Aware Design Style Packs (`GET /api/groxy/style-packs`, [`public/groxy/generator.js`](public/groxy/generator.js), [`src/groxy.grab`](src/groxy.grab)):**
+  - Keeps `emerald-editorial`, `obsidian-tech`, `warm-commerce`, and `swiss-minimal` 100% backwards-compatible while adding `local-service-trust`, `creative-studio-bold`, `creator-academy`, and `wellness-organic` with `industries`, `conversion_goals` (`lead_gen`, `ecommerce`, `editorial`, `saas`, `portfolio`), `?goal=`/`?industry=` filtering, and verified WCAG AA `>= 4.5:1` Light/Dark contrast across all **40 Style Pack × Blueprint combinations**.
+- **Live `SITE-CONTEXT.md` Background Sync (`POST /api/groxy/site-context/sync`, `GET /api/groxy/site-context.md`, [`public/groxy/site-context.js`](public/groxy/site-context.js)):**
+  - Read-only background indexing of GrabLab CMS entries, categories/tags, exact base-10 `GrabDecimal`/`GrabInteger` product prices (`ADR-025c`), navigation menus (`primary`, `footer`, `mobile`), media items, and `slug_history` `301` redirects into gitignored `storage/SITE-CONTEXT.md` and cache (`mutates_live_cms: false`).
+- **Site-Wide Internal Linking Graph (`POST /api/groxy/links/analyze`):**
+  - Computes internal authority scores (`0–100`), detects orphan pages, identifies broken targets and multi-hop `301` redirect chains, detects `301` redirect cycles/loops and strictly excludes loop targets from contextual link suggestions, and proposes descriptive non-generic anchor text cleanly without touching live copy (`GROXY-SAFE-001`).
+- **Deterministic `schema.org` JSON-LD Generator (`POST /api/groxy/schema/generate`):**
+  - Emits valid structured data for `Article`, `BlogPosting`, `Product` (retaining exact `ADR-025c` `GrabDecimal` price strings and rejecting JavaScript float prices with HTTP `422`), `FAQPage`, `BreadcrumbList`, and `WebSite`, with strict XSS escaping (`\u003c`, `\u003e`, `\u0026`) so `</script>` payloads cannot break out.
+- **Media Library `alt`-Text Enrichment (`POST /api/groxy/media/enrich-alt`, `POST /api/groxy/media/enrich-alt/approve`):**
+  - Scans `list_media` items for empty or raw filename `alt` values (`IMG_1234.jpg`, etc.), strictly preserves `decorative: true` / `is_decorative: true` items (`alt: ""`, `aria_hidden: "true"`, `status: "decorative_preserved"`), and gates descriptive WCAG AA proposals (`3–125` chars) behind `X-CSRF-Token` + single-use `approval_token` (`403` invalid, `409` replay).
+- **Non-Intrusive `Groxy Nightly Watch` Digest & Portable `Site DNA` Snapshot (`POST /api/groxy/watch/run`, `GET /api/groxy/watch/digest`, `GET /api/groxy/site-dna/export`):**
+  - Generates a quiet **Morning Boost Report** (`popups: false`, `silent_edits: false`, 1-click **🚀 "Let Groxy Boost This"** actions) and exports a portable JSON/Markdown **Site DNA** snapshot bundling `GRAB-DESIGN-SYSTEM.md` + `SITE-CONTEXT.md` + active style pack tokens + Nightly Watch summary for **Gashboard + `grabman`**.
+- **Zero-`<div>` Semantic Site Intelligence Studio Panels ([`views/dashboard.grab.html`](views/dashboard.grab.html), [`public/groxy/dashboard.js`](public/groxy/dashboard.js), [`public/groxy/groxy.css`](public/groxy/groxy.css)):**
+  - Adds Style Pack industry/goal filters plus dedicated semantic panels for `SITE-CONTEXT.md` Sync, Internal Linking Graph, `schema.org` JSON-LD, Media `alt` Enrichment, and Morning Boost Digest with `divCount === 0` and `innerHTMLWriteCount === 0`.
+- **Verification & Release Guide:**
+  - Added [`tests/unit_site_intelligence.test.js`](tests/unit_site_intelligence.test.js) and [`tests/unit_enrichment.test.js`](tests/unit_enrichment.test.js), expanded [`tests/unit_generator.test.js`](tests/unit_generator.test.js) and [`tests/unit_ui_dom.test.js`](tests/unit_ui_dom.test.js) (`35/35` passing), extended Gate 3B live 4-layer integration tests in [`tests/integration_e2e.py`](tests/integration_e2e.py), and added `v0.4.0` walkthrough guide in [`docs/releases/generate_release_guides.py`](docs/releases/generate_release_guides.py).
+
 ## [v0.3.0] — 2026-11-15
 
 ### Added

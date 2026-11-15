@@ -431,3 +431,37 @@ main#groxy-inspector-root {
   font-size: 0.78rem;
   font-weight: 600;
 }
+
+.groxy-code-preview {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 0.9rem 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.groxy-digest-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.groxy-digest-item {
+  border: 1px solid var(--groxy-border);
+  border-radius: 0.55rem;
+  padding: 0.85rem 1rem;
+  background: #f8fafc;
+}
+
+.groxy-check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+}

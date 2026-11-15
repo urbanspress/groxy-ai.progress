@@ -1,6 +1,6 @@
 # GROXY-AI-SPEC-004: Groxy AI `v0.4.0` Site-Wide Internal Linking Graph, Schema.org JSON-LD, Media `alt`-Text Enrichment & Non-Intrusive Background Snapshot Workflows
 
-- **Status:** Specification in Review (Approved milestone target; awaiting explicit project-owner approval of this specification before writing `v0.4.0` application code)
+- **Status:** Complete
 - **Milestone:** `v0.4.0` — Site-Wide Internal Linking Graph, Schema.org JSON-LD, Media `alt`-Text Enrichment & Non-Intrusive Background Snapshot Workflows
 - **Foundational Upstream Baselines:**
   - **GRAB:** `v1.1.0` (`grab serve --allow-scripts`, `grab check`, `grab format <file>`, `grab mcp`, `use server`, `use http`, `use json`, `use data`, `use cache`, `use crypto`, `use env`, `server.asset`)
