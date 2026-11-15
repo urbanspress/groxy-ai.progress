@@ -1,8 +1,8 @@
 # HANDOFF.md — Groxy AI
 
-- **Current Owner:** Google Antigravity (`Orchestrator (Argon)` / `Google Hydrogen (High)`)
-- **Current Milestone State:** `v0.1.0` **Complete** (zero pending `v0.1.0` tasks; ready for `v0.2.0` Pre-Publish Grade Gate & Boost Diff Engine planning)
-- **Next Milestone:** `v0.2.0` — Pre-Publish Grade Gate & `"Let Groxy Boost This"` Diff Engine (see `docs/ROADMAP.md`)
+- **Current Owner:** Google Antigravity (`Google Hydrogen (Medium)` — `v0.2.0` spec drafting; switch to `Google Hydrogen (High)` or `Orchestrator (Argon)` for implementation after owner approval)
+- **Current Milestone State:** `v0.1.0` **Complete**; `v0.2.0` **Approved target; specification in review** (`specifications/GROXY-AI-SPEC-002.md`)
+- **Next Milestone:** `v0.2.0` — Pre-Publish Grade Gate & 🚀 `"Let Groxy Boost This"` Side-by-Side Diff Engine (see `docs/ROADMAP.md` and `specifications/GROXY-AI-SPEC-002.md`)
 
 ---
 
