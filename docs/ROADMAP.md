@@ -64,3 +64,15 @@ Scope:
 Scope:
 - Full pre-`v1.0.0` second-opinion security, DOM, contract, and human-in-the-loop safety audit (`Orchestrator (Argon)` — **100% Complete** across all 5 ecosystem layers).
 - Hardened `--read-only` Docker deployment manifests (`deploy/docker-compose.yml` & `deploy/README.md`), SemVer `v1.x` contract freeze, plain-English walkthrough PDF (`docs/releases/pdf/Groxy-AI-v1.0.0-Guide.pdf`), and synchronized `v1.0.0` promotion to `urbanspress/groxy-ai.progress` and `urbanspress/groxy-ai.stable`.
+
+---
+
+## `v1.1.0` — Screenshot-to-Grex Visual Replica (`POST /api/groxy/vision-clone`)
+
+**Status:** Planned — Backwards-Compatible Minor Feature
+
+Scope:
+- Accepts user-uploaded reference screenshots (`PNG` / `JPEG` / `WebP` verified strictly via magic bytes + bounded max file size caps).
+- Extracts visual hierarchy, spacing rhythm, typography scale, and color tokens via a configured vision model (local **Ollama** `llama3.2-vision` / `qwen2.5-vl` with zero mandatory cloud API fees, or optional user-supplied API key).
+- Compiles a clean, zero-wrapper-`<div>` **`Grex JS v1.0.0`** layout (`divCount === 0`, WCAG AA `>= 4.5:1` contrast auto-repaired, `ADR-025c` exact decimals preserved, `GRAB-DESIGN-SYSTEM.md` tokens & `.grex-c-*` classes applied).
+- Gated behind `X-CSRF-Token` + single-use `approval_token` (`GROXY-SAFE-001`) before dispatching to Grex Theme Builder via `POST /api/mcp/layout` (`actor: "groxy-ai"` with 1-click Undo parity).

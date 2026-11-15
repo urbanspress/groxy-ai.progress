@@ -72,6 +72,17 @@ Completed multi-repository security, DOM, accessibility, precision, container, a
 5. **Container & Docker Security:** Verified `--read-only` rootfs isolation (`read_only: true`, `cap_drop: ["ALL"]`, `no-new-privileges:true`, `tmpfs: /tmp:rw,noexec,nosuid`), `GRAB-E401` file guards (`.env`/`.git`/`.ssh`/`*.key`/`*.pem`/traversal), and `GRAB-E402` default-deny network & SSRF blocking (`169.254.169.254`).
 6. **Ecosystem Contract Parity:** Verified `5` `grab mcp` stdio tools, `6` GrabLab CMS MCP tools, `-32602`/`422` error schemas, SHA-256 identity of 20-element `grex.elements.json` (`c54c4bcf...`) & `grex.js` (`c1e28d74...`), and live `GET /api/design-system.md` round-trip (`35/35` Groxy AI Node tests, `43/43` Grex JS tests, `24/24` Grex Builder tests, and all `integration_e2e.py` Gates `1`, `2`, `3A`, `3B` passing 100%).
 
+---
+
+## Planned Backwards-Compatible Minor Track (`v1.1.0`)
+
+- **Milestone `v1.1.0` — Screenshot-to-Grex Visual Replica (`POST /api/groxy/vision-clone`):** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified; specification & implementation pending owner scheduling after Step 5):
+  - Accepts user-uploaded reference screenshots (`PNG`/`JPEG`/`WebP` verified via magic bytes + max size caps).
+  - Extracts visual hierarchy, spacing rhythm, typography scale, and color tokens via a configured vision model (local Ollama `llama3.2-vision`/`qwen2.5-vl` or API key).
+  - Compiles a clean `Grex JS v1.0.0` layout (`divCount === 0`, WCAG AA `>= 4.5:1` contrast auto-repaired, `ADR-025c` exact decimals, `GRAB-DESIGN-SYSTEM.md` tokens) gated behind `X-CSRF-Token` + single-use `approval_token` (`GROXY-SAFE-001`) before dispatching to `POST /api/mcp/layout` (`actor: "groxy-ai"`).
+
+---
+
 ## Next Step Guidance (Step 5 — `Gashboard + Grabtaculous + grabman`)
 1. **Step 4 (`groxy-ai v1.0.0`) Is Complete:** All `v1.x` contracts, `--read-only` deployment manifests, walkthrough PDF, release bundles, and synchronized `origin`/`stable` GitHub Releases are shipped and verified `100%`.
 2. **Recommended Model for Step 5:** Switch to **`Google Hydrogen (Extra)`** to begin **Step 5 (`Gashboard + Grabtaculous + grabman`)** — multi-server orchestration, desktop VPS control panel, 1-click app marketplace, and `Site DNA` / `grabman.lock` deployment automation.
