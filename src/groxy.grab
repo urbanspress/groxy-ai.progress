@@ -269,6 +269,7 @@ make parse_design_system_md using md_raw
   set tokens_loaded to 0
   set classes_loaded to 0
   set registered_classes to []
+  set token_map to {}
   set default_bg to "#ffffff"
   set default_fg to ""
   set section to ""
@@ -302,11 +303,15 @@ make parse_design_system_md using md_raw
           set tok_val to text.trim using (text.replace using (parts at 2), "`", "")
           if text.starts_with using tok_name, "--grex-"
             set tokens_loaded to tokens_loaded plus 1
+            if not (has_map_key using token_map, tok_name)
+              set token_map to collections.put using token_map, tok_name, tok_val
+            end
             if sub is "light" or sub is "base"
-              if tok_name is "--grex-color-bg"
+              set token_map to collections.put using token_map, tok_name, tok_val
+              if tok_name is "--grex-color-bg" or tok_name is "--grex-bg"
                 set default_bg to tok_val
               end
-              if tok_name is "--grex-color-text"
+              if tok_name is "--grex-color-text" or tok_name is "--grex-text"
                 set default_fg to tok_val
               end
             end
@@ -323,11 +328,15 @@ make parse_design_system_md using md_raw
           set tok_val to text.trim using (text.replace using (bparts at 1), "`", "")
           if text.starts_with using tok_name, "--grex-"
             set tokens_loaded to tokens_loaded plus 1
+            if not (has_map_key using token_map, tok_name)
+              set token_map to collections.put using token_map, tok_name, tok_val
+            end
             if sub is "light" or sub is "base"
-              if tok_name is "--grex-color-bg"
+              set token_map to collections.put using token_map, tok_name, tok_val
+              if tok_name is "--grex-color-bg" or tok_name is "--grex-bg"
                 set default_bg to tok_val
               end
-              if tok_name is "--grex-color-text"
+              if tok_name is "--grex-color-text" or tok_name is "--grex-text"
                 set default_fg to tok_val
               end
             end
@@ -341,6 +350,9 @@ make parse_design_system_md using md_raw
           set seg to after_prefix at 1
           set clean_seg to text.replace using seg, "`", ""
           set clean_seg to text.replace using clean_seg, "*", ""
+          set clean_seg to (text.split using clean_seg, ":") at 0
+          set clean_seg to (text.split using clean_seg, "|") at 0
+          set clean_seg to (text.split using clean_seg, " ") at 0
           set clean_seg to text.trim using clean_seg
           if clean_seg is not ""
             set classes_loaded to classes_loaded plus 1
@@ -351,7 +363,7 @@ make parse_design_system_md using md_raw
     end
   end
 
-  give back record {tokens_loaded: tokens_loaded, reusable_classes_loaded: classes_loaded, registered_classes: registered_classes, default_bg: default_bg, default_fg: default_fg}
+  give back record {tokens_loaded: tokens_loaded, reusable_classes_loaded: classes_loaded, registered_classes: registered_classes, token_map: token_map, default_bg: default_bg, default_fg: default_fg}
 end
 
 make tokenize_words using raw_text
@@ -727,6 +739,16 @@ make walk_layout_tree using node, depth, inherited_bg, acc
   end
 
   set out_acc to record {node_count: acc_nodes, max_depth: acc_depth, div_count: acc_divs, invalid_elements: acc_bad_els, invalid_tags: acc_bad_tags, security_violations: acc_sec, headings: acc_headings, h1_count: acc_h1, sub_count: acc_sub, bad_images: acc_bad_imgs, image_count: acc_img_total, bad_forms: acc_bad_forms, bad_interactive: acc_bad_inter, links: acc_links, text_segments: acc_texts, classes_used: acc_classes, tokens_referenced: acc_tokens_ref, inline_color_overrides: acc_inline_colors, contrast_failures: acc_contrast_bad, focus_failures: acc_focus_bad}
+
+  if el_type is "Accordion" and (has_map_key using props, "items")
+    for each qitem in (props at "items")
+      if (is_record_value using qitem) and (has_map_key using qitem, "content")
+        for each qchild in (qitem at "content")
+          set out_acc to walk_layout_tree using qchild, (depth plus 1), node_bg, out_acc
+        end
+      end
+    end
+  end
 
   if has_map_key using node, "children"
     for each child in (node at "children")
@@ -1216,12 +1238,14 @@ make evaluate_audit_report using payload, playbook
   end
 
   # GROXY-LINK-003 (20 pts)
+  set has_menu_graph to no
+  set found_in_nav to no
   if site_ctx is not nothing and (has_map_key using site_ctx, "menus")
-    set found_in_nav to no
     set menus_val to site_ctx at "menus"
     if is_record_value using menus_val
       for each mkey in (collections.keys using menus_val)
         for each mi in (menus_val at mkey)
+          set has_menu_graph to yes
           if is_record_value using mi
             if (normalize_path using (map_get_str using mi, "href", "")) is self_slug_norm
               set found_in_nav to yes
@@ -1229,7 +1253,28 @@ make evaluate_audit_report using payload, playbook
           end
         end
       end
+    otherwise
+      try
+        for each mi in menus_val
+          set has_menu_graph to yes
+          if is_record_value using mi
+            if (normalize_path using (map_get_str using mi, "href", "")) is self_slug_norm
+              set found_in_nav to yes
+            end
+          end
+        end
+      catch m_err
+        set ignored_m to m_err.message
+      end
     end
+  end
+  set has_entries_graph to no
+  if site_ctx is not nothing and (has_map_key using site_ctx, "entries")
+    if (collections.length using (site_ctx at "entries")) is greater than 0
+      set has_entries_graph to yes
+    end
+  end
+  if has_menu_graph or has_entries_graph
     if found_in_nav
       set findings to collections.append using findings, (make_finding using "GROXY-LINK-003", "linking_readiness", "pass", 20, 20, "Entry is linked from site navigation menus.", "No change needed.", "Ahrefs Site Audit / GrabLab Menus")
     otherwise
@@ -2076,8 +2121,572 @@ make boost_entry_and_layout using payload, pb
   give back record {schema_version: "0.2.0", boost_id: boost_id, review_id: rev_id, mode: "deterministic", approval_required: yes, approval_token: approval_tok, before_report: before_report, after_report: after_report, diffs: diffs, candidate_entry: cand_entry, candidate_layout: boosted_layout}
 end
 
+# ---------------------------------------------------------------------------
+# Groxy AI v0.3.0 — Autonomous GRAB-DESIGN-SYSTEM.md Visual Generator Engine
+# ---------------------------------------------------------------------------
+
+make list_style_packs_doc
+  set sp1 to record {id: "emerald-editorial", label: "Emerald Editorial", description: "High-contrast editorial typography, generous vertical rhythm (--grex-space-lg), emerald primary accents (--grex-primary), and structured Card callouts.", token_preferences: ["--grex-surface", "--grex-text", "--grex-primary", "--grex-space-lg", "--grex-radius-md"], class_hints: ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3", "cta-button"]}
+  set sp2 to record {id: "obsidian-tech", label: "Obsidian Developer Studio", description: "Crisp technical hierarchy, high-contrast dark/light surface cards (--grex-surface-elevated), compact feature Grids, and scannable metric badges.", token_preferences: ["--grex-surface-elevated", "--grex-text", "--grex-primary", "--grex-space-md", "--grex-radius-sm"], class_hints: ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3"]}
+  set sp3 to record {id: "warm-commerce", label: "Warm Precision Commerce", description: "Conversion-focused product & pricing hierarchy, GrabDecimal-exact price callouts, trust Accordion FAQs, and clear primary/secondary Button pairs.", token_preferences: ["--grex-surface", "--grex-text", "--grex-primary", "--grex-space-md", "--grex-radius-lg"], class_hints: ["hero", "card", "btn-primary", "badge-pill", "grid-3", "cta-button"]}
+  set sp4 to record {id: "swiss-minimal", label: "Swiss Grid Minimal", description: "Clean geometric Grid proportions, strong H1-H3 typographic scale, restrained borders (--grex-border), and distraction-free reading flow.", token_preferences: ["--grex-bg", "--grex-text", "--grex-primary", "--grex-border", "--grex-space-lg"], class_hints: ["hero", "card", "btn-primary", "grid-3"]}
+
+  set bp1 to record {id: "full_landing_page", label: "Full Landing Page", default_slot: "main", description: "Multi-section page combining Nav header, Hero Section (H1), Value Grid, GrabDecimal Pricing Grid, ForEach showcase, and FAQ Accordion."}
+  set bp2 to record {id: "hero_section", label: "Hero Section", default_slot: "hero", description: "Landmark Section hero with H1 headline, keyword-aligned lead Text, primary/secondary actions, and accessible feature Image Card."}
+  set bp3 to record {id: "pricing_grid", label: "Pricing Grid (GrabDecimal)", default_slot: "main", description: "Accessible 3-tier pricing Grid preserving exact base-10 GrabDecimal wire strings and SKU metadata with semantic CTAs."}
+  set bp4 to record {id: "faq_accordion", label: "FAQ Accordion", default_slot: "main", description: "Sequential H2 -> H3 semantic Accordion populated with topic-aligned Q&A items and internal canonical links."}
+  set bp5 to record {id: "foreach_showcase", label: "ForEach Content Showcase", default_slot: "main", description: "Dynamic ForEach collection showcase bound to GrabLab CMS content_type items with semantic Card layout and safe media alt text."}
+
+  give back record {schema_version: "0.3.0", style_packs: [sp1, sp2, sp3, sp4], blueprints: [bp1, bp2, bp3, bp4, bp5]}
+end
+
+make get_style_pack_def using pack_id
+  if pack_id is "emerald-editorial"
+    give back record {id: "emerald-editorial", label: "Emerald Editorial", bg: "#ffffff", surface: "#f8fafc", text: "#0f172a", primary: "#047857", on_primary: "#ffffff", border: "#cbd5e1", muted: "#475569", space: "1.5rem", radius: "0.75rem"}
+  otherwise if pack_id is "obsidian-tech"
+    give back record {id: "obsidian-tech", label: "Obsidian Developer Studio", bg: "#f8fafc", surface: "#ffffff", text: "#09090b", primary: "#1d4ed8", on_primary: "#ffffff", border: "#cbd5e1", muted: "#334155", space: "1.25rem", radius: "0.5rem"}
+  otherwise if pack_id is "warm-commerce"
+    give back record {id: "warm-commerce", label: "Warm Precision Commerce", bg: "#fffbeb", surface: "#ffffff", text: "#1c1917", primary: "#92400e", on_primary: "#ffffff", border: "#fde68a", muted: "#44403c", space: "1.25rem", radius: "0.875rem"}
+  otherwise if pack_id is "swiss-minimal"
+    give back record {id: "swiss-minimal", label: "Swiss Grid Minimal", bg: "#ffffff", surface: "#f4f4f5", text: "#18181b", primary: "#b91c1c", on_primary: "#ffffff", border: "#d4d4d8", muted: "#3f3f46", space: "1.5rem", radius: "0.25rem"}
+  end
+  give back nothing
+end
+
+make is_allowed_blueprint using bp_id
+  give back list_contains using ["full_landing_page", "hero_section", "pricing_grid", "faq_accordion", "foreach_showcase"], bp_id
+end
+
+make map_gen_builder_slot using raw_slot
+  set s to text.trim using (text.from using raw_slot)
+  set sl to text.lower using s
+  if sl is "" or sl is "main" or sl is "hero" or sl is "landing"
+    give back "home"
+  otherwise if sl is "footer" or sl is "header" or sl is "card" or sl is "sidebar"
+    give back ("part:" joined with sl)
+  end
+  give back s
+end
+
+make resolve_gen_token using token_map, candidates, fallback_hex
+  set chosen_name to candidates at ((collections.length using candidates) minus 1)
+  set chosen_val to fallback_hex
+  set found to no
+  for each cand in candidates
+    if (not found) and (has_map_key using token_map, cand)
+      set chosen_name to cand
+      set chosen_val to text.from using (token_map at cand)
+      set found to yes
+    end
+  end
+  give back record {name: chosen_name, value: chosen_val}
+end
+
+make ensure_contrast_hex using fg_val, bg_val, fallback_fg
+  set ratio to compute_contrast_ratio using fg_val, bg_val
+  if ratio is not nothing
+    if ratio is at least 4.5
+      give back fg_val
+    end
+  end
+  give back fallback_fg
+end
+
+make build_gen_ds_ctx using ds_info, pack
+  set tmap to {}
+  if has_map_key using ds_info, "token_map"
+    set tmap to ds_info at "token_map"
+  end
+  set reg_classes to []
+  if has_map_key using ds_info, "registered_classes"
+    set reg_classes to ds_info at "registered_classes"
+  end
+
+  set bg_t to resolve_gen_token using tmap, ["--grex-color-bg", "--grex-bg"], pack.bg
+  set surf_t to resolve_gen_token using tmap, ["--grex-surface-elevated", "--grex-color-surface", "--grex-surface", "--grex-color-bg"], pack.surface
+  set txt_t to resolve_gen_token using tmap, ["--grex-color-text", "--grex-text"], pack.text
+  set pri_t to resolve_gen_token using tmap, ["--grex-color-primary", "--grex-primary"], pack.primary
+  set bdr_t to resolve_gen_token using tmap, ["--grex-color-border", "--grex-border"], pack.border
+  set spc_t to resolve_gen_token using tmap, ["--grex-space-lg", "--grex-space-md", "--grex-space-unit"], pack.space
+  set rad_t to resolve_gen_token using tmap, ["--grex-radius-md", "--grex-radius-lg", "--grex-radius-sm", "--grex-radius"], pack.radius
+
+  set bg_hex to bg_t.value
+  if not (text.starts_with using bg_hex, "#")
+    set bg_hex to pack.bg
+  end
+  set txt_hex to ensure_contrast_hex using txt_t.value, bg_hex, pack.text
+  set pri_hex to pri_t.value
+  if not (text.starts_with using pri_hex, "#")
+    set pri_hex to pack.primary
+  end
+  set check_pri to compute_contrast_ratio using pack.on_primary, pri_hex
+  if check_pri is nothing or check_pri is less than 4.5
+    set pri_hex to pack.primary
+  end
+
+  set bg_var to "var(" joined with bg_t.name joined with ", " joined with bg_hex joined with ")"
+  set surf_var to "var(" joined with surf_t.name joined with ", " joined with pack.surface joined with ")"
+  set txt_var to "var(" joined with txt_t.name joined with ", " joined with txt_hex joined with ")"
+  set pri_var to "var(" joined with pri_t.name joined with ", " joined with pri_hex joined with ")"
+  set bdr_var to "var(" joined with bdr_t.name joined with ", " joined with pack.border joined with ")"
+  set spc_var to "var(" joined with spc_t.name joined with ", " joined with pack.space joined with ")"
+  set rad_var to "var(" joined with rad_t.name joined with ", " joined with pack.radius joined with ")"
+
+  set tok_list to [bg_t.name, surf_t.name, txt_t.name, pri_t.name, bdr_t.name, spc_t.name, rad_t.name]
+  set dedup_tokens to []
+  for each tk in tok_list
+    if not (list_contains using dedup_tokens, tk)
+      set dedup_tokens to collections.append using dedup_tokens, tk
+    end
+  end
+
+  set repaired to (txt_hex is not txt_t.value) or (pri_hex is not pri_t.value)
+  set eff_md to ""
+  if repaired
+    set md_lines to ["# GRAB-DESIGN-SYSTEM.md", "", "## 1. Design Tokens", "### Light Mode", "| Token | Value |", "|---|---|", ("| `--grex-color-bg` | `" joined with bg_hex joined with "` |"), ("| `--grex-color-surface` | `" joined with pack.surface joined with "` |"), ("| `--grex-color-text` | `" joined with txt_hex joined with "` |"), ("| `--grex-color-primary` | `" joined with pri_hex joined with "` |"), "", "### Dark Mode", "| Token | Value |", "|---|---|", "| `--grex-color-bg` | `#0f172a` |", "| `--grex-color-text` | `#f8fafc` |", "| `--grex-color-primary` | `#34d399` |"]
+    if (collections.length using reg_classes) is greater than 0
+      set md_lines to collections.append using md_lines, ""
+      set md_lines to collections.append using md_lines, "## 2. Reusable Classes"
+      for each rc in reg_classes
+        set md_lines to collections.append using md_lines, ("- **`.grex-c-" joined with rc joined with "`**")
+      end
+    end
+    set eff_md to text.join using md_lines, "\n"
+  end
+
+  set st_bg to {"color": txt_var, "background-color": bg_var}
+  set st_surface to {"color": txt_var, "background-color": surf_var}
+  set st_link_bg to {"color": pri_var, "background-color": bg_var}
+  set st_link_surface to {"color": pri_var, "background-color": surf_var}
+  set st_muted_surface to {"color": pack.muted, "background-color": surf_var}
+  give back record {bg_hex: bg_hex, bg: bg_var, surface: surf_var, text: txt_var, primary: pri_var, on_primary: pack.on_primary, border: bdr_var, muted: pack.muted, space: spc_var, radius: rad_var, st_bg: st_bg, st_surface: st_surface, st_link_bg: st_link_bg, st_link_surface: st_link_surface, st_muted_surface: st_muted_surface, tokens_applied: dedup_tokens, reg_classes: reg_classes, repaired: repaired, effective_md: eff_md}
+end
+
+make pick_gen_class_list using reg_classes, pref_shorts, extra_list
+  set out to []
+  for each short_n in pref_shorts
+    if list_contains using reg_classes, short_n
+      set out to collections.append using out, ("grex-c-" joined with short_n)
+    end
+  end
+  for each ex in extra_list
+    if ex is not ""
+      set out to collections.append using out, ex
+    end
+  end
+  give back text.join using out, " "
+end
+
+make collect_applied_grex_classes using reg_classes
+  set out to []
+  for each cand in ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3", "cta-button", "hero-title"]
+    if list_contains using reg_classes, cand
+      set out to collections.append using out, ("grex-c-" joined with cand)
+    end
+  end
+  give back out
+end
+
+make default_gen_tiers
+  set t1 to record {name: "Starter", price: "0.00", billing_period: "month", sku: "10010", cta_label: "Start Free Draft", cta_href: "/pricing", features: ["Semantic 20-element composer", "Zero wrapper div markup guarantee", "Human-approved draft staging"]}
+  set t2 to record {name: "Studio Pro", price: "29.00", billing_period: "month", sku: "10020", cta_label: "Explore Studio Pro", cta_href: "/about", features: ["Live GRAB-DESIGN-SYSTEM.md sync", "Four-pillar Grade A+ audit gate", "One-click Builder Undo parity"]}
+  set t3 to record {name: "Enterprise", price: "149.95", billing_period: "month", sku: "10030", cta_label: "Read Enterprise Guide", cta_href: "/blog", features: ["Multi-slot template orchestration", "ADR-025c exact decimal precision lock", "Strict WCAG AA contrast verification"]}
+  give back [t1, t2, t3]
+end
+
+make normalize_gen_tiers using payload
+  if not (has_map_key using payload, "pricing_tiers")
+    give back record {ok: yes, tiers: (call default_gen_tiers), error: ""}
+  end
+  set raw to payload at "pricing_tiers"
+  if (collections.length using raw) is 0
+    give back record {ok: yes, tiers: (call default_gen_tiers), error: ""}
+  end
+  set defs to call default_gen_tiers
+  set out to []
+  set idx to 0
+  for each tr in raw
+    if not (is_record_value using tr)
+      give back record {ok: no, tiers: [], error: "pricing_tiers entries must be JSON objects."}
+    end
+    set wrapped_i to idx minus ((math.floor using ((idx times 1.0) divided by 3)) times 3)
+    set def_t to defs at wrapped_i
+    set price_str to def_t.price
+    if has_map_key using tr, "price"
+      set raw_p to tr at "price"
+      if not (text.starts_with using (json.stringify using raw_p), "\"")
+        give back record {ok: no, tiers: [], error: ("ADR-025c violation: pricing_tiers price must be an exact base-10 wire string, not a floating-point number.")}
+      end
+      set price_str to text.trim using (text.from using raw_p)
+    end
+    if not (is_exact_decimal_wire using price_str)
+      give back record {ok: no, tiers: [], error: ("ADR-025c violation: invalid GrabDecimal price wire string \"" joined with price_str joined with "\".")}
+    end
+    set cta_href to map_get_str using tr, "cta_href", def_t.cta_href
+    if not (is_safe_url using cta_href)
+      give back record {ok: no, tiers: [], error: ("Unsafe pricing CTA URL blocked: " joined with cta_href)}
+    end
+    set feats to def_t.features
+    if has_map_key using tr, "features"
+      if (collections.length using (tr at "features")) is greater than 0
+        set feats to tr at "features"
+      end
+    end
+    set norm_t to record {name: (map_get_str using tr, "name", def_t.name), price: price_str, billing_period: (map_get_str using tr, "billing_period", "month"), sku: (map_get_str using tr, "sku", def_t.sku), cta_label: (map_get_str using tr, "cta_label", def_t.cta_label), cta_href: cta_href, features: feats}
+    set out to collections.append using out, norm_t
+    set idx to idx plus 1
+  end
+  give back record {ok: yes, tiers: out, error: ""}
+end
+
+make make_gen_node using id_str, el_type, tag_name, props_map, cls_str, aria_lbl, styles_base, children_list
+  set node to {"id": id_str, "type": el_type, "element": el_type, "tag": tag_name, "props": props_map, "children": children_list}
+  set attrs to {}
+  if cls_str is not ""
+    set attrs to collections.put using attrs, "class", cls_str
+  end
+  if aria_lbl is not ""
+    set attrs to collections.put using attrs, "aria-label", aria_lbl
+  end
+  if (collections.length using (collections.keys using attrs)) is greater than 0
+    set node to collections.put using node, "attrs", attrs
+  end
+  if is_record_value using styles_base
+    set node to collections.put using node, "styles", (record {base: styles_base})
+  end
+  give back node
+end
+
+make resolve_gen_safe_links using site_ctx, self_slug, tiers
+  set redir_info to resolve_redirect_and_targets using site_ctx, self_slug, ""
+  set blocked to collections.append using redir_info.redir_from, (normalize_path using ("/" joined with self_slug))
+  set out to []
+  for each t in redir_info.targets
+    if not (list_contains using blocked, (normalize_path using t.href))
+      set out to collections.append using out, (record {label: t.title, href: t.href})
+    end
+  end
+  for each tier in tiers
+    set th_norm to normalize_path using tier.cta_href
+    if (is_safe_url using tier.cta_href) and (not (list_contains using blocked, th_norm))
+      set out to collections.append using out, (record {label: tier.cta_label, href: tier.cta_href})
+    end
+  end
+  for each fb in [record {label: "Explore Transparent Pricing Plans", href: "/pricing"}, record {label: "Read Architecture & Guides", href: "/blog"}, record {label: "About Grex Visual Architecture", href: "/about"}, record {label: "Contact Our Engineering Team", href: "/contact"}]
+    if not (list_contains using blocked, (normalize_path using fb.href))
+      set out to collections.append using out, fb
+    end
+  end
+  give back out
+end
+
+make build_gen_hero using ds, pack, title_str, audience, links, id_pref, site_ctx, standalone
+  set p_link to links at 0
+  set img_src to "/static/theme/preview-hero.svg"
+  set img_alt to title_str joined with " semantic layout preview"
+  if (site_ctx is not nothing) and (has_map_key using site_ctx, "media")
+    set mlist to site_ctx at "media"
+    if (collections.length using mlist) is greater than 0
+      set m0 to mlist at 0
+      if is_record_value using m0
+        set murl to map_get_str using m0, "url", ""
+        set malt to map_get_str using m0, "alt", ""
+        if murl is not "" and (is_safe_url using murl)
+          set img_src to murl
+        end
+        if (text.length using malt) is at least 10
+          set img_alt to malt
+        end
+      end
+    end
+  end
+
+  set h1_n to make_gen_node using (id_pref joined with "-h1"), "Heading", "h1", (record {level: 1, text: title_str}), (pick_gen_class_list using ds.reg_classes, ["hero-title"], ["groxy-h1"]), "", ds.st_bg, []
+  set lead_n to make_gen_node using (id_pref joined with "-lead"), "Text", "p", (record {text: ("Engineered for " joined with audience joined with ", this accessible publication workflow pairs live GRAB-DESIGN-SYSTEM.md custom properties with strict WCAG AA contrast pairings, exact base-10 decimal precision, and clean HTML5 landmarks across mobile, tablet, and desktop screens.")}), "", "", ds.st_bg, []
+  set link_n to make_gen_node using (id_pref joined with "-cta"), "Link", "a", (record {href: p_link.href, text: p_link.label, label: p_link.label}), (pick_gen_class_list using ds.reg_classes, ["btn-primary", "cta-button"], ["groxy-link-cta"]), "", {"background-color": ds.primary, "color": ds.on_primary, "border-radius": ds.radius}, []
+  set btn_n to make_gen_node using (id_pref joined with "-inspect-btn"), "Button", "button", (record {type: "button", text: "Inspect Semantic Tokens", label: "Inspect active GRAB design tokens"}), "", "", {"background-color": ds.surface, "color": ds.text, "border": ("1px solid " joined with ds.border)}, []
+  set act_stack to make_gen_node using (id_pref joined with "-actions"), "Stack", "section", (record {direction: "row", gap: "0.75rem", label: "Hero Call to Action Group"}), "", "", nothing, [link_n, btn_n]
+  set copy_children to [h1_n, lead_n]
+  if standalone
+    set arch_n to make_gen_node using (id_pref joined with "-arch-note"), "Text", "p", (record {text: "Every component compiles strictly from the approved 20-element Grex JS library with zero wrapper div elements, zero runtime third-party scripts, single-use human approval tokens, and reversible applyAiLayout dispatch inside Grex Theme Builder."}), "", "", ds.st_bg, []
+    set copy_children to collections.append using copy_children, arch_n
+  end
+  set copy_children to collections.append using copy_children, act_stack
+  set copy_stack to make_gen_node using (id_pref joined with "-copy"), "Stack", "section", (record {direction: "column", gap: "1rem", label: "Hero Copy Stack"}), "", "", nothing, copy_children
+
+  set img_n to make_gen_node using (id_pref joined with "-img"), "Image", "img", (record {src: img_src, alt: img_alt, decorative: no, width: 800, height: 450, loading: "lazy"}), "", "", nothing, []
+  set card_h2 to make_gen_node using (id_pref joined with "-card-h2"), "Heading", "h2", (record {level: 2, text: (pack.label joined with " Design Token Preview")}), "", "", ds.st_surface, []
+  set card_p to make_gen_node using (id_pref joined with "-card-txt"), "Text", "p", (record {text: ("Built cleanly from the 20-element Grex JS catalog and synchronized with " joined with pack.label joined with " contrast pairs prior to human review.")}), "", "", ds.st_surface, []
+  set media_card to make_gen_node using (id_pref joined with "-media-card"), "Card", "article", (record {elevated: yes, label: "Hero Visual Preview"}), (pick_gen_class_list using ds.reg_classes, ["hero-card", "card"], ["groxy-media-card"]), "", {"background-color": ds.surface, "color": ds.text, "border": ("1px solid " joined with ds.border), "border-radius": ds.radius}, [img_n, card_h2, card_p]
+
+  set grid_n to make_gen_node using (id_pref joined with "-hero-grid"), "Grid", "section", (record {columns: "2", gap: "1.5rem", label: "Hero Columns"}), "", "", nothing, [copy_stack, media_card]
+  set cont_n to make_gen_node using (id_pref joined with "-hero-container"), "Container", "section", (record {maxWidth: "1120px", label: "Hero Container"}), "", "", nothing, [grid_n]
+  give back make_gen_node using (id_pref joined with "-hero"), "Section", "section", (record {label: "Hero Overview"}), (pick_gen_class_list using ds.reg_classes, ["hero"], [("groxy-style-" joined with pack.id), "groxy-hero-section"]), "", {"background-color": ds.bg, "color": ds.text, "padding": ds.space, "border-radius": ds.radius}, [cont_n]
+end
+
+make build_gen_pricing using ds, pack, tiers, links, id_pref, standalone, title_str
+  set cards to []
+  set idx to 0
+  for each tier in tiers
+    set lcnt to collections.length using links
+    set wrapped_l to idx minus ((math.floor using ((idx times 1.0) divided by lcnt)) times lcnt)
+    set link_fb to links at wrapped_l
+    set c_href to tier.cta_href
+    if c_href is "" or (not (is_safe_url using c_href))
+      set c_href to link_fb.href
+    end
+    set idx1 to text.from using (idx plus 1)
+    set ch3 to make_gen_node using (id_pref joined with "-t-h3-" joined with idx1), "Heading", "h3", (record {level: 3, text: tier.name}), "", "", ds.st_surface, []
+    set cprice to make_gen_node using (id_pref joined with "-t-price-" joined with idx1), "Text", "p", (record {text: ("$" joined with tier.price joined with " / " joined with tier.billing_period)}), (pick_gen_class_list using ds.reg_classes, ["badge-pill"], ["groxy-price-wire"]), "", ds.st_surface, []
+    set csku to make_gen_node using (id_pref joined with "-t-sku-" joined with idx1), "Text", "p", (record {text: ("Plan SKU: " joined with tier.sku)}), "", "", ds.st_muted_surface, []
+    set fnodes to []
+    set fidx to 0
+    for each ft in tier.features
+      set fidx1 to text.from using (fidx plus 1)
+      set fnodes to collections.append using fnodes, (make_gen_node using (id_pref joined with "-t-" joined with idx1 joined with "-f-" joined with fidx1), "Text", "p", (record {text: ft}), "", "", ds.st_surface, [])
+      set fidx to fidx plus 1
+    end
+    set fstack to make_gen_node using (id_pref joined with "-t-feats-" joined with idx1), "Stack", "section", (record {direction: "column", gap: "0.4rem", label: (tier.name joined with " included features")}), "", "", nothing, fnodes
+    set clink to make_gen_node using (id_pref joined with "-t-cta-" joined with idx1), "Link", "a", (record {href: c_href, text: tier.cta_label, label: (tier.cta_label joined with " (" joined with tier.name joined with ")")}), (pick_gen_class_list using ds.reg_classes, ["btn-primary"], ["groxy-pricing-link"]), "", {"background-color": ds.primary, "color": ds.on_primary, "border-radius": ds.radius}, []
+    set card_n to make_gen_node using (id_pref joined with "-t-card-" joined with idx1), "Card", "article", (record {elevated: (idx is 1), label: (tier.name joined with " pricing tier")}), (pick_gen_class_list using ds.reg_classes, ["card"], [("groxy-pricing-card-" joined with idx1)]), "", {"background-color": ds.surface, "color": ds.text, "border": ("1px solid " joined with ds.border), "border-radius": ds.radius, "padding": ds.space}, [ch3, cprice, csku, fstack, clink]
+    set cards to collections.append using cards, card_n
+    set idx to idx plus 1
+  end
+
+  set p_children to []
+  if standalone
+    set ph1 to make_gen_node using (id_pref joined with "-p-h1"), "Heading", "h1", (record {level: 1, text: title_str}), (pick_gen_class_list using ds.reg_classes, ["hero-title"], ["groxy-h1"]), "", ds.st_bg, []
+    set p_children to collections.append using p_children, ph1
+  end
+  set ph2 to make_gen_node using (id_pref joined with "-p-h2"), "Heading", "h2", (record {level: 2, text: "Transparent Base-10 Pricing Tiers & Architecture"}), "", "", ds.st_bg, []
+  set pintro to make_gen_node using (id_pref joined with "-p-intro"), "Text", "p", (record {text: "Every plan includes full semantic HTML5 layout rendering, base-10 GrabDecimal wire accuracy across currency figures, live GRAB design-system inheritance, and non-destructive draft previews before changes go live in Grex Theme Builder."}), "", "", ds.st_bg, []
+  set p_children to collections.append using p_children, ph2
+  set p_children to collections.append using p_children, pintro
+  if standalone
+    set pguar to make_gen_node using (id_pref joined with "-p-guarantee"), "Text", "p", (record {text: "Pricing figures are preserved byte-for-byte as strings without JavaScript floating-point conversion, while single-use human approval tokens ensure no layout change or billing tier reaches live visitors without explicit editorial confirmation and one-click undo support."}), "", "", ds.st_bg, []
+    set p_children to collections.append using p_children, pguar
+  end
+  set pgrid to make_gen_node using (id_pref joined with "-p-grid"), "Grid", "section", (record {columns: "3", gap: "1rem", label: "Pricing Tier Cards"}), (pick_gen_class_list using ds.reg_classes, ["grid-3"], ["groxy-pricing-grid"]), "", nothing, cards
+  set p_children to collections.append using p_children, pgrid
+  set pstack to make_gen_node using (id_pref joined with "-p-stack"), "Stack", "section", (record {direction: "column", gap: "1.25rem", label: "Pricing Stack"}), "", "", nothing, p_children
+  set pcont to make_gen_node using (id_pref joined with "-p-cont"), "Container", "section", (record {maxWidth: "1120px", label: "Pricing Container"}), "", "", nothing, [pstack]
+  give back make_gen_node using (id_pref joined with "-pricing"), "Section", "section", (record {label: "Pricing Plans"}), (pick_gen_class_list using ds.reg_classes, [], [("groxy-style-" joined with pack.id), "groxy-pricing-section"]), "", {"background-color": ds.bg, "color": ds.text, "padding": ds.space}, [pcont]
+end
+
+make build_gen_faq using ds, pack, links, id_pref, standalone, title_str
+  set l0 to links at 0
+  set l1 to links at 1
+  set qa_specs to [record {idx: "1", q: "How are exact GrabDecimal pricing and clean DOM structure preserved?", a: "Every currency value is stored as an exact base-10 wire string per ADR-025c so rounding drift never occurs, while layouts emit zero wrapper div elements.", lnk: l0}, record {idx: "2", q: "Can designers undo AI-generated layouts in Grex Theme Builder?", a: "Yes. Human-approved layouts dispatch via POST /api/mcp/layout with actor set to groxy-ai and record an applyAiLayout command for instant one-click Ctrl+Z Undo.", lnk: l1}, record {idx: "3", q: "How are GRAB-DESIGN-SYSTEM.md tokens and WCAG AA contrast enforced?", a: "Groxy AI parses active CSS tokens and registered classes prior to generation, verifies >= 4.5:1 foreground-to-background contrast, and confirms Grade A or A+ scores.", lnk: l0}]
+  set acc_items to []
+  for each qa in qa_specs
+    set q_h3 to make_gen_node using (id_pref joined with "-faq" joined with qa.idx joined with "-h3"), "Heading", "h3", (record {level: 3, text: qa.q}), "", "", ds.st_surface, []
+    set q_ans to make_gen_node using (id_pref joined with "-faq" joined with qa.idx joined with "-a"), "Text", "p", (record {text: qa.a}), "", "", ds.st_surface, []
+    set q_lnk to make_gen_node using (id_pref joined with "-faq" joined with qa.idx joined with "-l"), "Link", "a", (record {href: qa.lnk.href, text: qa.lnk.label, label: qa.lnk.label}), "", "", ds.st_link_surface, []
+    set acc_items to collections.append using acc_items, (record {id: (id_pref joined with "-faq-" joined with qa.idx), title: qa.q, content: [q_h3, q_ans, q_lnk]})
+  end
+  set f_children to []
+  if standalone
+    set fh1 to make_gen_node using (id_pref joined with "-faq-h1"), "Heading", "h1", (record {level: 1, text: title_str}), (pick_gen_class_list using ds.reg_classes, ["hero-title"], ["groxy-h1"]), "", ds.st_bg, []
+    set f_children to collections.append using f_children, fh1
+  end
+  set fh2 to make_gen_node using (id_pref joined with "-faq-h2"), "Heading", "h2", (record {level: 2, text: "Frequently Asked Questions & Safety Guarantees"}), "", "", ds.st_bg, []
+  set fsum to make_gen_node using (id_pref joined with "-faq-summary"), "Text", "p", (record {text: "Review how human-in-the-loop safety gates, accessible Accordion disclosure widgets, and live design tokens protect your published pages while accelerating layout production."}), "", "", ds.st_bg, []
+  set facc to make_gen_node using (id_pref joined with "-faq-acc"), "Accordion", "section", (record {singleOpen: no, openIds: [(id_pref joined with "-faq-1")], items: acc_items}), "", "", nothing, []
+  set fh3 to make_gen_node using (id_pref joined with "-faq-fh3"), "Heading", "h3", (record {level: 3, text: "Explore Related Semantic Documentation"}), "", "", ds.st_bg, []
+  set flink to make_gen_node using (id_pref joined with "-faq-flink"), "Link", "a", (record {href: l1.href, text: l1.label, label: l1.label}), "", "", ds.st_link_bg, []
+  set f_children to collections.append using f_children, fh2
+  set f_children to collections.append using f_children, fsum
+  set f_children to collections.append using f_children, facc
+  set f_children to collections.append using f_children, fh3
+  set f_children to collections.append using f_children, flink
+  set fstack to make_gen_node using (id_pref joined with "-faq-stack"), "Stack", "section", (record {direction: "column", gap: "1rem", label: "FAQ Stack"}), "", "", nothing, f_children
+  set fcont to make_gen_node using (id_pref joined with "-faq-cont"), "Container", "section", (record {maxWidth: "960px", label: "FAQ Container"}), "", "", nothing, [fstack]
+  give back make_gen_node using (id_pref joined with "-faq"), "Section", "section", (record {label: "Frequently Asked Questions"}), (pick_gen_class_list using ds.reg_classes, [], [("groxy-style-" joined with pack.id), "groxy-faq-section"]), "", {"background-color": ds.bg, "color": ds.text, "padding": ds.space}, [fcont]
+end
+
+make build_gen_foreach using ds, pack, collection, site_ctx, links, id_pref, standalone, title_str
+  set sample_rows to [record {id: "s-1", title: "Composable Semantic Grid Patterns", href: (links at 0).href, excerpt: "Structure reusable landing page grids with semantic Landmarks, accessible contrast tokens, and zero build tooling.", alt: "Composable semantic layout grid card preview"}, record {id: "s-2", title: "WCAG AA Contrast & Accessibility Gates", href: (links at 1).href, excerpt: "Guarantee sequential headings, descriptive image alt text, and labeled interactive controls on every candidate tree.", alt: "Accessibility contrast and heading verification overview"}, record {id: "s-3", title: "Exact GrabDecimal Commerce Bindings", href: (links at 2).href, excerpt: "Bind dynamic GrabLab CMS fields cleanly inside ForEach repeaters while preserving base-10 string pricing.", alt: "Exact base-10 decimal pricing field showcase diagram"}]
+  set cards to []
+  set rep_items to []
+  set idx to 0
+  for each row in sample_rows
+    set idx1 to text.from using (idx plus 1)
+    set rep_items to collections.append using rep_items, (record {id: row.id, title: row.title, href: row.href})
+    set img_n to make_gen_node using (id_pref joined with "-fe-img-" joined with idx1), "Image", "img", (record {src: "/static/theme/preview-card.svg", alt: row.alt, decorative: no, width: 640, height: 360, loading: "lazy"}), "", "", nothing, []
+    set ch3 to make_gen_node using (id_pref joined with "-fe-h3-" joined with idx1), "Heading", "h3", (record {level: 3, text: row.title}), "", "", ds.st_surface, []
+    set ctxt to make_gen_node using (id_pref joined with "-fe-txt-" joined with idx1), "Text", "p", (record {text: row.excerpt}), "", "", ds.st_surface, []
+    set clnk to make_gen_node using (id_pref joined with "-fe-lnk-" joined with idx1), "Link", "a", (record {href: row.href, text: ("Read " joined with row.title), label: ("Read " joined with row.title)}), "", "", ds.st_link_surface, []
+    set cards to collections.append using cards, (make_gen_node using (id_pref joined with "-fe-card-" joined with idx1), "Card", "article", (record {elevated: no, label: row.title}), (pick_gen_class_list using ds.reg_classes, ["card"], [("groxy-foreach-card-" joined with idx1)]), "", {"background-color": ds.surface, "color": ds.text, "border": ("1px solid " joined with ds.border), "border-radius": ds.radius, "padding": ds.space}, [img_n, ch3, ctxt, clnk])
+    set idx to idx plus 1
+  end
+
+  set e_children to []
+  if standalone
+    set eh1 to make_gen_node using (id_pref joined with "-fe-h1"), "Heading", "h1", (record {level: 1, text: title_str}), (pick_gen_class_list using ds.reg_classes, ["hero-title"], ["groxy-h1"]), "", ds.st_bg, []
+    set e_children to collections.append using e_children, eh1
+  end
+  set eh2 to make_gen_node using (id_pref joined with "-fe-h2"), "Heading", "h2", (record {level: 2, text: ("Dynamic " joined with collection joined with " Collection Showcase")}), "", "", ds.st_bg, []
+  set eintro to make_gen_node using (id_pref joined with "-fe-intro"), "Text", "p", (record {text: ("Powered by a live GrabLab CMS " joined with collection joined with " query binding, this ForEach showcase renders clean semantic cards with descriptive alt attributes, accessible headings, and canonical internal links across desktop and mobile viewports.")}), "", "", ds.st_bg, []
+  set e_children to collections.append using e_children, eh2
+  set e_children to collections.append using e_children, eintro
+  if standalone
+    set earch to make_gen_node using (id_pref joined with "-fe-arch"), "Text", "p", (record {text: "Every dynamic item inherits live GRAB-DESIGN-SYSTEM.md spacing and surface contrast variables while eliminating wrapper div elements, broken redirect URLs, and unapproved schema drift. Editors review every staged preview in full before committing draft content to GrabLab CMS or Grex Theme Builder."}), "", "", ds.st_bg, []
+    set e_children to collections.append using e_children, earch
+  end
+  set erep to make_gen_node using (id_pref joined with "-fe-repeater"), "ForEach", "ul", (record {items: rep_items}), "", "", nothing, []
+  set erep to collections.put using erep, "queryLoop", (record {source: "grablab_query", content_type: collection, itemAs: "item", limit: 6})
+  set egrid to make_gen_node using (id_pref joined with "-fe-grid"), "Grid", "section", (record {columns: "3", gap: "1rem", label: (collection joined with " Cards Grid")}), (pick_gen_class_list using ds.reg_classes, ["grid-3"], ["groxy-foreach-grid"]), "", nothing, cards
+  set e_children to collections.append using e_children, erep
+  set e_children to collections.append using e_children, egrid
+  set estack to make_gen_node using (id_pref joined with "-fe-stack"), "Stack", "section", (record {direction: "column", gap: "1rem", label: "Showcase Stack"}), "", "", nothing, e_children
+  set econt to make_gen_node using (id_pref joined with "-fe-cont"), "Container", "section", (record {maxWidth: "1120px", label: "Showcase Container"}), "", "", nothing, [estack]
+  give back make_gen_node using (id_pref joined with "-foreach"), "Section", "section", (record {label: "Dynamic Content Showcase"}), (pick_gen_class_list using ds.reg_classes, [], [("groxy-style-" joined with pack.id), "groxy-foreach-section"]), "", {"background-color": ds.bg, "color": ds.text, "padding": ds.space}, [econt]
+end
+
+make build_gen_value_grid using ds, pack, links, id_pref
+  set rows to [record {t: "Zero Wrapper Divs", b: "Every generated block compiles directly to native HTML5 landmarks and CSS grids with zero div nesting overhead.", l: (links at 0)}, record {t: "Live Design Token Inheritance", b: "Consumes active --grex-* custom properties from GRAB-DESIGN-SYSTEM.md for instant visual consistency.", l: (links at 1)}, record {t: "Human-Approved Safety Gate", b: "Stages every candidate layout as a non-mutating preview until explicit single-use token approval.", l: (links at 2)}]
+  set cards to []
+  set idx to 0
+  for each r in rows
+    set idx1 to text.from using (idx plus 1)
+    set vh3 to make_gen_node using (id_pref joined with "-v-h3-" joined with idx1), "Heading", "h3", (record {level: 3, text: r.t}), "", "", ds.st_surface, []
+    set vtxt to make_gen_node using (id_pref joined with "-v-txt-" joined with idx1), "Text", "p", (record {text: r.b}), "", "", ds.st_surface, []
+    set vlnk to make_gen_node using (id_pref joined with "-v-lnk-" joined with idx1), "Link", "a", (record {href: r.l.href, text: r.l.label, label: r.l.label}), "", "", ds.st_link_surface, []
+    set cards to collections.append using cards, (make_gen_node using (id_pref joined with "-v-card-" joined with idx1), "Card", "article", (record {elevated: no, label: r.t}), (pick_gen_class_list using ds.reg_classes, ["card"], ["groxy-value-card"]), "", {"background-color": ds.surface, "color": ds.text, "border": ("1px solid " joined with ds.border), "border-radius": ds.radius, "padding": ds.space}, [vh3, vtxt, vlnk])
+    set idx to idx plus 1
+  end
+  set vh2 to make_gen_node using (id_pref joined with "-v-h2"), "Heading", "h2", (record {level: 2, text: "Why Publishing Teams Choose Semantic Grex Layouts"}), "", "", ds.st_bg, []
+  set vgrid to make_gen_node using (id_pref joined with "-v-grid"), "Grid", "section", (record {columns: "3", gap: "1rem", label: "Capability Cards Grid"}), (pick_gen_class_list using ds.reg_classes, ["grid-3"], ["groxy-value-grid"]), "", nothing, cards
+  set vcont to make_gen_node using (id_pref joined with "-v-cont"), "Container", "section", (record {maxWidth: "1120px", label: "Capabilities Container"}), "", "", nothing, [vh2, vgrid]
+  give back make_gen_node using (id_pref joined with "-value"), "Section", "section", (record {label: "Core Capabilities"}), (pick_gen_class_list using ds.reg_classes, [], [("groxy-style-" joined with pack.id), "groxy-value-section"]), "", {"background-color": ds.bg, "color": ds.text, "padding": ds.space}, [vcont]
+end
+
+make compose_generated_layout using payload, pb
+  set blueprint_id to text.trim using (map_get_str using payload, "blueprint", "full_landing_page")
+  if blueprint_id is ""
+    set blueprint_id to "full_landing_page"
+  end
+  if not (is_allowed_blueprint using blueprint_id)
+    give back record {ok: no, status: 422, error: ("Unsupported blueprint: " joined with blueprint_id)}
+  end
+
+  set style_pack_id to text.trim using (map_get_str using payload, "style_pack", "emerald-editorial")
+  if style_pack_id is ""
+    set style_pack_id to "emerald-editorial"
+  end
+  set pack to get_style_pack_def using style_pack_id
+  if pack is nothing
+    give back record {ok: no, status: 422, error: ("Unsupported style_pack: " joined with style_pack_id)}
+  end
+
+  set tiers_res to normalize_gen_tiers using payload
+  if not tiers_res.ok
+    give back record {ok: no, status: 422, error: tiers_res.error}
+  end
+  set tiers to tiers_res.tiers
+
+  set def_slot to "main"
+  if blueprint_id is "hero_section"
+    set def_slot to "hero"
+  end
+  set slot_name to text.trim using (map_get_str using payload, "slot", def_slot)
+  if slot_name is ""
+    set slot_name to def_slot
+  end
+
+  set kw to text.trim using (map_get_str using payload, "focus_keyword", "semantic theme builder")
+  if kw is ""
+    set kw to "semantic theme builder"
+  end
+  set topic_raw to text.trim using (map_get_str using payload, "topic_title", "")
+  if topic_raw is ""
+    set topic_raw to (title_case_str using kw) joined with " Studio for Fast Publishing"
+  end
+  if not (text.contains using (text.lower using topic_raw), (text.lower using kw))
+    set topic_raw to topic_raw joined with " (" joined with kw joined with ")"
+  end
+  set cand_title to trim_window using topic_raw, 50, 60, "for Fast Accessible Web Publishing"
+  set audience to text.trim using (map_get_str using payload, "target_audience", "editorial and product teams")
+  if audience is ""
+    set audience to "editorial and product teams"
+  end
+  set collection_name to text.lower using (text.trim using (map_get_str using payload, "foreach_collection", "posts"))
+  if collection_name is ""
+    set collection_name to "posts"
+  end
+
+  set site_ctx to nothing
+  if (has_map_key using payload, "site_context") and (is_record_value using (payload at "site_context"))
+    set site_ctx to payload at "site_context"
+  end
+
+  set cand_slug to slugify_clean using (map_get_str using payload, "slug", (kw joined with "-" joined with (text.replace using blueprint_id, "_", "-")))
+  if cand_slug is ""
+    set cand_slug to "semantic-theme-builder-studio"
+  end
+
+  set feat_tier to tiers at 0
+  if (collections.length using tiers) is greater than 1
+    set feat_tier to tiers at 1
+  end
+  set cand_excerpt to trim_window using ("Build accessible zero-div pages and dynamic sections using " joined with kw joined with " with live design tokens, exact " joined with feat_tier.price joined with " pricing, and instant undo."), 120, 158, "Reviewed before publish."
+  set cand_cf to record {featured_price: feat_tier.price, featured_sku: feat_tier.sku}
+  set cand_entry to record {content_type: "page", title: cand_title, slug: cand_slug, excerpt: cand_excerpt, focus_keyword: kw, custom_fields: cand_cf}
+
+  set ds_md to map_get_str using payload, "design_system_md", ""
+  set ds_info to parse_design_system_md using ds_md
+  set ds to build_gen_ds_ctx using ds_info, pack
+  set links to resolve_gen_safe_links using site_ctx, cand_slug, tiers
+  set id_pref to "groxy-" joined with (text.replace using blueprint_id, "_", "-")
+
+  set cand_layout to nothing
+  if blueprint_id is "hero_section"
+    set cand_layout to build_gen_hero using ds, pack, cand_title, audience, links, id_pref, site_ctx, yes
+  otherwise if blueprint_id is "pricing_grid"
+    set cand_layout to build_gen_pricing using ds, pack, tiers, links, id_pref, yes, cand_title
+  otherwise if blueprint_id is "faq_accordion"
+    set cand_layout to build_gen_faq using ds, pack, links, id_pref, yes, cand_title
+  otherwise if blueprint_id is "foreach_showcase"
+    set cand_layout to build_gen_foreach using ds, pack, collection_name, site_ctx, links, id_pref, yes, cand_title
+  otherwise
+    set nav_items to [record {label: (links at 0).label, href: (links at 0).href}, record {label: (links at 1).label, href: (links at 1).href}, record {label: (links at 2).label, href: (links at 2).href}]
+    set nav_n to make_gen_node using "root-landing-nav", "Nav", "nav", (record {label: "Primary Navigation", items: nav_items}), "", "", {"background-color": ds.surface, "color": ds.text}, []
+    set h_blk to build_gen_hero using ds, pack, cand_title, audience, links, id_pref, site_ctx, no
+    set v_blk to build_gen_value_grid using ds, pack, links, id_pref
+    set p_blk to build_gen_pricing using ds, pack, tiers, links, id_pref, no, cand_title
+    set e_blk to build_gen_foreach using ds, pack, collection_name, site_ctx, links, id_pref, no, cand_title
+    set f_blk to build_gen_faq using ds, pack, links, id_pref, no, cand_title
+    set cand_layout to make_gen_node using "root-landing-main", "Section", "section", (record {label: "Generated Landing Page"}), (pick_gen_class_list using ds.reg_classes, ["hero"], [("groxy-style-" joined with pack.id), "groxy-landing-root"]), "", {"background-color": ds.bg, "color": ds.text}, [nav_n, h_blk, v_blk, p_blk, e_blk, f_blk]
+  end
+
+  set empty_acc to record {node_count: 0, max_depth: 0, div_count: 0, invalid_elements: [], invalid_tags: [], security_violations: [], headings: [], h1_count: 0, sub_count: 0, bad_images: 0, image_count: 0, bad_forms: 0, bad_interactive: 0, links: [], text_segments: [], classes_used: [], tokens_referenced: 0, inline_color_overrides: 0, contrast_failures: [], focus_failures: 0}
+  set val_acc to walk_layout_tree using cand_layout, 1, ds.bg_hex, empty_acc
+  set schema_ok to (val_acc.div_count is 0) and ((collections.length using val_acc.invalid_elements) is 0) and ((collections.length using val_acc.security_violations) is 0) and (val_acc.max_depth is at most 24)
+  set wcag_ok to ((collections.length using val_acc.contrast_failures) is 0) and (val_acc.bad_images is 0) and (val_acc.bad_forms is 0) and (val_acc.bad_interactive is 0)
+
+  set audit_payload to copy_to_map using payload
+  if ds.repaired
+    set audit_payload to collections.put using audit_payload, "design_system_md", ds.effective_md
+  end
+  set audit_payload to collections.put using audit_payload, "entry", cand_entry
+  set audit_payload to collections.put using audit_payload, "grex_layout", cand_layout
+  set audit_payload to collections.put using audit_payload, "focus_keyword", kw
+  set audit_report to evaluate_audit_report using audit_payload, pb
+
+  if (audit_report.overall_score is less than 90) or (not audit_report.publish_safe)
+    give back record {ok: no, status: 422, error: ("Generated layout scored " joined with (text.from using audit_report.overall_score) joined with " (" joined with audit_report.overall_grade joined with "), below Grade A threshold.")}
+  end
+
+  set applied_classes to collect_applied_grex_classes using ds.reg_classes
+  set audit_ds to audit_report.design_system_summary
+  set gen_id to "gen_" joined with (crypto.random_urlsafe using 16)
+  set app_tok to "tok_" joined with (crypto.random_urlsafe using 16)
+  set result_doc to record {schema_version: "0.3.0", generation_id: gen_id, blueprint: blueprint_id, style_pack: pack.id, slot: slot_name, mode: "deterministic", approval_required: yes, approval_token: app_tok, validation: (record {grex_schema_valid: schema_ok, div_count: val_acc.div_count, max_depth: val_acc.max_depth, node_count: val_acc.node_count, wcag_aa_passed: wcag_ok, decimal_integrity_verified: yes}), audit_report: audit_report, design_system_summary: (record {tokens_applied: ds.tokens_applied, reusable_classes_applied: applied_classes, unknown_classes_used: (audit_ds at "unknown_classes_used")}), candidate_entry: cand_entry, candidate_layout: cand_layout}
+  give back record {ok: yes, status: 200, result: result_doc, error: ""}
+end
+
 route "GET" "/_health"
-  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "0.2.0"}
+  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "0.3.0"}
 end
 
 route "GET" "/_ready"
@@ -2087,7 +2696,7 @@ route "GET" "/_ready"
     if rule_cnt is not 22
       give back server.json using 503, record {status: "not_ready", error: "Playbook rule count mismatch"}
     end
-    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "0.2.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt}
+    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "0.3.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt}
   catch err
     give back server.json using 503, record {status: "not_ready", error: err.message}
   end
@@ -2202,7 +2811,7 @@ route "POST" "/api/groxy/mcp/inspect" using req
       end
     end
 
-    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "0.2.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
+    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "0.3.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
   catch err
     give back server.json using 400, record {ok: no, error: err.message}
   end
@@ -2344,6 +2953,254 @@ route "POST" "/api/groxy/boost/approve" using req
     end
 
     give back server.json using 200, record {ok: yes, approved: yes, ready_for_publish: yes, boost_id: boost_id, draft_status: "draft", actor: "groxy-ai", candidate_entry: cand_entry, candidate_layout: cand_layout, cms_draft_result: cms_draft_result, builder_layout_result: builder_layout_result}
+  catch err
+    give back server.json using 400, record {ok: no, error: err.message}
+  end
+end
+
+route "GET" "/api/groxy/style-packs"
+  set sp_doc to call list_style_packs_doc
+  give back server.json using 200, sp_doc
+end
+
+route "POST" "/api/groxy/generate-layout" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set payload to server.parse_json using req
+    set pb to load_playbook_doc using groxy_cache
+
+    set ds_existing to text.trim using (map_get_str using payload, "design_system_md", "")
+    if ds_existing is ""
+      set b_url to text.trim using (map_get_str using payload, "builder_url", "")
+      if b_url is ""
+        try
+          if env.has using "GROXY_BUILDER_URL"
+            set b_url to text.trim using (env.get using "GROXY_BUILDER_URL")
+          end
+        catch env_err
+          set ignored_genv to env_err.message
+        end
+      end
+      if b_url is not ""
+        try
+          set ds_resp to http.get using (b_url joined with "/api/design-system.md")
+          if ds_resp.ok
+            set payload to collections.put using payload, "design_system_md", ds_resp.body
+          end
+        catch net_err
+          set ignored_gds to net_err.message
+        end
+      end
+    end
+
+    set gen_res to compose_generated_layout using payload, pb
+    if not gen_res.ok
+      give back server.json using gen_res.status, record {ok: no, error: gen_res.error}
+    end
+
+    set out_doc to gen_res.result
+    set cache_rec to {"generation_id": out_doc.generation_id, "approval_token": out_doc.approval_token, "slot": out_doc.slot, "blueprint": out_doc.blueprint, "style_pack": out_doc.style_pack, "candidate_entry": out_doc.candidate_entry, "candidate_layout": out_doc.candidate_layout, "used": no}
+    call cache.set using groxy_cache, ("gen:" joined with out_doc.generation_id), cache_rec, 3600000
+    give back server.json using 200, out_doc
+  catch err
+    give back server.json using 400, record {ok: no, error: err.message}
+  end
+end
+
+route "POST" "/api/groxy/generate-layout/apply" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set payload to server.parse_json using req
+    set gen_id to text.trim using (map_get_str using payload, "generation_id", "")
+    set approval_token to text.trim using (map_get_str using payload, "approval_token", "")
+    if gen_id is ""
+      give back server.json using 404, record {ok: no, error: "GROXY-SAFE-001: generation_id not found or expired."}
+    end
+
+    set cache_key to "gen:" joined with gen_id
+    set cached to cache.get using groxy_cache, cache_key
+    if not cached.found
+      give back server.json using 404, record {ok: no, error: "Generation candidate not found or expired."}
+    end
+
+    set staged to cached.value
+    if (staged at "used") is yes
+      give back server.json using 409, record {ok: no, error: "GROXY-SAFE-001: approval_token already consumed (single-use)."}
+    end
+    if approval_token is "" or ((staged at "approval_token") is not approval_token)
+      give back server.json using 403, record {ok: no, error: "GROXY-SAFE-001: Invalid or missing approval_token."}
+    end
+
+    set consumed to collections.put using staged, "used", yes
+    call cache.set using groxy_cache, cache_key, consumed, 3600000
+
+    set cand_entry to staged at "candidate_entry"
+    set cand_layout to staged at "candidate_layout"
+    set req_slot to text.trim using (map_get_str using payload, "slot", "")
+    if req_slot is ""
+      set req_slot to map_get_str using staged, "slot", "main"
+    end
+    set builder_slot to map_gen_builder_slot using req_slot
+    set summary_txt to text.trim using (map_get_str using payload, "summary", "")
+    if summary_txt is ""
+      set summary_txt to "Groxy AI generated " joined with (map_get_str using staged, "blueprint", "layout") joined with " (" joined with (map_get_str using staged, "style_pack", "emerald-editorial") joined with ")"
+    end
+
+    set builder_url to text.trim using (map_get_str using payload, "builder_url", "")
+    if builder_url is ""
+      try
+        if env.has using "GROXY_BUILDER_URL"
+          set builder_url to text.trim using (env.get using "GROXY_BUILDER_URL")
+        end
+      catch env_err
+        set ignored_benv to env_err.message
+      end
+    end
+    set builder_csrf to text.trim using (map_get_str using payload, "builder_csrf", "")
+
+    set builder_dispatched to no
+    set builder_result to nothing
+    set builder_cmd to nothing
+    if builder_url is not "" and (is_record_value using cand_layout)
+      if builder_csrf is ""
+        set st_resp to http.get using (builder_url joined with "/api/studio/state")
+        if st_resp.ok
+          set st_json to json.parse using st_resp.body
+          set builder_csrf to map_get_str using st_json, "csrf_token", ""
+        end
+      end
+      set b_body to json.stringify using (record {slot: builder_slot, actor: "groxy-ai", summary: summary_txt, layout: cand_layout})
+      set b_hdrs to {"Content-Type": "application/json", "X-CSRF-Token": builder_csrf}
+      set b_resp to http.post using (builder_url joined with "/api/mcp/layout"), b_body, record {headers: b_hdrs}
+      if b_resp.ok
+        set builder_dispatched to yes
+        set builder_result to json.parse using b_resp.body
+        if has_map_key using builder_result, "command"
+          set builder_cmd to builder_result at "command"
+        end
+      otherwise
+        give back server.json using 502, record {ok: no, error: ("Grex Theme Builder dispatch failed: HTTP " joined with (text.from using b_resp.status) joined with " — " joined with b_resp.body)}
+      end
+    end
+
+    set want_draft to no
+    if has_map_key using payload, "create_draft"
+      if (payload at "create_draft") is yes
+        set want_draft to yes
+      end
+    end
+    set grablab_url to text.trim using (map_get_str using payload, "grablab_url", "")
+    if grablab_url is ""
+      set grablab_url to text.trim using (map_get_str using payload, "cms_url", "")
+    end
+    if grablab_url is "" and want_draft
+      try
+        if env.has using "GROXY_CMS_URL"
+          set grablab_url to text.trim using (env.get using "GROXY_CMS_URL")
+        end
+      catch env_err2
+        set ignored_cenv to env_err2.message
+      end
+    end
+    set cms_token to text.trim using (map_get_str using payload, "grablab_token", "")
+    if cms_token is ""
+      set cms_token to text.trim using (map_get_str using payload, "cms_token", "")
+    end
+
+    set draft_saved to no
+    set cms_draft_result to nothing
+    if want_draft and grablab_url is not ""
+      set ct_slug_val to map_get_str using cand_entry, "content_type", "page"
+      set cms_hdrs to {"Content-Type": "application/json"}
+      if cms_token is not ""
+        set cms_hdrs to collections.put using cms_hdrs, "Authorization", ("Bearer " joined with cms_token)
+      end
+
+      set allowed_keys to []
+      set known_schema to no
+      set lct_body to json.stringify using (record {jsonrpc: "2.0", id: 1, method: "tools/call", params: (record {name: "list_content_types", arguments: {}})})
+      set lct_resp to http.post using (grablab_url joined with "/api/mcp"), lct_body, record {headers: cms_hdrs}
+      if lct_resp.ok
+        try
+          set lct_json to json.parse using lct_resp.body
+          if has_map_key using lct_json, "result"
+            set lct_r to lct_json at "result"
+            if has_map_key using lct_r, "structuredContent"
+              set lct_sc to lct_r at "structuredContent"
+              if has_map_key using lct_sc, "content_types"
+                for each ctype in (lct_sc at "content_types")
+                  if (map_get_str using ctype, "slug", "") is ct_slug_val
+                    set known_schema to yes
+                    if has_map_key using ctype, "fields"
+                      for each fld in (ctype at "fields")
+                        set fk to map_get_str using fld, "field_key", ""
+                        if fk is not ""
+                          set allowed_keys to collections.append using allowed_keys, fk
+                        end
+                      end
+                    end
+                  end
+                end
+              end
+            end
+          end
+        catch lct_err
+          set ignored_lct to lct_err.message
+        end
+      end
+
+      set draft_args to {"content_type_slug": ct_slug_val, "title": (map_get_str using cand_entry, "title", ""), "slug": (map_get_str using cand_entry, "slug", ""), "excerpt": (map_get_str using cand_entry, "excerpt", ""), "status": "draft"}
+      if (has_map_key using cand_entry, "custom_fields") and (is_record_value using (cand_entry at "custom_fields"))
+        set raw_cf to cand_entry at "custom_fields"
+        if known_schema
+          set safe_cf to {}
+          for each rfk in (collections.keys using raw_cf)
+            if list_contains using allowed_keys, rfk
+              set safe_cf to collections.put using safe_cf, rfk, (raw_cf at rfk)
+            end
+          end
+          if (list_contains using allowed_keys, "subtitle") and (not (has_map_key using safe_cf, "subtitle"))
+            set fp to map_get_str using raw_cf, "featured_price", ""
+            set fs to map_get_str using raw_cf, "featured_sku", ""
+            if fp is not ""
+              set safe_cf to collections.put using safe_cf, "subtitle", ("Featured tier $" joined with fp joined with " (SKU " joined with fs joined with ")")
+            end
+          end
+          set draft_args to collections.put using draft_args, "custom_fields", safe_cf
+        otherwise
+          set draft_args to collections.put using draft_args, "custom_fields", raw_cf
+        end
+      end
+      set rpc_body to json.stringify using (record {jsonrpc: "2.0", id: 2, method: "tools/call", params: (record {name: "create_entry_draft", arguments: draft_args})})
+      set cms_resp to http.post using (grablab_url joined with "/api/mcp"), rpc_body, record {headers: cms_hdrs}
+      if cms_resp.ok
+        set cms_draft_result to json.parse using cms_resp.body
+        set rpc_err to no
+        if has_map_key using cms_draft_result, "error"
+          set rpc_err to yes
+        end
+        if has_map_key using cms_draft_result, "result"
+          set cms_r to cms_draft_result at "result"
+          if has_map_key using cms_r, "isError"
+            if (cms_r at "isError") is yes
+              set rpc_err to yes
+            end
+          end
+        end
+        if rpc_err
+          give back server.json using 502, record {ok: no, error: ("GrabLab CMS create_entry_draft tool error: " joined with cms_resp.body)}
+        end
+        set draft_saved to yes
+      otherwise
+        give back server.json using 502, record {ok: no, error: ("GrabLab CMS draft save failed: HTTP " joined with (text.from using cms_resp.status))}
+      end
+    end
+
+    give back server.json using 200, record {schema_version: "0.3.0", generation_id: gen_id, approved: yes, actor: "groxy-ai", command_stack_action: "applyAiLayout", undo_available: yes, status_enforced: "draft", builder_dispatch: (record {dispatched: builder_dispatched, slot: req_slot, builder_slot: builder_slot, command: builder_cmd, result: builder_result}), draft_persistence: (record {saved_as_draft: draft_saved, status_enforced: "draft", result: cms_draft_result}), candidate_entry: cand_entry}
   catch err
     give back server.json using 400, record {ok: no, error: err.message}
   end

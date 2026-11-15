@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Groxy AI v0.3.0 Walkthrough Guide</title>
+  <style>
+    @page { size: letter; margin: 0.65in; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      line-height: 1.5;
+      font-size: 10.2pt;
+      margin: 0;
+    }
+    header {
+      border-bottom: 3px solid #047857;
+      padding-bottom: 0.7rem;
+      margin-bottom: 1rem;
+    }
+    h1 { margin: 0 0 0.2rem 0; font-size: 20pt; color: #064e3b; }
+    .subtitle { margin: 0; color: #334155; font-size: 11pt; font-weight: 600; }
+    .meta { margin: 0.35rem 0 0 0; color: #475569; font-size: 9.2pt; }
+    h2 {
+      margin: 1.1rem 0 0.45rem 0;
+      font-size: 13pt;
+      color: #065f46;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 0.18rem;
+      page-break-after: avoid;
+    }
+    p { margin: 0.35rem 0 0.55rem 0; }
+    ul { margin: 0.25rem 0 0.65rem 1.2rem; padding: 0; }
+    li { margin-bottom: 0.25rem; }
+    .callout {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      border-left: 4px solid #047857;
+      border-radius: 6px;
+      padding: 0.65rem 0.85rem;
+      margin: 0.7rem 0;
+      page-break-inside: avoid;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0 1rem 0;
+      font-size: 9.2pt;
+      page-break-inside: avoid;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 0.42rem 0.55rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #ecfdf5; color: #0f172a; font-weight: 700; }
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      background: #f1f5f9;
+      padding: 0.08rem 0.28rem;
+      border-radius: 4px;
+      font-size: 9pt;
+    }
+    footer {
+      margin-top: 1.5rem;
+      padding-top: 0.6rem;
+      border-top: 1px solid #e2e8f0;
+      color: #475569;
+      font-size: 9pt;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Groxy AI v0.3.0 Walkthrough Guide</h1>
+    <p class="subtitle">Autonomous <code>GRAB-DESIGN-SYSTEM.md</code>-Aware Visual Page &amp; Section Generator for Grex Theme Builder</p>
+    <p class="meta">Release Series: Post-1.0 Step 4 &bull; Runtime: GRAB v1.1.0 + Grex JS v1.0.0 &bull; SemVer Tier: Pre-1.0 Feature Release</p>
+  </header>
+
+  <section class="callout">
+    <p><strong>What Groxy AI v0.3.0 Adds in Plain English:</strong> Designers and content authors can now compose complete landing pages or modular page sections (Hero Sections, Pricing Grids, FAQ Accordions, and dynamic <code>ForEach</code> showcases) by picking a curated visual <strong>Style Pack</strong>, target slot, and topic. Every generated section automatically inherits your site&rsquo;s live <code>--grex-*</code> colors and <code>.grex-c-*</code> utility classes from <code>GRAB-DESIGN-SYSTEM.md</code>, enforces zero wrapper <code>&lt;div&gt;</code> tags and exact <code>GrabDecimal</code> pricing, verifies a Grade <code>A</code>/<code>A+</code> WCAG AA scorecard before previewing, and waits for your single-use approval before dispatching to Grex Theme Builder with 1-click <code>Ctrl+Z</code> Undo support.</p>
+  </section>
+
+  <section>
+    <h2>1. Curated Zero-Fee Style Packs &amp; 5 Page/Section Blueprints</h2>
+    <ul>
+      <li><strong>Catalog Endpoint:</strong> <code>GET /api/groxy/style-packs</code> returns 4 deterministic Design Style Packs and 5 Blueprints (<code>public/groxy/generator.js</code> &amp; <code>src/groxy.grab</code>).</li>
+      <li><strong>4 Design Style Packs:</strong> <code>emerald-editorial</code> (Emerald Editorial), <code>obsidian-tech</code> (Obsidian Developer Studio), <code>warm-commerce</code> (Warm Precision Commerce), and <code>swiss-minimal</code> (Swiss Grid Minimal).</li>
+      <li><strong>5 Semantic Blueprints:</strong> <code>full_landing_page</code>, <code>hero_section</code>, <code>pricing_grid</code>, <code>faq_accordion</code>, and <code>foreach_showcase</code> built purely from the 20 approved <code>grex.elements.json</code> components.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>2. Safety, Accessibility &amp; Exact Decimal Guarantees</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Verification Gate</th>
+          <th>How Groxy AI v0.3.0 Enforces It</th>
+          <th>Protected Layer / Standard</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Live Design-System Sync</strong></td>
+          <td>Fetches <code>GET /api/design-system.md</code>, extracts active <code>--grex-*</code> custom properties and registered <code>.grex-c-*</code> classes, and automatically repairs low-contrast overrides to meet &ge; 4.5:1 WCAG AA contrast.</td>
+          <td><code>GRAB-DESIGN-SYSTEM.md</code> &amp; <code>Grex Theme Builder v1.0.0</code></td>
+        </tr>
+        <tr>
+          <td><strong>Strict Schema &amp; Zero-<code>&lt;div&gt;</code> Gate</strong></td>
+          <td>Validates every candidate node tree against <code>validateElementNode({ strictProps: true })</code>, <code>auditAccessibility()</code>, and Groxy&rsquo;s 22-rule 4-pillar auditor (requiring score &ge; 90 Grade <code>A</code>/<code>A+</code> &amp; <code>publish_safe: true</code>).</td>
+          <td><code>Grex JS v1.0.0</code> &amp; Groxy AI Playbook</td>
+        </tr>
+        <tr>
+          <td><strong>Exact Base-10 Pricing Strings</strong></td>
+          <td>Rejects JavaScript float prices with HTTP <code>422</code> and preserves base-10 <code>GrabDecimal</code> (<code>"0.00"</code>, <code>"29.00"</code>, <code>"149.95"</code>) and <code>GrabInteger</code> (<code>"10020"</code>) wire strings byte-for-byte.</td>
+          <td><code>ADR-025c</code> (Tier Cards &amp; Companion Entry Custom Fields)</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>3. Human-in-the-Loop Preview, MCP Dispatch &amp; 1-Click Undo</h2>
+    <ul>
+      <li><strong>Non-Mutating Studio Preview (<code>POST /api/groxy/generate-layout</code>):</strong> Renders an interactive zero-<code>&lt;div&gt;</code> live preview canvas, hierarchical semantic node tree inspector, applied <code>--grex-*</code> / <code>.grex-c-*</code> badges, and 4-pillar scorecard in <code>/groxy</code> without writing to GrabLab CMS or Grex Theme Builder.</li>
+      <li><strong>Single-Use Token Dispatch (<code>POST /api/groxy/generate-layout/apply</code>):</strong> Requires valid <code>X-CSRF-Token</code> plus the single-use <code>approval_token</code> (<code>403</code> invalid, <code>409</code> replay). Dispatches to Grex Theme Builder <code>POST /api/mcp/layout</code> with <code>actor: "groxy-ai"</code> and records a reversible <code>applyAiLayout</code> command stack entry for 1-click Undo restoration.</li>
+      <li><strong>Draft-Only CMS Persistence (<code>GROXY-SAFE-001</code>):</strong> When creating a companion entry in GrabLab CMS via <code>create_entry_draft</code>, inspects live type field definitions and strictly enforces <code>status_enforced: "draft"</code>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>4. Verification Summary</h2>
+    <ul>
+      <li><code>grab check --platform-config grab.platform.json src/groxy.grab</code> &amp; non-destructive byte-for-byte <code>grab format</code> verification: <strong>Passed</strong>.</li>
+      <li><code>node --test tests/unit_*.test.js</code> (unit + Generator Studio DOM + 20-matrix Style Pack &times; Blueprint + <code>ADR-025c</code> tests): <strong>28/28 Passed</strong>.</li>
+      <li><code>python tests/integration_e2e.py</code> (Gates 1, 2, 3A <code>grab mcp</code>, 3B live 4-layer GRAB v1.1.0 + GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v0.3.0 + live <code>applyAiLayout</code> 1-click Undo): <strong>Passed 100%</strong>.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <p>Groxy AI v0.3.0 &bull; Urban's Press / GRAB Ecosystem &bull; Human-in-the-Loop Safe &bull; Verified Zero-<code>&lt;div&gt;</code> Semantic Architecture</p>
+  </footer>
+</body>
+</html>

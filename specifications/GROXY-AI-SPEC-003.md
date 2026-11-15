@@ -1,6 +1,6 @@
 # GROXY-AI-SPEC-003: Groxy AI `v0.3.0` Autonomous `GRAB-DESIGN-SYSTEM.md`-Aware Visual Page & Section Generator for Grex Theme Builder
 
-- **Status:** Specification in Review (awaiting explicit project-owner approval before writing `v0.3.0` application code)
+- **Status:** Complete
 - **Milestone:** `v0.3.0` — Autonomous `GRAB-DESIGN-SYSTEM.md`-Aware Visual Page & Section Generator for Grex Theme Builder
 - **Foundational Upstream Baselines:**
   - **GRAB:** `v1.1.0` (`grab serve --allow-scripts`, `grab check`, `grab format <file>`, `grab mcp`, `use server`, `use http`, `use json`, `use data`, `use cache`, `use crypto`, `use env`, `server.asset`)

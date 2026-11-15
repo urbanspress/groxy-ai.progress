@@ -1,5 +1,5 @@
 /**
- * Groxy AI v0.2.0 — Zero-<div> Semantic Audit, Pre-Publish Grade Gate & Boost Diff UI.
+ * Groxy AI v0.3.0 — Zero-<div> Visual Generator Studio, Pre-Publish Grade Gate & Boost Diff UI.
  * Built strictly with Grex JS v1.0.0 signals and semantic HTML5 elements.
  * Zero innerHTML writes, zero eval(), zero wrapper <div> elements.
  */
@@ -8,12 +8,19 @@ import {
   auditAccessibility,
   computed,
   effect,
+  isSafeUrl,
   setSafeText,
   signal,
 } from "./grex.js";
 import { DEFAULT_SEO_PLAYBOOK } from "./playbook.js";
 import { auditEntryAndLayout } from "./auditor.js";
 import { boostEntryAndLayout, buildPrePublishReview } from "./booster.js";
+import {
+  DEFAULT_PRICING_TIERS,
+  generatePageOrSection,
+  LAYOUT_BLUEPRINTS,
+  listStylePacks,
+} from "./generator.js";
 
 export const SAMPLE_AUDIT_PRESETS = Object.freeze({
   clean: {
@@ -234,6 +241,19 @@ export function mountGroxyDashboard(options = {}) {
   const reviewSig = signal(null);
   const boostSig = signal(null);
   const publishNoticeSig = signal("");
+  const genBlueprintSig = signal("full_landing_page");
+  const genStylePackSig = signal("emerald-editorial");
+  const genSlotSig = signal("main");
+  const genKeywordSig = signal("semantic theme builder");
+  const genTopicSig = signal("Semantic Theme Builder Studio for Fast Publishing");
+  const genAudienceSig = signal("Editorial and product teams");
+  const genStarterPriceSig = signal(DEFAULT_PRICING_TIERS[0].price);
+  const genProPriceSig = signal(DEFAULT_PRICING_TIERS[1].price);
+  const genEntPriceSig = signal(DEFAULT_PRICING_TIERS[2].price);
+  const genCollectionSig = signal("posts");
+  const genCandidateSig = signal(null);
+  const genNoticeSig = signal("");
+  const genErrorSig = signal("");
   const mcpStatusSig = signal({
     loading: false,
     summary: "Click Inspect MCP Bridge to verify live GrabLab CMS, Grex Theme Builder, and GRAB CLI capabilities.",
@@ -284,7 +304,7 @@ export function mountGroxyDashboard(options = {}) {
     class: "groxy-card",
     "aria-label": "Deterministic SEO and DOM Auditor",
   });
-  formCard.appendChild(createEl(doc, "h1", {}, "Groxy AI v0.2.0 — 4-Pillar SEO, Pre-Publish Gate & Boost Inspector"));
+  formCard.appendChild(createEl(doc, "h1", {}, "Groxy AI v0.3.0 — Visual Generator Studio, Pre-Publish Gate & Audit Inspector"));
   formCard.appendChild(
     createEl(
       doc,
@@ -715,7 +735,326 @@ export function mountGroxyDashboard(options = {}) {
   playbookCard.appendChild(playbookTable);
   root.appendChild(playbookCard);
 
-  // 6. MCP Bridge Diagnostic Card
+  // 6. Visual Page & Section Generator Studio Card (v0.3.0, Zero wrapper <div>)
+  const generatorCard = createEl(doc, "section", {
+    id: "groxy-generator-studio-panel",
+    class: "groxy-card",
+    "aria-label": "Visual Page and Section Generator Studio",
+  });
+  generatorCard.appendChild(createEl(doc, "h2", {}, "Visual Page & Section Generator Studio"));
+  generatorCard.appendChild(
+    createEl(
+      doc,
+      "p",
+      { class: "groxy-muted" },
+      "Compose full landing pages, hero sections, GrabDecimal pricing grids, FAQ accordions, and ForEach showcases purely from 20 semantic Grex elements using live GRAB-DESIGN-SYSTEM.md tokens."
+    )
+  );
+
+  const packMeta = listStylePacks();
+  const genForm = createEl(doc, "form", { id: "groxy-generator-form" });
+
+  const genGridTop = createEl(doc, "section", { class: "groxy-grid-3", "aria-label": "Generator Blueprint Settings" });
+
+  const addSelectField = (parent, id, labelText, opts, sig) => {
+    const p = createEl(doc, "p", { class: "groxy-field" });
+    p.appendChild(createEl(doc, "label", { for: id }, labelText));
+    const sel = createEl(doc, "select", { id, name: id });
+    for (const o of opts) {
+      const optEl = createEl(doc, "option", { value: o.value }, o.label);
+      if (sig.peek() === o.value) optEl.setAttribute("selected", "selected");
+      sel.appendChild(optEl);
+    }
+    sel.value = sig.peek();
+    sel.addEventListener("change", () => sig.set(sel.value));
+    p.appendChild(sel);
+    parent.appendChild(p);
+    return sel;
+  };
+
+  const addTextField = (parent, id, labelText, sig) => {
+    const p = createEl(doc, "p", { class: "groxy-field" });
+    p.appendChild(createEl(doc, "label", { for: id }, labelText));
+    const inp = createEl(doc, "input", { id, name: id, type: "text", value: sig.peek() });
+    inp.value = sig.peek();
+    inp.addEventListener("input", () => sig.set(inp.value));
+    p.appendChild(inp);
+    parent.appendChild(p);
+    return inp;
+  };
+
+  addSelectField(
+    genGridTop,
+    "groxy-gen-blueprint",
+    "Page / Section Blueprint",
+    LAYOUT_BLUEPRINTS.map((b) => ({ value: b.id, label: b.label })),
+    genBlueprintSig
+  );
+  addSelectField(
+    genGridTop,
+    "groxy-gen-style-pack",
+    "Design Style Pack",
+    packMeta.style_packs.map((s) => ({ value: s.id, label: s.label })),
+    genStylePackSig
+  );
+  addSelectField(
+    genGridTop,
+    "groxy-gen-slot",
+    "Target Template Slot",
+    [
+      { value: "main", label: "main (Home Landing)" },
+      { value: "hero", label: "hero (Primary Hero)" },
+      { value: "home", label: "home (Theme Home)" },
+      { value: "single", label: "single (Single Entry)" },
+      { value: "footer", label: "footer (Part: Footer)" },
+    ],
+    genSlotSig
+  );
+  genForm.appendChild(genGridTop);
+
+  const genGridMeta = createEl(doc, "section", { class: "groxy-grid-2", "aria-label": "Topic and Audience Inputs" });
+  addTextField(genGridMeta, "groxy-gen-keyword", "Focus Keyword", genKeywordSig);
+  addTextField(genGridMeta, "groxy-gen-topic", "Topic / Page Title", genTopicSig);
+  addTextField(genGridMeta, "groxy-gen-audience", "Target Audience", genAudienceSig);
+  addTextField(genGridMeta, "groxy-gen-collection", "ForEach CMS Collection", genCollectionSig);
+  genForm.appendChild(genGridMeta);
+
+  const genGridPricing = createEl(doc, "section", { class: "groxy-grid-3", "aria-label": "GrabDecimal Pricing Tiers" });
+  addTextField(genGridPricing, "groxy-gen-starter-price", "Starter Price (GrabDecimal)", genStarterPriceSig);
+  addTextField(genGridPricing, "groxy-gen-pro-price", "Studio Pro Price (GrabDecimal)", genProPriceSig);
+  addTextField(genGridPricing, "groxy-gen-ent-price", "Enterprise Price (GrabDecimal)", genEntPriceSig);
+  genForm.appendChild(genGridPricing);
+
+  const genBtnRow = createEl(doc, "p", { class: "groxy-actions" });
+  const genPreviewBtn = createEl(
+    doc,
+    "button",
+    { id: "groxy-generate-preview-btn", type: "button", class: "groxy-btn" },
+    "🎨 Generate Preview"
+  );
+  genBtnRow.appendChild(genPreviewBtn);
+  genForm.appendChild(genBtnRow);
+  generatorCard.appendChild(genForm);
+
+  const genNoticeWrap = createEl(doc, "output", { id: "groxy-gen-status", "aria-live": "polite" });
+  generatorCard.appendChild(genNoticeWrap);
+
+  const genPreviewArea = createEl(doc, "section", {
+    id: "groxy-generator-preview",
+    "aria-label": "Generated Semantic Layout Preview and Scorecard",
+  });
+  generatorCard.appendChild(genPreviewArea);
+  root.appendChild(generatorCard);
+
+  function buildGeneratorPayload() {
+    return {
+      blueprint: genBlueprintSig.peek(),
+      style_pack: genStylePackSig.peek(),
+      slot: genSlotSig.peek(),
+      focus_keyword: genKeywordSig.peek(),
+      topic_title: genTopicSig.peek(),
+      target_audience: genAudienceSig.peek(),
+      foreach_collection: genCollectionSig.peek(),
+      pricing_tiers: [
+        { ...DEFAULT_PRICING_TIERS[0], price: String(genStarterPriceSig.peek() || "").trim() },
+        { ...DEFAULT_PRICING_TIERS[1], price: String(genProPriceSig.peek() || "").trim() },
+        { ...DEFAULT_PRICING_TIERS[2], price: String(genEntPriceSig.peek() || "").trim() },
+      ],
+    };
+  }
+
+  async function triggerGeneratePreview() {
+    genErrorSig.set("");
+    genNoticeSig.set("");
+    let payload;
+    try {
+      payload = buildGeneratorPayload();
+      if (fetchFn && csrfToken) {
+        const resp = await fetchFn("/api/groxy/generate-layout", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": csrfToken,
+          },
+          body: JSON.stringify(payload),
+        });
+        const body = await resp.json();
+        if (resp.ok && body?.generation_id) {
+          genCandidateSig.set(body);
+          return body;
+        }
+        if (resp.status >= 400 && resp.status < 500) {
+          genErrorSig.set(body?.error || `Validation rejected (${resp.status})`);
+          return null;
+        }
+      }
+      const localRes = generatePageOrSection(payload, { playbook });
+      genCandidateSig.set(localRes);
+      return localRes;
+    } catch (err) {
+      genErrorSig.set(err instanceof Error ? err.message : String(err));
+      return null;
+    }
+  }
+
+  async function approveGeneratedLayout() {
+    const cand = genCandidateSig.peek();
+    if (!cand) return null;
+    genErrorSig.set("");
+    if (fetchFn && csrfToken) {
+      try {
+        const resp = await fetchFn("/api/groxy/generate-layout/apply", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": csrfToken,
+          },
+          body: JSON.stringify({
+            generation_id: cand.generation_id,
+            approval_token: cand.approval_token,
+            slot: cand.slot,
+          }),
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data?.approved) {
+          genErrorSig.set(data?.error || `Approval failed (HTTP ${resp.status})`);
+          return data;
+        }
+        genNoticeSig.set(
+          `Approved & dispatched to Grex Theme Builder (actor: ${data.actor || "groxy-ai"}, action: ${data.command_stack_action || "applyAiLayout"}, status: ${data.status_enforced || "draft"}).`
+        );
+        genCandidateSig.set(null);
+        return data;
+      } catch (err) {
+        genErrorSig.set(err instanceof Error ? err.message : String(err));
+        return null;
+      }
+    }
+    genNoticeSig.set(
+      `Approved candidate ${cand.generation_id} locally (actor: groxy-ai, action: applyAiLayout, status: draft).`
+    );
+    genCandidateSig.set(null);
+    return {
+      schema_version: "0.3.0",
+      generation_id: cand.generation_id,
+      approved: true,
+      actor: "groxy-ai",
+      command_stack_action: "applyAiLayout",
+      undo_available: true,
+      status_enforced: "draft",
+    };
+  }
+
+  function discardGeneratedPreview() {
+    genCandidateSig.set(null);
+    genErrorSig.set("");
+    genNoticeSig.set("Discarded staged layout preview locally (zero changes written).");
+  }
+
+  genPreviewBtn.addEventListener("click", () => {
+    void triggerGeneratePreview();
+  });
+
+  function renderPreviewCanvasNode(node) {
+    if (!node || typeof node !== "object") return null;
+    const type = String(node.type || node.element || "Section");
+    if (type === "Heading") {
+      const rawLvl = Number(node.props?.level || 2);
+      const previewTag = rawLvl <= 2 ? "h4" : "h5";
+      return createEl(
+        doc,
+        previewTag,
+        {
+          class: `groxy-preview-h${Math.min(3, Math.max(1, rawLvl))}`,
+          "data-semantic-tag": `h${rawLvl}`,
+        },
+        String(node.props?.text || "")
+      );
+    }
+    if (type === "Text" || type === "RichText") {
+      return createEl(doc, "p", {}, String(node.props?.text || ""));
+    }
+    if (type === "Link") {
+      const href = String(node.props?.href || "/");
+      const safeHref = isSafeUrl(href) ? href : "/";
+      const txt = String(node.props?.text || node.props?.label || safeHref);
+      return createEl(doc, "a", { href: safeHref, class: "groxy-btn groxy-btn-secondary" }, txt);
+    }
+    if (type === "Button") {
+      return createEl(
+        doc,
+        "button",
+        { type: "button", class: "groxy-btn" },
+        String(node.props?.text || node.props?.label || "Action")
+      );
+    }
+    if (type === "Image") {
+      const src = String(node.props?.src || "/static/theme/preview-hero.svg");
+      const safeSrc = isSafeUrl(src) ? src : "/static/theme/preview-hero.svg";
+      const alt = String(node.props?.alt || "Semantic layout media preview");
+      return createEl(doc, "img", { src: safeSrc, alt });
+    }
+    if (type === "Nav") {
+      const nav = createEl(doc, "nav", {
+        class: "groxy-preview-nav",
+        "aria-label": String(node.props?.label || "Generated Navigation"),
+      });
+      for (const item of node.props?.items || []) {
+        const href = isSafeUrl(item?.href) ? item.href : "/";
+        nav.appendChild(createEl(doc, "a", { href }, String(item?.label || href)));
+      }
+      return nav;
+    }
+    if (type === "Accordion") {
+      const wrap = createEl(doc, "section", { "aria-label": "FAQ Accordion Preview" });
+      for (const item of node.props?.items || []) {
+        const det = createEl(doc, "details", { open: "open" });
+        det.appendChild(createEl(doc, "summary", {}, String(item?.title || "FAQ Question")));
+        for (const c of item?.content || []) {
+          const childEl = renderPreviewCanvasNode(c);
+          if (childEl) det.appendChild(childEl);
+        }
+        wrap.appendChild(det);
+      }
+      return wrap;
+    }
+    if (type === "ForEach") {
+      const ul = createEl(doc, "ul", { class: "groxy-tree-list", "aria-label": "ForEach Collection Bindings" });
+      for (const item of node.props?.items || []) {
+        ul.appendChild(createEl(doc, "li", {}, `${item?.title || item?.id || "Entry"} -> ${item?.href || "/"}`));
+      }
+      return ul;
+    }
+
+    const wrapTag = type === "Card" ? "article" : "section";
+    const cls =
+      type === "Grid"
+        ? "groxy-preview-grid"
+        : type === "Card"
+          ? "groxy-preview-card"
+          : "groxy-preview-section";
+    const el = createEl(doc, wrapTag, { class: cls });
+    for (const ch of node.children || []) {
+      const childEl = renderPreviewCanvasNode(ch);
+      if (childEl) el.appendChild(childEl);
+    }
+    return el;
+  }
+
+  function renderTreeInspectorList(node) {
+    const ul = createEl(doc, "ul", { class: "groxy-tree-list" });
+    const clsStr = node.attrs?.class ? ` .${node.attrs.class.split(/\s+/).join(" .")}` : "";
+    const li = createEl(doc, "li", {}, `<${node.type || node.element}> #${node.id || "node"}${clsStr}`);
+    if (Array.isArray(node.children) && node.children.length > 0) {
+      for (const ch of node.children) {
+        li.appendChild(renderTreeInspectorList(ch));
+      }
+    }
+    ul.appendChild(li);
+    return ul;
+  }
+
+  // 7. MCP Bridge Diagnostic Card
   const mcpCard = createEl(doc, "section", {
     id: "groxy-mcp-panel",
     class: "groxy-card",
@@ -1013,6 +1352,88 @@ export function mountGroxyDashboard(options = {}) {
     setSafeText(mcpSummaryEl, st.summary);
   });
 
+  const disposeGeneratorEffect = effect(() => {
+    const notice = genNoticeSig.get();
+    const errMsg = genErrorSig.get();
+    const cand = genCandidateSig.get();
+
+    clearChildren(genNoticeWrap);
+    if (errMsg) {
+      genNoticeWrap.appendChild(createEl(doc, "p", { id: "groxy-gen-error", class: "groxy-alert-fail" }, errMsg));
+    } else if (notice) {
+      genNoticeWrap.appendChild(createEl(doc, "p", { id: "groxy-gen-notice", class: "groxy-alert-pass" }, notice));
+    }
+
+    clearChildren(genPreviewArea);
+    if (!cand) {
+      genPreviewArea.appendChild(
+        createEl(
+          doc,
+          "p",
+          { class: "groxy-muted" },
+          "Choose a blueprint and Style Pack above, then click \"🎨 Generate Preview\" to inspect semantic nodes, design tokens, and four-pillar scorecard readiness."
+        )
+      );
+      return;
+    }
+
+    const ar = cand.audit_report;
+    genPreviewArea.appendChild(createEl(doc, "h3", {}, "Generated 4-Pillar Scorecard & Design Tokens"));
+    const scoreSummary = createEl(
+      doc,
+      "p",
+      { id: "groxy-gen-scorecard", class: "groxy-alert-pass" },
+      `Score ${ar.overall_score}/100 (Grade ${ar.overall_grade}) — Publish Safe: ${ar.publish_safe ? "Yes" : "No"} — Nodes: ${cand.validation.node_count} (Depth ${cand.validation.max_depth}, Divs: ${cand.validation.div_count})`
+    );
+    genPreviewArea.appendChild(scoreSummary);
+
+    const tokenStrip = createEl(doc, "p", { id: "groxy-generator-tokens", class: "groxy-token-strip" });
+    for (const tk of cand.design_system_summary?.tokens_applied || []) {
+      tokenStrip.appendChild(createEl(doc, "span", { class: "groxy-token-badge" }, tk));
+    }
+    for (const cls of cand.design_system_summary?.reusable_classes_applied || []) {
+      tokenStrip.appendChild(createEl(doc, "span", { class: "groxy-token-badge" }, `.${cls}`));
+    }
+    genPreviewArea.appendChild(tokenStrip);
+
+    genPreviewArea.appendChild(createEl(doc, "h3", {}, "Live Semantic Preview (Zero Wrapper <div>s)"));
+    const canvas = createEl(doc, "section", {
+      id: "groxy-generator-canvas",
+      class: "groxy-preview-canvas",
+      "aria-label": "Generated Semantic Layout Canvas Preview",
+    });
+    const previewTreeEl = renderPreviewCanvasNode(cand.candidate_layout);
+    if (previewTreeEl) canvas.appendChild(previewTreeEl);
+    genPreviewArea.appendChild(canvas);
+
+    genPreviewArea.appendChild(createEl(doc, "h3", {}, "Semantic Node Tree Inspector"));
+    const treeWrap = createEl(doc, "section", {
+      id: "groxy-generator-tree",
+      "aria-label": "Semantic Node Tree Hierarchy",
+    });
+    treeWrap.appendChild(renderTreeInspectorList(cand.candidate_layout));
+    genPreviewArea.appendChild(treeWrap);
+
+    const actRow = createEl(doc, "p", { class: "groxy-actions" });
+    const approveGenBtn = createEl(
+      doc,
+      "button",
+      { id: "groxy-approve-gen-btn", type: "button", class: "groxy-btn" },
+      "✅ Approve & Send to Grex Theme Builder"
+    );
+    const discardGenBtn = createEl(
+      doc,
+      "button",
+      { id: "groxy-discard-gen-btn", type: "button", class: "groxy-btn groxy-btn-secondary" },
+      "🗑️ Discard Preview"
+    );
+    approveGenBtn.addEventListener("click", () => void approveGeneratedLayout());
+    discardGenBtn.addEventListener("click", () => discardGeneratedPreview());
+    actRow.appendChild(approveGenBtn);
+    actRow.appendChild(discardGenBtn);
+    genPreviewArea.appendChild(actRow);
+  });
+
   return {
     auditDomSafety() {
       return {
@@ -1029,17 +1450,24 @@ export function mountGroxyDashboard(options = {}) {
     getBoostState() {
       return boostSig.peek();
     },
+    getGeneratorState() {
+      return genCandidateSig.peek();
+    },
     runAudit: executeAudit,
     triggerPrePublishReview,
     triggerBoost,
     approveBoost,
     discardBoost,
+    triggerGeneratePreview,
+    approveGeneratedLayout,
+    discardGeneratedPreview,
     dispose() {
       disposePrePublishEffect();
       disposeBoostEffect();
       disposeReportEffect();
       disposePlaybookEffect();
       disposeMcpEffect();
+      disposeGeneratorEffect();
     },
   };
 }

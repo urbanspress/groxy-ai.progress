@@ -599,7 +599,7 @@ export function parseDesignSystemMarkdown(markdownText) {
         }
       }
     } else if (section === "classes") {
-      const clsMatch = /^(?:-\s+\*\*`?\.grex-c-([a-zA-Z0-9_-]+)`?\*\*|###\s+`?\.grex-c-([a-zA-Z0-9_-]+)`?)/.exec(line);
+      const clsMatch = /^(?:-\s+(?:\*\*)?`?\.grex-c-([a-zA-Z0-9_-]+)`?(?:\*\*)?|###\s+`?\.grex-c-([a-zA-Z0-9_-]+)`?)/.exec(line);
       if (clsMatch) {
         currentClassName = clsMatch[1] || clsMatch[2];
         if (!reusableClasses[currentClassName]) {

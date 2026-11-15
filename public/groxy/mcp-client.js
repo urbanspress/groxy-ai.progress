@@ -8,6 +8,29 @@
 
 import { parseDesignSystemMarkdown } from "./playbook.js";
 
+const BUILDER_SLOT_ALIASES = Object.freeze({
+  main: "home",
+  hero: "home",
+  landing: "home",
+  footer: "part:footer",
+  header: "part:header",
+  card: "part:card",
+  sidebar: "part:sidebar",
+});
+
+/**
+ * Map friendly page/section slot aliases (`main`, `hero`, `footer`) onto active Grex Theme Builder
+ * template and part slots (`home`, `single`, `archive`, `part:footer`, ...).
+ * @param {string} rawSlot
+ * @returns {string}
+ */
+export function mapGroxySlotToBuilderSlot(rawSlot) {
+  const s = String(rawSlot || "home").trim();
+  const low = s.toLowerCase();
+  if (!low) return "home";
+  return BUILDER_SLOT_ALIASES[low] || s;
+}
+
 export const GRAB_CLI_MCP_TOOLS = Object.freeze([
   {
     name: "grab_check",
@@ -498,8 +521,9 @@ export function createGroxyMcpClient(config = {}) {
 
     async submitCandidateLayout({ slot = "home", tree, layout, document, summary, csrfToken: overrideCsrf } = {}) {
       const base = requireBase(builderBaseUrl, "Grex Theme Builder");
+      const resolvedSlot = mapGroxySlotToBuilderSlot(slot);
       const payload = {
-        slot,
+        slot: resolvedSlot,
         actor: "groxy-ai",
         summary: summary || "Groxy AI candidate layout",
       };

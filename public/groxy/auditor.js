@@ -1535,6 +1535,7 @@ export function auditEntryAndLayout(input = {}, options = {}) {
       } else if (
         siteContext &&
         Array.isArray(siteContext.entries) &&
+        siteContext.entries.length > 0 &&
         !norm.startsWith("/static/") &&
         !norm.startsWith("/category/") &&
         !knownPaths.has(norm)
@@ -1578,7 +1579,14 @@ export function auditEntryAndLayout(input = {}, options = {}) {
 
   {
     const r = rulesById["GROXY-LINK-003"];
-    if (siteContext && (siteContext.menus || siteContext.entries)) {
+    const hasMenus =
+      (Array.isArray(siteContext?.menus) && siteContext.menus.length > 0) ||
+      (siteContext?.menus &&
+        typeof siteContext.menus === "object" &&
+        !Array.isArray(siteContext.menus) &&
+        Object.values(siteContext.menus).some((arr) => Array.isArray(arr) && arr.length > 0));
+    const hasEntries = Array.isArray(siteContext?.entries) && siteContext.entries.length > 0;
+    if (siteContext && (hasMenus || hasEntries)) {
       const targetSlugs = new Set(
         [slug ? normalizePath(`/${slug}`) : "", slug ? normalizePath(`/blog/${slug}`) : "", entry.url ? normalizePath(entry.url) : ""].filter(
           Boolean

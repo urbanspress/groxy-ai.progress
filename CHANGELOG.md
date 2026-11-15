@@ -3,6 +3,22 @@
 All notable changes to **Groxy AI** (`urbanspress/groxy-ai`) are documented in this file.
 Versioning follows `MAJOR.MINOR.PATCH` SemVer rules per [`AGENTS.md`](AGENTS.md).
 
+## [v0.3.0] — 2026-11-15
+
+### Added
+- **Live Design-System & Style Pack Engine (`GET /api/groxy/style-packs`, [`public/groxy/generator.js`](public/groxy/generator.js), [`src/groxy.grab`](src/groxy.grab)):**
+  - Consumes live `--grex-*` custom properties, Light/Dark WCAG AA pairs, and `.grex-c-*` utility classes from **Grex Theme Builder `v1.0.0`** (`GET /api/design-system.md`), automatically normalizing low-contrast token overrides before composition.
+  - Ships 4 curated zero-API-fee Design Style Packs (`emerald-editorial`, `obsidian-tech`, `warm-commerce`, `swiss-minimal`) and 5 Blueprints (`full_landing_page`, `hero_section`, `pricing_grid`, `faq_accordion`, `foreach_showcase`).
+- **Autonomous Semantic Composer & Pre-Dispatch Validation (`POST /api/groxy/generate-layout`):**
+  - Composes candidate layouts purely from the 20 semantic `grex.elements.json` components (`div_count === 0`, zero `innerHTML`, zero scripts or unsafe URLs, unbroken `H1 -> H2 -> H3` hierarchy, descriptive image `alt` attributes, and dynamic `ForEach` `queryLoop` bindings).
+  - Enforces `ADR-025c` exact base-10 `GrabDecimal` / `GrabInteger` wire string preservation (`"0.00"`, `"29.00"`, `"149.95"`, `"10020"`) and rejects JavaScript float pricing with HTTP `422`.
+  - Runs `validateElementNode({ strictProps: true })`, `auditAccessibility()`, and Groxy AI's 22-rule 4-pillar auditor prior to previewing, guaranteeing `Grade A` or `A+` (`>= 90`) and `publish_safe: true`.
+- **Visual Generator Studio UI & 1-Click Builder Undo Parity (`POST /api/groxy/generate-layout/apply`, [`views/dashboard.grab.html`](views/dashboard.grab.html), [`public/groxy/dashboard.js`](public/groxy/dashboard.js), [`public/groxy/mcp-client.js`](public/groxy/mcp-client.js), [`public/groxy/groxy.css`](public/groxy/groxy.css)):**
+  - Renders a zero-`<div>`, zero-`innerHTML` studio preview canvas, semantic node tree inspector, applied token/class strip, and 4-pillar scorecard in `/groxy`.
+  - Enforces single-use `approval_token` + `X-CSRF-Token` (`403` invalid, `409` replay), maps slots cleanly via `mapGroxySlotToBuilderSlot()`, dispatches approved layouts to Grex Theme Builder `POST /api/mcp/layout` with `actor: "groxy-ai"` (`applyAiLayout` command stack for 1-click Undo), and saves GrabLab CMS companion drafts with schema-checked `custom_fields` and enforced `status_enforced: "draft"`.
+- **Verification & Release Guide:**
+  - Added [`tests/unit_generator.test.js`](tests/unit_generator.test.js) and Visual Generator Studio DOM tests in [`tests/unit_ui_dom.test.js`](tests/unit_ui_dom.test.js) (`28/28` passing), extended 4-layer Gate 3B live integration + 1-click Builder Undo verification in [`tests/integration_e2e.py`](tests/integration_e2e.py), and added `v0.3.0` plain-English walkthrough guide in [`docs/releases/generate_release_guides.py`](docs/releases/generate_release_guides.py).
+
 ## [v0.2.0] — 2026-11-14
 
 ### Added

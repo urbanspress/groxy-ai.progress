@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { auditDom, createDomDocument } from "./helpers/dom-shim.js";
 import { mountGroxyDashboard, SAMPLE_AUDIT_PRESETS } from "../public/groxy/dashboard.js";
+import { generatePageOrSection } from "../public/groxy/generator.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const VIEW_PATH = path.resolve(__dirname, "..", "views", "dashboard.grab.html");
@@ -219,6 +220,159 @@ test("Pre-Publish Review Gate & Side-by-Side Boost Diff Viewer maintain zero <di
   const bypassed = await handle.triggerPrePublishReview();
   assert.equal(bypassed.gate_status, "bypassed");
   assert.ok(root.querySelector("#groxy-gate-bypassed"));
+
+  domAudit = auditDom(root, doc);
+  assert.equal(domAudit.divCount, 0);
+  assert.equal(domAudit.innerHTMLWriteCount, 0);
+
+  handle.dispose();
+});
+
+test("Visual Generator Studio renders Style Packs, Blueprint previews, exact GrabDecimal tiers, Discard, and Approve with zero <div> / innerHTML", async () => {
+  const { doc, root } = createDomDocument({ csrfToken: "csrf-v030-gen-ui" });
+
+  let generateCalls = 0;
+  let applyCalls = 0;
+  let lastGenerateBody = null;
+  let lastApplyBody = null;
+  const stagedTokens = new Map();
+
+  const mockFetch = async (url, init = {}) => {
+    if (url === "/api/groxy/generate-layout") {
+      generateCalls += 1;
+      assert.equal(init.headers["X-CSRF-Token"], "csrf-v030-gen-ui");
+      lastGenerateBody = JSON.parse(init.body);
+      const generated = generatePageOrSection(lastGenerateBody);
+      stagedTokens.set(generated.generation_id, generated.approval_token);
+      return new Response(JSON.stringify(generated), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (url === "/api/groxy/generate-layout/apply") {
+      applyCalls += 1;
+      assert.equal(init.headers["X-CSRF-Token"], "csrf-v030-gen-ui");
+      lastApplyBody = JSON.parse(init.body);
+      const expected = stagedTokens.get(lastApplyBody.generation_id);
+      if (!expected || expected !== lastApplyBody.approval_token) {
+        return new Response(JSON.stringify({ error: "Invalid approval_token" }), {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      stagedTokens.delete(lastApplyBody.generation_id);
+      return new Response(
+        JSON.stringify({
+          schema_version: "0.3.0",
+          generation_id: lastApplyBody.generation_id,
+          approved: true,
+          actor: "groxy-ai",
+          command_stack_action: "applyAiLayout",
+          undo_available: true,
+          status_enforced: "draft",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    return new Response("{}", { status: 404 });
+  };
+
+  const handle = mountGroxyDashboard({
+    root,
+    document: doc,
+    csrfToken: "csrf-v030-gen-ui",
+    fetchImpl: mockFetch,
+  });
+
+  // Verify initial studio form controls are labeled and div-free
+  assert.ok(root.querySelector("#groxy-generator-studio-panel"));
+  let domAudit = auditDom(root, doc);
+  assert.equal(domAudit.divCount, 0);
+  assert.equal(domAudit.innerHTMLWriteCount, 0);
+  assert.deepEqual(domAudit.unlabeledControls, []);
+  assert.equal(domAudit.headingOrderOk, true);
+
+  // Configure Pricing Grid + Warm Commerce pack + exact GrabDecimal strings
+  const blueprintSel = root.querySelector("#groxy-gen-blueprint");
+  blueprintSel.value = "pricing_grid";
+  blueprintSel.dispatchEvent({ type: "change" });
+
+  const packSel = root.querySelector("#groxy-gen-style-pack");
+  packSel.value = "warm-commerce";
+  packSel.dispatchEvent({ type: "change" });
+
+  const p0 = root.querySelector("#groxy-gen-starter-price");
+  p0.value = "0.00";
+  p0.dispatchEvent({ type: "input" });
+  const p1 = root.querySelector("#groxy-gen-pro-price");
+  p1.value = "29.00";
+  p1.dispatchEvent({ type: "input" });
+  const p2 = root.querySelector("#groxy-gen-ent-price");
+  p2.value = "149.95";
+  p2.dispatchEvent({ type: "input" });
+
+  const preview1 = await handle.triggerGeneratePreview();
+  assert.ok(preview1);
+  assert.equal(generateCalls, 1);
+  assert.equal(applyCalls, 0);
+  assert.equal(lastGenerateBody.pricing_tiers[0].price, "0.00");
+  assert.equal(lastGenerateBody.pricing_tiers[1].price, "29.00");
+  assert.equal(lastGenerateBody.pricing_tiers[2].price, "149.95");
+
+  const scorecardText = root.querySelector("#groxy-gen-scorecard").textContent;
+  assert.ok(scorecardText.includes("Grade A"));
+  assert.ok(scorecardText.includes("Divs: 0"));
+
+  const canvasText = root.querySelector("#groxy-generator-canvas").textContent;
+  assert.ok(canvasText.includes("0.00"));
+  assert.ok(canvasText.includes("29.00"));
+  assert.ok(canvasText.includes("149.95"));
+  assert.ok(root.querySelector("#groxy-generator-tokens").children.length > 0);
+  assert.ok(root.querySelector("#groxy-generator-tree").textContent.includes("<Section>"));
+
+  domAudit = auditDom(root, doc);
+  assert.equal(domAudit.divCount, 0);
+  assert.equal(domAudit.innerHTMLWriteCount, 0);
+  assert.equal(domAudit.headingOrderOk, true);
+  assert.equal(domAudit.missingAltImages, 0);
+  assert.deepEqual(domAudit.unsafeUrls, []);
+  assert.deepEqual(domAudit.inlineHandlers, []);
+
+  // Discard Preview locally without touching /apply
+  root.querySelector("#groxy-discard-gen-btn").dispatchEvent({ type: "click" });
+  assert.equal(applyCalls, 0);
+  assert.equal(handle.getGeneratorState(), null);
+  assert.ok(root.querySelector("#groxy-gen-notice").textContent.includes("Discarded"));
+
+  // Switch to Full Landing Page and generate, inspect DOM safety, then Approve & Dispatch
+  blueprintSel.value = "full_landing_page";
+  blueprintSel.dispatchEvent({ type: "change" });
+  const preview2 = await handle.triggerGeneratePreview();
+  assert.ok(preview2);
+  assert.equal(generateCalls, 2);
+
+  domAudit = auditDom(root, doc);
+  assert.equal(domAudit.divCount, 0);
+  assert.equal(domAudit.innerHTMLWriteCount, 0);
+  assert.equal(domAudit.headingOrderOk, true);
+  assert.equal(domAudit.missingAltImages, 0);
+  assert.deepEqual(domAudit.unsafeUrls, []);
+  assert.deepEqual(domAudit.inlineHandlers, []);
+
+  const applyRes = await handle.approveGeneratedLayout();
+  assert.equal(applyCalls, 1);
+  assert.equal(applyRes.approved, true);
+  assert.equal(applyRes.actor, "groxy-ai");
+  assert.equal(applyRes.command_stack_action, "applyAiLayout");
+  assert.equal(applyRes.status_enforced, "draft");
+  assert.equal(lastApplyBody.generation_id, preview2.generation_id);
+  assert.equal(lastApplyBody.approval_token, preview2.approval_token);
+
+  const approveNotice = root.querySelector("#groxy-gen-notice").textContent;
+  assert.ok(approveNotice.includes("Approved"));
+  assert.ok(approveNotice.includes("groxy-ai"));
+  assert.ok(approveNotice.includes("applyAiLayout"));
+  assert.ok(approveNotice.includes("draft"));
 
   domAudit = auditDom(root, doc);
   assert.equal(domAudit.divCount, 0);

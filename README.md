@@ -2,8 +2,8 @@
 
 **Step 4 of the Post-1.0 GRAB Ecosystem:** Autonomous Design, Content & SEO Intelligence Agent built natively on **GRAB `v1.1.0`**, **Grex JS `v1.0.0`**, **GrabLab CMS `v1.0.1`**, and **Grex Theme Builder `v1.0.0`**.
 
-- **Current Release:** `v0.2.0` (**Complete** — Pre-Publish SEO & Performance Grade Review Gate & 🚀 `"Let Groxy Boost This"` Side-by-Side Diff Engine)
-- **Next Milestone:** `v0.3.0` (Autonomous `GRAB-DESIGN-SYSTEM.md`-Aware Visual Page & Section Generator for Grex Theme Builder)
+- **Current Release:** `v0.3.0` (**Complete** — Autonomous `GRAB-DESIGN-SYSTEM.md`-Aware Visual Page & Section Generator for Grex Theme Builder)
+- **Next Milestone:** `v0.4.0` (Site-Wide Internal Linking Graph, Schema.org JSON-LD & Media `alt`-Text Enrichment)
 - **Development Repo (`origin`):** `https://github.com/urbanspress/groxy-ai.progress`
 - **Production Release Repo (`stable`):** `https://github.com/urbanspress/groxy-ai.stable`
 
@@ -21,8 +21,9 @@
    - Scores any entry, layout JSON, or HTML fragment deterministically (`0–100`, `A+`–`F`) with hard `F` / `publish_safe: false` safety caps on wrapper `<div>` or XSS violations.
 3. **Safety-First `grab mcp` & Theme Builder Bridge (`public/groxy/mcp-client.js`, `src/groxy.grab`):**
    - Connects read-only by default to Core GRAB CLI (`grab mcp`), GrabLab CMS `v1.0.1` (forcing `status: "draft"` via `create_entry_draft`), and Grex Theme Builder `v1.0.0` (submitting candidate layouts with `actor: "groxy-ai"` via `POST /api/mcp/layout`).
-4. **Zero-`<div>` Semantic Inspector UI (`views/dashboard.grab.html`, `public/groxy/dashboard.js`):**
+4. **Zero-`<div>` Semantic Inspector & Visual Generator UI ([`views/dashboard.grab.html`](views/dashboard.grab.html), [`public/groxy/dashboard.js`](public/groxy/dashboard.js), [`public/groxy/generator.js`](public/groxy/generator.js)):**
    - Zero Node build steps, zero wrapper `<div>` elements, zero `innerHTML`, and 100% WCAG AA pass on `Grex JS v1.0.0`.
+   - Composes full landing pages, hero sections, `GrabDecimal`-exact pricing grids (`ADR-025c`), FAQ `Accordion` widgets, and dynamic `ForEach` showcases from 4 Design Style Packs (`emerald-editorial`, `obsidian-tech`, `warm-commerce`, `swiss-minimal`) using live `--grex-*` tokens and `.grex-c-*` classes, gated behind Grade `A`/`A+` pre-dispatch verification and single-use human approval (`POST /api/mcp/layout` with `actor: "groxy-ai"` and 1-click Undo parity).
 
 ---
 
@@ -35,7 +36,7 @@ grab check --platform-config grab.platform.json src/groxy.grab
 # 2. Start Groxy AI Inspector UI & API server
 grab serve --addr 127.0.0.1:8090 --allow-scripts --platform-config grab.platform.json --allow-cache groxy:read-write --static public --allow-read . src/groxy.grab
 
-# 3. Run Node unit & DOM tests (19/19 tests)
+# 3. Run Node unit & DOM tests (28/28 tests)
 node --test tests/unit_*.test.js
 
 # 4. Run full 4-layer live cross-layer E2E verification (GRAB + GrabLab CMS + Grex Builder + Groxy AI)
@@ -63,7 +64,9 @@ python tests/integration_e2e.py
 - [Roadmap (`docs/ROADMAP.md`)](docs/ROADMAP.md)
 - [v0.1.0 Specification (`specifications/GROXY-AI-SPEC-001.md`)](specifications/GROXY-AI-SPEC-001.md)
 - [v0.2.0 Specification (`specifications/GROXY-AI-SPEC-002.md`)](specifications/GROXY-AI-SPEC-002.md)
+- [v0.3.0 Specification (`specifications/GROXY-AI-SPEC-003.md`)](specifications/GROXY-AI-SPEC-003.md)
 - [v0.1.0 Walkthrough Guide (`docs/releases/pdf/Groxy-AI-v0.1.0-Guide.pdf`)](docs/releases/pdf/Groxy-AI-v0.1.0-Guide.pdf)
 - [v0.2.0 Walkthrough Guide (`docs/releases/pdf/Groxy-AI-v0.2.0-Guide.pdf`)](docs/releases/pdf/Groxy-AI-v0.2.0-Guide.pdf)
+- [v0.3.0 Walkthrough Guide (`docs/releases/pdf/Groxy-AI-v0.3.0-Guide.pdf`)](docs/releases/pdf/Groxy-AI-v0.3.0-Guide.pdf)
 - [Changelog (`CHANGELOG.md`)](CHANGELOG.md)
 - [Handoff Log (`HANDOFF.md`)](HANDOFF.md)

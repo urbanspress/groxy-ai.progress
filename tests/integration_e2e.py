@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Groxy AI v0.1.0 — Full Cross-Layer End-to-End Verification Suite.
+Groxy AI v0.3.0 — Full Cross-Layer End-to-End Verification Suite.
 
 Runs 3 non-negotiable gates:
   Gate 1: Static analysis (grab check), non-destructive canonical formatting (grab format byte-for-byte),
@@ -10,7 +10,7 @@ Runs 3 non-negotiable gates:
             - Core GRAB v1.1.0 `grab mcp` stdio JSON-RPC 2.0 server
             - GrabLab CMS v1.0.1 (isolated temp copy)
             - Grex Theme Builder v1.0.0 (isolated temp copy)
-            - Groxy AI v0.1.0 (src/groxy.grab)
+            - Groxy AI v0.3.0 (src/groxy.grab)
 """
 
 import http.cookiejar
@@ -175,6 +175,7 @@ def gate_1_static_and_format(grab_bin: str):
         REPO_ROOT / "public" / "groxy" / "playbook.js",
         REPO_ROOT / "public" / "groxy" / "auditor.js",
         REPO_ROOT / "public" / "groxy" / "booster.js",
+        REPO_ROOT / "public" / "groxy" / "generator.js",
         REPO_ROOT / "public" / "groxy" / "mcp-client.js",
         REPO_ROOT / "public" / "groxy" / "dashboard.js",
     ]:
@@ -194,6 +195,7 @@ def gate_2_node_tests():
         "tests/unit_playbook.test.js",
         "tests/unit_auditor.test.js",
         "tests/unit_booster.test.js",
+        "tests/unit_generator.test.js",
         "tests/unit_mcp_client.test.js",
         "tests/unit_ui_dom.test.js",
     ])
@@ -271,6 +273,9 @@ def gate_3a_grab_mcp_stdio(grab_bin: str):
         "/api/groxy/prepublish-review",
         "/api/groxy/boost",
         "/api/groxy/boost/approve",
+        "/api/groxy/style-packs",
+        "/api/groxy/generate-layout",
+        "/api/groxy/generate-layout/apply",
     ]:
         assert required_route in routes_raw, f"Route {required_route} missing from grab_inspect_routes output"
 
@@ -283,7 +288,7 @@ def gate_3a_grab_mcp_stdio(grab_bin: str):
 
 
 def gate_3b_live_cross_layer(grab_bin: str):
-    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v0.2.0...")
+    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v0.3.0...")
     cms_src = Path(os.environ.get("GRABLAB_CMS_DIR", r"C:\Development\grablab-cms"))
     builder_src = Path(os.environ.get("GREX_BUILDER_DIR", r"C:\Development\grex-builder"))
     if not (cms_src / "src" / "app.grab").exists():
@@ -398,7 +403,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         procs.append(builder_proc)
         wait_for_health(builder_url, builder_proc, "Grex Theme Builder v1.0.0", log_path=builder_log)
 
-        # 3. Start Groxy AI v0.2.0 from REPO_ROOT
+        # 3. Start Groxy AI v0.3.0 from REPO_ROOT
         groxy_log = tmp_root / "groxy.log"
         groxy_fh = open(groxy_log, "wb+")
         log_files.append(groxy_fh)
@@ -426,7 +431,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
             stderr=subprocess.STDOUT,
         )
         procs.append(groxy_proc)
-        health_json = wait_for_health(groxy_url, groxy_proc, "Groxy AI v0.2.0", log_path=groxy_log)
+        health_json = wait_for_health(groxy_url, groxy_proc, "Groxy AI v0.3.0", log_path=groxy_log)
         assert health_json.get("status") == "ok", (
             f"Unexpected /_health payload from Groxy AI: {health_json}"
         )
@@ -446,7 +451,13 @@ def gate_3b_live_cross_layer(grab_bin: str):
         assert m, "Missing groxy-csrf meta tag in /groxy HTML"
         groxy_csrf = m.group(1)
 
-        for asset_path in ["/static/groxy/groxy.css", "/static/groxy/dashboard.js", "/static/groxy/booster.js", "/static/groxy/grex.js"]:
+        for asset_path in [
+            "/static/groxy/groxy.css",
+            "/static/groxy/dashboard.js",
+            "/static/groxy/booster.js",
+            "/static/groxy/generator.js",
+            "/static/groxy/grex.js",
+        ]:
             st, _, _ = http_request(f"{groxy_url}{asset_path}")
             assert st == 200, f"Expected 200 for {asset_path}, got {st}"
 
@@ -462,6 +473,8 @@ def gate_3b_live_cross_layer(grab_bin: str):
             "/api/groxy/prepublish-review",
             "/api/groxy/boost",
             "/api/groxy/boost/approve",
+            "/api/groxy/generate-layout",
+            "/api/groxy/generate-layout/apply",
         ]:
             st_no_csrf, _, _ = http_request(f"{groxy_url}{post_path}", method="POST", json_body={"entry": {}})
             assert st_no_csrf == 403, f"Expected 403 without CSRF on {post_path}, got {st_no_csrf}"
@@ -502,7 +515,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         assert st_insp == 200, f"/api/groxy/mcp/inspect failed ({st_insp}): {insp_body}"
         insp = json.loads(insp_body)
         assert insp["ok"] is True
-        assert insp["version"] == "0.2.0"
+        assert insp["version"] == "0.3.0"
         assert insp["grablab_cms"]["connected"] is True
         assert insp["grablab_cms"]["elements_count"] == 20
         assert "create_entry_draft" in insp["grablab_cms"]["tools"]
@@ -852,11 +865,253 @@ def gate_3b_live_cross_layer(grab_bin: str):
         )
         assert st_replay == 409, f"Expected 409 on replayed approval_token, got {st_replay}"
 
+        # -----------------------------------------------------------------
+        # v0.3.0: Autonomous Visual Page & Section Generator + Builder Undo
+        # -----------------------------------------------------------------
+        st_ds, _, ds_md_raw = http_request(f"{builder_url}/api/design-system.md")
+        assert st_ds == 200 and "--grex-" in ds_md_raw, f"Failed fetching live design-system.md: HTTP {st_ds}"
+
+        st_packs, _, packs_raw = http_request(f"{groxy_url}/api/groxy/style-packs")
+        assert st_packs == 200, f"GET /api/groxy/style-packs failed ({st_packs}): {packs_raw}"
+        packs_doc = json.loads(packs_raw)
+        assert packs_doc["schema_version"] == "0.3.0"
+        assert [p["id"] for p in packs_doc["style_packs"]] == [
+            "emerald-editorial",
+            "obsidian-tech",
+            "warm-commerce",
+            "swiss-minimal",
+        ]
+        assert [b["id"] for b in packs_doc["blueprints"]] == [
+            "full_landing_page",
+            "hero_section",
+            "pricing_grid",
+            "faq_accordion",
+            "foreach_showcase",
+        ]
+
+        # Snapshot Builder commands, home draft tree, and CMS entries BEFORE generation
+        _, _, cmds_pre_raw = http_request(f"{builder_url}/api/studio/commands")
+        cmds_pre = json.loads(cmds_pre_raw).get("commands", [])
+        _, _, state_pre_raw = http_request(f"{builder_url}/api/studio/state")
+        home_draft_before = json.loads(state_pre_raw)["draft"]["templates"]["home"]
+
+        st_cms_pre, _, cms_pre_raw = http_request(
+            f"{cms_url}/api/mcp",
+            method="POST",
+            headers={"Authorization": f"Bearer {cms_token}"},
+            json_body={"jsonrpc": "2.0", "id": 30, "method": "tools/call", "params": {"name": "query_entries", "arguments": {}}},
+        )
+        assert st_cms_pre == 200
+        cms_pre_sc = json.loads(cms_pre_raw)["result"]["structuredContent"]
+        cms_count_before_gen = len(cms_pre_sc.get("items", cms_pre_sc.get("entries", [])))
+
+        # Reject JS float pricing per ADR-025c (HTTP 422)
+        st_float, _, float_body = http_request(
+            f"{groxy_url}/api/groxy/generate-layout",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "blueprint": "pricing_grid",
+                "style_pack": "warm-commerce",
+                "pricing_tiers": [{"name": "FloatBad", "price": 29.99, "sku": "10020"}],
+            },
+        )
+        assert st_float == 422, f"Expected 422 ADR-025c rejection for float price, got {st_float}: {float_body}"
+
+        # Generate Pricing Grid preview with exact base-10 wire strings
+        st_gen_price, _, gen_price_raw = http_request(
+            f"{groxy_url}/api/groxy/generate-layout",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "blueprint": "pricing_grid",
+                "style_pack": "warm-commerce",
+                "slot": "main",
+                "focus_keyword": "precision commerce builder",
+                "design_system_md": ds_md_raw,
+                "pricing_tiers": [
+                    {
+                        "name": "Starter",
+                        "price": "0.00",
+                        "billing_period": "month",
+                        "sku": "10010",
+                        "cta_label": "Start Free Draft",
+                        "cta_href": "/pricing",
+                        "features": ["Zero wrapper div layout"],
+                    },
+                    {
+                        "name": "Studio Pro",
+                        "price": "29.00",
+                        "billing_period": "month",
+                        "sku": "10020",
+                        "cta_label": "Explore Studio Pro",
+                        "cta_href": "/about",
+                        "features": ["Live GRAB design tokens"],
+                    },
+                    {
+                        "name": "Enterprise",
+                        "price": "149.95",
+                        "billing_period": "month",
+                        "sku": "10030",
+                        "cta_label": "Read Enterprise Guide",
+                        "cta_href": "/blog",
+                        "features": ["One-click Undo parity"],
+                    },
+                ],
+            },
+        )
+        assert st_gen_price == 200, f"generate-layout pricing_grid failed ({st_gen_price}): {gen_price_raw}"
+        gen_price = json.loads(gen_price_raw)
+        assert gen_price["validation"]["div_count"] == 0
+        assert gen_price["validation"]["grex_schema_valid"] is True
+        assert gen_price["validation"]["wcag_aa_passed"] is True
+        assert gen_price["validation"]["decimal_integrity_verified"] is True
+        assert gen_price["audit_report"]["overall_score"] >= 90
+        assert gen_price["audit_report"]["overall_grade"] in ("A", "A+")
+        assert gen_price["audit_report"]["publish_safe"] is True
+        assert gen_price["candidate_entry"]["custom_fields"]["featured_price"] == "29.00"
+        assert gen_price["candidate_entry"]["custom_fields"]["featured_sku"] == "10020"
+        tree_str = json.dumps(gen_price["candidate_layout"])
+        for wire in ("0.00", "29.00", "149.95", "10020"):
+            assert wire in tree_str, f"Exact wire string {wire} missing from pricing tree"
+
+        # Generate Full Landing Page preview wired to live Builder URL
+        st_gen_full, _, gen_full_raw = http_request(
+            f"{groxy_url}/api/groxy/generate-layout",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "blueprint": "full_landing_page",
+                "style_pack": "emerald-editorial",
+                "slot": "main",
+                "focus_keyword": "semantic theme builder",
+                "builder_url": builder_url,
+            },
+        )
+        assert st_gen_full == 200, f"generate-layout full_landing_page failed ({st_gen_full}): {gen_full_raw}"
+        gen_full = json.loads(gen_full_raw)
+        assert gen_full["approval_required"] is True
+        assert gen_full["approval_token"].startswith("tok_")
+        assert gen_full["validation"]["div_count"] == 0
+        assert gen_full["audit_report"]["overall_score"] >= 90
+        assert gen_full["audit_report"]["overall_grade"] in ("A", "A+")
+        assert gen_full["audit_report"]["publish_safe"] is True
+        assert len(gen_full["design_system_summary"]["tokens_applied"]) > 0
+
+        # Confirm generation alone made ZERO mutations to Builder or CMS
+        _, _, cmds_mid_raw = http_request(f"{builder_url}/api/studio/commands")
+        assert len(json.loads(cmds_mid_raw).get("commands", [])) == len(cmds_pre), (
+            "Preview generation must NOT mutate Grex Theme Builder commands"
+        )
+        st_cms_mid, _, cms_mid_raw = http_request(
+            f"{cms_url}/api/mcp",
+            method="POST",
+            headers={"Authorization": f"Bearer {cms_token}"},
+            json_body={"jsonrpc": "2.0", "id": 31, "method": "tools/call", "params": {"name": "query_entries", "arguments": {}}},
+        )
+        assert st_cms_mid == 200
+        cms_mid_sc = json.loads(cms_mid_raw)["result"]["structuredContent"]
+        assert len(cms_mid_sc.get("items", cms_mid_sc.get("entries", []))) == cms_count_before_gen, (
+            "Preview generation must NOT write GrabLab CMS entries before human approval"
+        )
+
+        # Bad approval_token must be rejected (403)
+        st_bad_tok, _, _ = http_request(
+            f"{groxy_url}/api/groxy/generate-layout/apply",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "generation_id": gen_full["generation_id"],
+                "approval_token": "tok_invalid_000",
+                "builder_url": builder_url,
+                "builder_csrf": builder_csrf,
+            },
+        )
+        assert st_bad_tok == 403, f"Expected 403 on bad approval_token, got {st_bad_tok}"
+
+        # Valid human approval dispatches to Grex Theme Builder (actor: groxy-ai) + saves CMS draft
+        st_gen_apply, _, gen_apply_raw = http_request(
+            f"{groxy_url}/api/groxy/generate-layout/apply",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "generation_id": gen_full["generation_id"],
+                "approval_token": gen_full["approval_token"],
+                "slot": "main",
+                "builder_url": builder_url,
+                "builder_csrf": builder_csrf,
+                "grablab_url": cms_url,
+                "grablab_token": cms_token,
+                "create_draft": True,
+            },
+        )
+        assert st_gen_apply == 200, f"generate-layout/apply failed ({st_gen_apply}): {gen_apply_raw}"
+        apply_doc = json.loads(gen_apply_raw)
+        assert apply_doc["approved"] is True
+        assert apply_doc["actor"] == "groxy-ai"
+        assert apply_doc["command_stack_action"] == "applyAiLayout"
+        assert apply_doc["undo_available"] is True
+        assert apply_doc["status_enforced"] == "draft"
+        assert apply_doc["builder_dispatch"]["dispatched"] is True
+        assert apply_doc["builder_dispatch"]["builder_slot"] == "home"
+        assert apply_doc["draft_persistence"]["saved_as_draft"] is True
+        cms_gen_sc = apply_doc["draft_persistence"]["result"]["result"]["structuredContent"]
+        assert cms_gen_sc["status_enforced"] == "draft"
+        assert cms_gen_sc["entry"]["status"] == "draft"
+
+        # Replay of single-use approval_token must return 409
+        st_gen_replay, _, _ = http_request(
+            f"{groxy_url}/api/groxy/generate-layout/apply",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "generation_id": gen_full["generation_id"],
+                "approval_token": gen_full["approval_token"],
+            },
+        )
+        assert st_gen_replay == 409, f"Expected 409 on replayed generation approval_token, got {st_gen_replay}"
+
+        # Verify Builder recorded applyAiLayout by groxy-ai & execute 1-click Undo restoration
+        _, _, cmds_post_raw = http_request(f"{builder_url}/api/studio/commands")
+        cmds_post = json.loads(cmds_post_raw).get("commands", [])
+        assert len(cmds_post) > len(cmds_pre)
+        ai_cmd_rows = [
+            c for c in cmds_post
+            if c.get("actor") == "groxy-ai" and c.get("command_type") == "applyAiLayout"
+        ]
+        assert len(ai_cmd_rows) >= 1, f"Expected applyAiLayout command by groxy-ai, got: {cmds_post}"
+        latest_ai_cmd = json.loads(ai_cmd_rows[0]["command_json"])
+        assert latest_ai_cmd["type"] == "applyAiLayout"
+        assert latest_ai_cmd["slot"] == "home"
+        assert latest_ai_cmd["inverse"]["_restore"] is True
+        restore_tree = latest_ai_cmd["inverse"]["nextTree"]
+        assert restore_tree == home_draft_before
+
+        _, _, state_after_apply_raw = http_request(f"{builder_url}/api/studio/state")
+        assert json.loads(state_after_apply_raw)["draft"]["templates"]["home"]["id"] == "root-landing-main"
+
+        st_undo, _, undo_raw = http_request(
+            f"{builder_url}/api/mcp/layout",
+            method="POST",
+            headers={"X-CSRF-Token": builder_csrf},
+            json_body={
+                "slot": "home",
+                "actor": "designer-undo",
+                "summary": "1-Click Undo restoring pre-AI layout",
+                "layout": restore_tree,
+            },
+        )
+        assert st_undo == 200, f"1-Click Undo layout restore failed ({st_undo}): {undo_raw}"
+        _, _, state_after_undo_raw = http_request(f"{builder_url}/api/studio/state")
+        assert json.loads(state_after_undo_raw)["draft"]["templates"]["home"] == home_draft_before, (
+            "1-Click Undo failed to restore exact pre-AI draft home layout"
+        )
+
         # Live published theme state STILL untouched
         _, _, state_final_raw = http_request(f"{builder_url}/api/studio/state")
         assert json.loads(state_final_raw)["published"] == live_before
 
-        print("  [PASS] Gate 3B complete (live 4-layer GRAB + GrabLab CMS + Grex Builder + Groxy AI v0.2.0 verified 100%).")
+        print("  [PASS] Gate 3B complete (live 4-layer GRAB + GrabLab CMS + Grex Builder + Groxy AI v0.3.0 verified 100%).")
     finally:
         for p in reversed(procs):
             terminate_process(p)
@@ -875,7 +1130,7 @@ def main():
     gate_2_node_tests()
     gate_3a_grab_mcp_stdio(grab_bin)
     gate_3b_live_cross_layer(grab_bin)
-    print("\nALL GROXY AI v0.2.0 VERIFICATION GATES PASSED 100%.")
+    print("\nALL GROXY AI v0.3.0 VERIFICATION GATES PASSED 100%.")
 
 
 if __name__ == "__main__":
