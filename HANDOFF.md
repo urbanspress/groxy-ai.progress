@@ -1,7 +1,7 @@
 # HANDOFF.md — Groxy AI
 
-- **Current Owner:** Google Antigravity (`Google Hydrogen (High)` — `v0.2.0` complete; switch to `Google Hydrogen (Medium)` before drafting `specifications/GROXY-AI-SPEC-003.md` for `v0.3.0`)
-- **Current Milestone State:** `v0.2.0` **Complete** (`specifications/GROXY-AI-SPEC-002.md`)
+- **Current Owner:** Google Antigravity (`Gemini 4 Argon (Medium)` — `specifications/GROXY-AI-SPEC-003.md` drafted and awaiting explicit project-owner approval before `v0.3.0` implementation)
+- **Current Milestone State:** `v0.3.0` **Specification in Review** (`specifications/GROXY-AI-SPEC-003.md`; `v0.2.0` **Complete**)
 - **Next Milestone:** `v0.3.0` — Autonomous `GRAB-DESIGN-SYSTEM.md`-Aware Visual Page & Section Generator for Grex Theme Builder (see `docs/ROADMAP.md`)
 
 ---
@@ -31,5 +31,5 @@
 ---
 
 ## Next Step Guidance (for `v0.3.0`)
-1. Switch to **`Google Hydrogen (Medium)`** to draft `specifications/GROXY-AI-SPEC-003.md` for `v0.3.0` (Autonomous `GRAB-DESIGN-SYSTEM.md`-Aware Visual Page & Section Generator for Grex Theme Builder) and pause for explicit project-owner approval (`Spec-First Approval Gate`).
-2. After `specifications/GROXY-AI-SPEC-003.md` is approved, implement `v0.3.0` using **`Google Hydrogen (High)`** (or **`Google Hydrogen (Extra)`** / **`Orchestrator (Argon)`** if deep multi-section Theme Builder layout synthesis and live cross-layer undo/preview checks require extra coordination).
+1. **Awaiting Project-Owner Approval (`Spec-First Approval Gate`):** Review `specifications/GROXY-AI-SPEC-003.md` for `v0.3.0` (Autonomous `GRAB-DESIGN-SYSTEM.md`-Aware Visual Page & Section Generator for Grex Theme Builder). Do NOT write `v0.3.0` implementation code until explicitly approved.
+2. **Recommended Model for Implementation:** Once `specifications/GROXY-AI-SPEC-003.md` is approved, switch to **`Google Hydrogen (High)`** (or **`Google Hydrogen (Extra)`** / **`Orchestrator (Argon)`** if deep multi-section Theme Builder layout synthesis and live cross-layer undo/preview checks require extra coordination) to implement `v0.3.0`.
