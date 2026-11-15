@@ -74,7 +74,7 @@ Completed multi-repository security, DOM, accessibility, precision, container, a
 
 ---
 
-## Planned Backwards-Compatible Minor Track (`v1.1.0` – `v1.3.0`)
+## Planned Backwards-Compatible Minor Track (`v1.1.0` – `v1.5.0`)
 
 - **Milestone `v1.1.0` — Screenshot-to-Grex Visual Replica (`POST /api/groxy/vision-clone`):** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified; specification & implementation pending owner scheduling after Step 5):
   - Accepts user-uploaded reference screenshots (`PNG`/`JPEG`/`WebP` verified via magic bytes + max size caps).
@@ -84,6 +84,15 @@ Completed multi-repository security, DOM, accessibility, precision, container, a
   - 8–10 question onboarding wizard saving `storage/BRAND-DNA.md` + `Site DNA`, powering 1-sentence batch creation of up to 40+ SEO/WCAG-audited blog posts or products with exact `ADR-025c` `GrabDecimal` prices, gated behind `create_entry_draft` (`status: "draft"`) and single-use `approval_token` (`GROXY-SAFE-001`).
 - **Milestone `v1.3.0` — Autonomous Post-Purchase Email Flow Designer & Copywriter:** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified):
   - Reads `BRAND-DNA.md`, `SITE-CONTEXT.md`, and `--grex-*` tokens to design multi-step post-purchase receipts, setup guides, review requests, and exact-price product cross-sell flows gated behind `GROXY-SAFE-001` approval.
+- **Milestone `v1.4.0` — 5 Autonomous Storefront & Commerce AI Engines:** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified):
+  - **AI Abandoned-Cart & Smart Checkout Recovery (`POST /api/groxy/recovery`):** Triggered by `commerce:abandoned_checkout` with exact `ADR-025c` `GrabDecimal` math and `BRAND-DNA.md` tone.
+  - **Grounded Storefront Concierge & Pre-Sale Q&A Widget:** `Grex JS` zero-wrapper-`<div>` `<dialog>`/`<aside>` strictly grounded in `SITE-CONTEXT.md` + `BRAND-DNA.md`.
+  - **Dynamic Bundle & Cross-Sell Architect (`POST /api/groxy/bundles`):** Generates `ADR-025c` exact-price bundles + `GROXY-SAFE-001` Grex Theme Builder sections.
+  - **Automated Review Sentiment Miner & FAQ Builder (`POST /api/groxy/reviews/mine`):** Generates `FAQPage` `schema.org` blocks + SKU alert flags.
+  - **Seasonal Campaign & Flash-Sale Autopilot (`POST /api/groxy/campaigns/plan`):** Generates synchronized hero banner + landing page draft + 3-email launch sequence gated behind `GROXY-SAFE-001`.
+- **Milestone `v1.5.0` — Bespoke Store Schema Quiz & Opt-In "Talk to Groxy" Database & Store Consultant:** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified):
+  - **Store Architecture Quiz (`POST /api/groxy/db/architect-quiz`):** Generates lean, zero-bloat `.grab` database migrations (`ADR-024f` + `ADR-025c`) tailored to the user's exact business model and dispatches to **Groxy Desk** / **Gashboard** SSH tunnels for human-approved provisioning (`GROXY-SAFE-001`).
+  - **Opt-In Database & Store Consultant (`groxy_db_consultant_enabled`):** Reads live `.grab` schema, row counts, active `ForEach` Query Loops, `slug_history` redirects, and order records (`SCHEMA-CONTEXT.md` + `SITE-CONTEXT.md`) to provide honest **Impact & Risk Assessments** (*Safe / Caution / High-Risk Data Loss*) before any table/column/data change, triggering an automatic **Grabtaculous** Pre-Deploy Snapshot before applying approved adjustments.
 
 ---
 

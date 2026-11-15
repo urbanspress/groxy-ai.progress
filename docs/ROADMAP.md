@@ -98,3 +98,26 @@ Scope:
 - Reads `storage/BRAND-DNA.md`, `storage/SITE-CONTEXT.md`, and live `--grex-*` design tokens (`GET /api/design-system.md`) to design multi-step post-purchase transactional and retention flows.
 - Generates branded receipt copy, onboarding/setup guides, review request sequences, and exact-price (`ADR-025c` `GrabDecimal`) product cross-sell flows paired with GrabLab CMS `email_outbox` triggers and Grex Builder `mode: "email"` templates.
 - All generated sequences, subject lines, and dispatch bindings remain strictly gated behind `GROXY-SAFE-001` single-use `approval_token` review prior to activation.
+
+---
+
+## `v1.4.0` — 5 Autonomous Storefront & Commerce AI Engines
+
+**Status:** Planned — Backwards-Compatible Minor Feature
+
+Scope:
+- **AI Abandoned-Cart & Smart Checkout Recovery (`POST /api/groxy/recovery`):** Triggered by GrabLab CMS `commerce:abandoned_checkout` events, drafting brand-voiced recovery sequences using `storage/BRAND-DNA.md` tone and exact `ADR-025c` `GrabDecimal` subtotal/discount math gated behind `GROXY-SAFE-001`.
+- **Grounded Storefront Concierge & Pre-Sale Q&A Widget:** Zero-wrapper-`<div>` `Grex JS` semantic `<dialog>`/`<aside>` storefront assistant strictly grounded in `storage/SITE-CONTEXT.md` and `storage/BRAND-DNA.md` (zero hallucinated specs, prices, or policies).
+- **Dynamic Bundle & Cross-Sell Architect (`POST /api/groxy/bundles`):** Generates exact-price (`ADR-025c` `GrabDecimal`) product bundles and complementary cross-sell Grex Theme Builder sections gated behind `GROXY-SAFE-001`.
+- **Automated Review Sentiment Miner & FAQ Builder (`POST /api/groxy/reviews/mine`):** Mines verified customer feedback to propose `FAQPage` `schema.org` JSON-LD blocks and SKU-level product quality/alert flags for operator review.
+- **Seasonal Campaign & Flash-Sale Autopilot (`POST /api/groxy/campaigns/plan`):** Plans synchronized hero banner updates, campaign landing page drafts (`status: "draft"`), and 3-email launch sequences strictly gated behind `GROXY-SAFE-001` single-use `approval_token` confirmation.
+
+---
+
+## `v1.5.0` — Bespoke Store Schema Quiz & Opt-In "Talk to Groxy" Database & Store Consultant
+
+**Status:** Planned — Backwards-Compatible Minor Feature
+
+Scope:
+- **Store Architecture Quiz (`POST /api/groxy/db/architect-quiz`):** Generates lean, zero-bloat `.grab` database migrations (`ADR-024f` + `ADR-025c`) tailored to the operator's exact business model and dispatches approved plans to **Groxy Desk** / **Gashboard** SSH tunnels for human-approved provisioning (`GROXY-SAFE-001`).
+- **Opt-In Database & Store Consultant (`groxy_db_consultant_enabled`):** Reads live `.grab` schema, row counts, active `ForEach` Query Loops, `slug_history` redirects, and order records (`SCHEMA-CONTEXT.md` + `SITE-CONTEXT.md`) to deliver plain-English **Impact & Risk Assessments** (*Safe / Caution / High-Risk Data Loss*) prior to any table, column, or data change, automatically triggering a **Grabtaculous** Pre-Deploy Snapshot before applying approved adjustments.
