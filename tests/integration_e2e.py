@@ -88,14 +88,16 @@ def http_request(url, method="GET", headers=None, json_body=None, opener=None):
         return err.code, dict(err.headers), body
 
 
-def wait_for_health(base_url, proc, label, timeout_s=20.0):
+def wait_for_health(base_url, proc, label, timeout_s=20.0, log_path=None):
     deadline = time.time() + timeout_s
     last_err = None
     while time.time() < deadline:
         if proc.poll() is not None:
-            out, err = proc.communicate(timeout=2)
+            log_text = ""
+            if log_path and Path(log_path).exists():
+                log_text = Path(log_path).read_text(encoding="utf-8", errors="replace")
             raise AssertionError(
-                f"{label} exited prematurely with code {proc.returncode}.\nSTDOUT:\n{out}\nSTDERR:\n{err}"
+                f"{label} exited prematurely with code {proc.returncode}.\nLOG:\n{log_text}"
             )
         try:
             status, _, body = http_request(f"{base_url}/_health")
@@ -172,6 +174,7 @@ def gate_1_static_and_format(grab_bin: str):
     for js_file in [
         REPO_ROOT / "public" / "groxy" / "playbook.js",
         REPO_ROOT / "public" / "groxy" / "auditor.js",
+        REPO_ROOT / "public" / "groxy" / "booster.js",
         REPO_ROOT / "public" / "groxy" / "mcp-client.js",
         REPO_ROOT / "public" / "groxy" / "dashboard.js",
     ]:
@@ -190,6 +193,7 @@ def gate_2_node_tests():
         "--test",
         "tests/unit_playbook.test.js",
         "tests/unit_auditor.test.js",
+        "tests/unit_booster.test.js",
         "tests/unit_mcp_client.test.js",
         "tests/unit_ui_dom.test.js",
     ])
@@ -257,7 +261,17 @@ def gate_3a_grab_mcp_stdio(grab_bin: str):
 
     routes_res = responses[4]["result"]
     routes_raw = json.dumps(routes_res)
-    for required_route in ["/_health", "/_ready", "/groxy", "/api/groxy/playbook", "/api/groxy/audit", "/api/groxy/mcp/inspect"]:
+    for required_route in [
+        "/_health",
+        "/_ready",
+        "/groxy",
+        "/api/groxy/playbook",
+        "/api/groxy/audit",
+        "/api/groxy/mcp/inspect",
+        "/api/groxy/prepublish-review",
+        "/api/groxy/boost",
+        "/api/groxy/boost/approve",
+    ]:
         assert required_route in routes_raw, f"Route {required_route} missing from grab_inspect_routes output"
 
     env_res = responses[5]["result"]
@@ -269,7 +283,7 @@ def gate_3a_grab_mcp_stdio(grab_bin: str):
 
 
 def gate_3b_live_cross_layer(grab_bin: str):
-    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v0.1.0...")
+    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v0.2.0...")
     cms_src = Path(os.environ.get("GRABLAB_CMS_DIR", r"C:\Development\grablab-cms"))
     builder_src = Path(os.environ.get("GREX_BUILDER_DIR", r"C:\Development\grex-builder"))
     if not (cms_src / "src" / "app.grab").exists():
@@ -285,6 +299,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
     groxy_url = f"http://127.0.0.1:{groxy_port}"
 
     procs = []
+    log_files = []
     tmp_root = Path(tempfile.mkdtemp(prefix="groxy_e2e_"))
     try:
         cms_tmp = tmp_root / "grablab-cms"
@@ -310,6 +325,9 @@ def gate_3b_live_cross_layer(grab_bin: str):
             else:
                 run_cmd([grab_bin, "migrate", "--db-config", "grab.data.json", "--allow-db", "main:migrate", mig], cwd=cms_tmp)
 
+        cms_log = tmp_root / "cms.log"
+        cms_fh = open(cms_log, "wb+")
+        log_files.append(cms_fh)
         cms_proc = subprocess.Popen(
             [
                 grab_bin,
@@ -339,16 +357,19 @@ def gate_3b_live_cross_layer(grab_bin: str):
             ],
             cwd=str(cms_tmp),
             env=cms_env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stdout=cms_fh,
+            stderr=subprocess.STDOUT,
         )
         procs.append(cms_proc)
-        wait_for_health(cms_url, cms_proc, "GrabLab CMS v1.0.1")
+        wait_for_health(cms_url, cms_proc, "GrabLab CMS v1.0.1", log_path=cms_log)
 
         # 2. Migrate & start ephemeral Grex Theme Builder v1.0.0
         for mig in ["migrations/001_studio_schema.grab", "migrations/002_revisions_schema.grab"]:
             run_cmd([grab_bin, "migrate", "--db-config", "grab.data.json", "--allow-db", "main:migrate", mig], cwd=builder_tmp)
 
+        builder_log = tmp_root / "builder.log"
+        builder_fh = open(builder_log, "wb+")
+        log_files.append(builder_fh)
         builder_proc = subprocess.Popen(
             [
                 grab_bin,
@@ -371,13 +392,16 @@ def gate_3b_live_cross_layer(grab_bin: str):
                 "src/studio.grab",
             ],
             cwd=str(builder_tmp),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stdout=builder_fh,
+            stderr=subprocess.STDOUT,
         )
         procs.append(builder_proc)
-        wait_for_health(builder_url, builder_proc, "Grex Theme Builder v1.0.0")
+        wait_for_health(builder_url, builder_proc, "Grex Theme Builder v1.0.0", log_path=builder_log)
 
-        # 3. Start Groxy AI v0.1.0 from REPO_ROOT
+        # 3. Start Groxy AI v0.2.0 from REPO_ROOT
+        groxy_log = tmp_root / "groxy.log"
+        groxy_fh = open(groxy_log, "wb+")
+        log_files.append(groxy_fh)
         groxy_proc = subprocess.Popen(
             [
                 grab_bin,
@@ -398,11 +422,11 @@ def gate_3b_live_cross_layer(grab_bin: str):
                 "src/groxy.grab",
             ],
             cwd=str(REPO_ROOT),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stdout=groxy_fh,
+            stderr=subprocess.STDOUT,
         )
         procs.append(groxy_proc)
-        health_json = wait_for_health(groxy_url, groxy_proc, "Groxy AI v0.1.0")
+        health_json = wait_for_health(groxy_url, groxy_proc, "Groxy AI v0.2.0", log_path=groxy_log)
         assert health_json.get("status") == "ok", (
             f"Unexpected /_health payload from Groxy AI: {health_json}"
         )
@@ -411,7 +435,9 @@ def gate_3b_live_cross_layer(grab_bin: str):
         st, _, body = http_request(f"{groxy_url}/_ready")
         assert st == 200
         ready_json = json.loads(body)
-        assert ready_json.get("status") == "ready", f"Unexpected /_ready payload: {ready_json}"
+        assert ready_json.get("status") == "ready", (
+            f"Unexpected /_ready payload: {ready_json}"
+        )
 
         st, _, html = http_request(f"{groxy_url}/groxy")
         assert st == 200
@@ -420,7 +446,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         assert m, "Missing groxy-csrf meta tag in /groxy HTML"
         groxy_csrf = m.group(1)
 
-        for asset_path in ["/static/groxy/groxy.css", "/static/groxy/dashboard.js", "/static/groxy/grex.js"]:
+        for asset_path in ["/static/groxy/groxy.css", "/static/groxy/dashboard.js", "/static/groxy/booster.js", "/static/groxy/grex.js"]:
             st, _, _ = http_request(f"{groxy_url}{asset_path}")
             assert st == 200, f"Expected 200 for {asset_path}, got {st}"
 
@@ -429,11 +455,16 @@ def gate_3b_live_cross_layer(grab_bin: str):
         pb = json.loads(pb_body)
         assert len(pb.get("rules", [])) == 22
 
-        # Verify CSRF enforcement on POST routes
-        st_no_csrf, _, _ = http_request(f"{groxy_url}/api/groxy/audit", method="POST", json_body={"entry": {}})
-        assert st_no_csrf == 403, f"Expected 403 without CSRF on /api/groxy/audit, got {st_no_csrf}"
-        st_no_csrf2, _, _ = http_request(f"{groxy_url}/api/groxy/mcp/inspect", method="POST", json_body={})
-        assert st_no_csrf2 == 403, f"Expected 403 without CSRF on /api/groxy/mcp/inspect, got {st_no_csrf2}"
+        # Verify CSRF enforcement on all POST routes
+        for post_path in [
+            "/api/groxy/audit",
+            "/api/groxy/mcp/inspect",
+            "/api/groxy/prepublish-review",
+            "/api/groxy/boost",
+            "/api/groxy/boost/approve",
+        ]:
+            st_no_csrf, _, _ = http_request(f"{groxy_url}{post_path}", method="POST", json_body={"entry": {}})
+            assert st_no_csrf == 403, f"Expected 403 without CSRF on {post_path}, got {st_no_csrf}"
 
         # Setup GrabLab CMS admin user & mint bearer MCP token
         cms_cj = http.cookiejar.CookieJar()
@@ -471,6 +502,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         assert st_insp == 200, f"/api/groxy/mcp/inspect failed ({st_insp}): {insp_body}"
         insp = json.loads(insp_body)
         assert insp["ok"] is True
+        assert insp["version"] == "0.2.0"
         assert insp["grablab_cms"]["connected"] is True
         assert insp["grablab_cms"]["elements_count"] == 20
         assert "create_entry_draft" in insp["grablab_cms"]["tools"]
@@ -649,10 +681,190 @@ def gate_3b_live_cross_layer(grab_bin: str):
             "Live published theme state must remain completely untouched until human Publish!"
         )
 
-        print("  [PASS] Gate 3B complete (live 4-layer GRAB + GrabLab CMS + Grex Builder + Groxy AI verified 100%).")
+        # -----------------------------------------------------------------
+        # Groxy AI v0.2.0 E2E: Pre-Publish Grade Gate + Boost Diff + Approve
+        # -----------------------------------------------------------------
+        # 1. Opt-out check (groxy_assist_enabled: False -> bypassed)
+        st_byp, _, byp_body = http_request(
+            f"{groxy_url}/api/groxy/prepublish-review",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"groxy_assist_enabled": False, "entry": {"id": "555", "title": "Bypass"}},
+        )
+        assert st_byp == 200, f"prepublish-review bypass failed ({st_byp}): {byp_body}"
+        byp_json = json.loads(byp_body)
+        assert byp_json["gate_status"] == "bypassed"
+        assert byp_json["groxy_assist_enabled"] is False
+
+        # 2. Opt-in Pre-Publish Review Gate on flawed F entry (with <div>, H1->H3 skip, missing alt, 301 link)
+        v020_flawed_payload = {
+            "groxy_assist_enabled": True,
+            "builder_url": builder_url,
+            "focus_keyword": "semantic cms",
+            "entry": {
+                "id": "777",
+                "content_type": "post",
+                "title": "Post",
+                "slug": "admin-bad_slug",
+                "excerpt": "Short.",
+                "body": "Short copy.",
+                "custom_fields": {"subtitle": "Semantic boost subtitle", "reading_minutes": "8"},
+            },
+            "grex_layout": {
+                "element": "div",
+                "tag": "div",
+                "props": {"id": "bad-root"},
+                "styles": {"base": {"color": "#9ca3af", "background-color": "#ffffff"}},
+                "children": [
+                    {"element": "Heading", "props": {"id": "bad-h1", "level": 1, "text": "Draft"}},
+                    {"element": "Heading", "props": {"id": "bad-h3", "level": 3, "text": "Skipped H2"}},
+                    {"element": "Image", "props": {"id": "bad-img", "src": "/static/theme/product.png"}},
+                    {"element": "Link", "props": {"id": "bad-lnk", "href": "/old-guide", "text": "click here"}},
+                ],
+            },
+            "site_context": {
+                "entries": [
+                    {
+                        "id": "10",
+                        "title": "Semantic CMS Architecture Guide",
+                        "slug": "semantic-cms-architecture",
+                        "slug_history": ["old-guide"],
+                    }
+                ],
+                "redirects": [],
+            },
+        }
+        st_rev, _, rev_body = http_request(
+            f"{groxy_url}/api/groxy/prepublish-review",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body=v020_flawed_payload,
+        )
+        assert st_rev == 200, f"prepublish-review failed ({st_rev}): {rev_body}"
+        rev_json = json.loads(rev_body)
+        assert rev_json["gate_status"] == "review_required"
+        assert rev_json["audit_report"]["overall_grade"] == "F"
+        assert rev_json["audit_report"]["publish_safe"] is False
+        assert [a["id"] for a in rev_json["actions"]] == ["make_live", "boost"]
+
+        # Snapshot GrabLab entries count BEFORE Boost (must not mutate before human approval!)
+        st_q_before, _, q_before_body = http_request(
+            f"{cms_url}/api/mcp",
+            method="POST",
+            headers={"Authorization": f"Bearer {cms_token}"},
+            json_body={"jsonrpc": "2.0", "id": 20, "method": "tools/call", "params": {"name": "query_entries", "arguments": {}}},
+        )
+        assert st_q_before == 200
+        q_before_sc = json.loads(q_before_body)["result"]["structuredContent"]
+        entries_before = q_before_sc.get("items", q_before_sc.get("entries", []))
+
+        # 3. Invoke 🚀 Let Groxy Boost This (POST /api/groxy/boost)
+        st_bst, _, bst_body = http_request(
+            f"{groxy_url}/api/groxy/boost",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={**v020_flawed_payload, "review_id": rev_json["review_id"]},
+        )
+        assert st_bst == 200, f"/api/groxy/boost failed ({st_bst}): {bst_body}"
+        bst_json = json.loads(bst_body)
+        assert bst_json["before_report"]["overall_grade"] == "F"
+        assert bst_json["after_report"]["overall_score"] >= 90, (
+            f"Expected boosted score >= 90, got {bst_json['after_report']['overall_score']}: {bst_json['after_report']}"
+        )
+        assert bst_json["after_report"]["overall_grade"] in ("A", "A+")
+        assert bst_json["after_report"]["publish_safe"] is True
+        assert bst_json["candidate_entry"]["custom_fields"]["reading_minutes"] == "8"
+        assert bst_json["candidate_entry"]["custom_fields"]["subtitle"] == "Semantic boost subtitle"
+        assert bst_json["approval_required"] is True
+
+        # Also verify GrabDecimal "49.99" exact preservation via live POST /api/groxy/boost on a product candidate
+        st_prod_bst, _, prod_bst_body = http_request(
+            f"{groxy_url}/api/groxy/boost",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                **v020_flawed_payload,
+                "entry": {
+                    **v020_flawed_payload["entry"],
+                    "content_type": "product",
+                    "custom_fields": {"price": "49.99", "sku": "10042"},
+                },
+            },
+        )
+        assert st_prod_bst == 200, f"Product boost failed ({st_prod_bst}): {prod_bst_body}"
+        prod_bst_json = json.loads(prod_bst_body)
+        assert prod_bst_json["candidate_entry"]["custom_fields"]["price"] == "49.99"
+        assert prod_bst_json["candidate_entry"]["custom_fields"]["sku"] == "10042"
+        approval_token = bst_json["approval_token"]
+        boost_id = bst_json["boost_id"]
+        assert "/old-guide" not in json.dumps(bst_json["candidate_layout"])
+        assert "/semantic-cms-architecture" in json.dumps(bst_json["candidate_layout"])
+
+        # Confirm GrabLab CMS was NOT mutated before human clicks Approve & Make This Live
+        _, _, q_mid_body = http_request(
+            f"{cms_url}/api/mcp",
+            method="POST",
+            headers={"Authorization": f"Bearer {cms_token}"},
+            json_body={"jsonrpc": "2.0", "id": 21, "method": "tools/call", "params": {"name": "query_entries", "arguments": {}}},
+        )
+        q_mid_sc = json.loads(q_mid_body)["result"]["structuredContent"]
+        entries_mid = q_mid_sc.get("items", q_mid_sc.get("entries", []))
+        assert len(entries_mid) == len(entries_before), "Boost preview must NOT persist CMS entries before approval!"
+
+        # 4. Reject invalid approval_token (GROXY-SAFE-001)
+        st_bad_tok, _, _ = http_request(
+            f"{groxy_url}/api/groxy/boost/approve",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"boost_id": boost_id, "approval_token": "tok_wrong"},
+        )
+        assert st_bad_tok == 403, f"Expected 403 on wrong approval_token, got {st_bad_tok}"
+
+        # 5. Approve & Make This Live -> persists draft in GrabLab CMS + actor="groxy-ai" layout in Grex Builder
+        st_app, _, app_body = http_request(
+            f"{groxy_url}/api/groxy/boost/approve",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "boost_id": boost_id,
+                "approval_token": approval_token,
+                "cms_url": cms_url,
+                "cms_token": cms_token,
+                "builder_url": builder_url,
+                "builder_csrf": builder_csrf,
+                "slot": "home",
+            },
+        )
+        assert st_app == 200, f"/api/groxy/boost/approve failed ({st_app}): {app_body}"
+        app_json = json.loads(app_body)
+        assert app_json["approved"] is True
+        assert app_json["draft_status"] == "draft"
+        assert app_json["actor"] == "groxy-ai"
+        assert app_json["cms_draft_result"]["result"]["structuredContent"]["status_enforced"] == "draft"
+        assert app_json["builder_layout_result"]["ok"] is True
+
+        # Replay of single-use approval_token must be rejected (409)
+        st_replay, _, _ = http_request(
+            f"{groxy_url}/api/groxy/boost/approve",
+            method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"boost_id": boost_id, "approval_token": approval_token},
+        )
+        assert st_replay == 409, f"Expected 409 on replayed approval_token, got {st_replay}"
+
+        # Live published theme state STILL untouched
+        _, _, state_final_raw = http_request(f"{builder_url}/api/studio/state")
+        assert json.loads(state_final_raw)["published"] == live_before
+
+        print("  [PASS] Gate 3B complete (live 4-layer GRAB + GrabLab CMS + Grex Builder + Groxy AI v0.2.0 verified 100%).")
     finally:
         for p in reversed(procs):
             terminate_process(p)
+        for fh in log_files:
+            try:
+                fh.close()
+            except Exception:
+                pass
         shutil.rmtree(tmp_root, ignore_errors=True)
 
 
@@ -663,7 +875,7 @@ def main():
     gate_2_node_tests()
     gate_3a_grab_mcp_stdio(grab_bin)
     gate_3b_live_cross_layer(grab_bin)
-    print("\nALL GROXY AI v0.1.0 VERIFICATION GATES PASSED 100%.")
+    print("\nALL GROXY AI v0.2.0 VERIFICATION GATES PASSED 100%.")
 
 
 if __name__ == "__main__":

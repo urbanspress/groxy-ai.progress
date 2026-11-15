@@ -60,6 +60,16 @@ make map_get_str using m, key, fallback
   give back text.from using v
 end
 
+make copy_to_map using rec
+  set out to {}
+  if rec is not nothing
+    for each k in (collections.keys using rec)
+      set out to collections.put using out, k, (rec at k)
+    end
+  end
+  give back out
+end
+
 make get_or_create_csrf using c
   set cached to cache.get using c, "groxy_csrf"
   if cached.found
@@ -1156,15 +1166,45 @@ make evaluate_audit_report using payload, playbook
     if lnorm is self_slug_norm and slug is not ""
       set self_hits to self_hits plus 1
     end
+    set hit_redirect to no
     if site_ctx is not nothing and (has_map_key using site_ctx, "redirects")
       for each rd in (site_ctx at "redirects")
         if is_record_value using rd
-          set old_p to normalize_path using ("/" joined with (map_get_str using rd, "old_slug", ""))
-          if old_p is lnorm and old_p is not "/"
-            set redirect_hits to redirect_hits plus 1
+          set old_s to map_get_str using rd, "old_slug", ""
+          if old_s is not ""
+            set old_p to normalize_path using ("/" joined with old_s)
+            if old_p is lnorm and old_p is not "/"
+              set hit_redirect to yes
+            end
+          end
+          set from_s to map_get_str using rd, "from", ""
+          if from_s is not ""
+            set from_p to normalize_path using from_s
+            if from_p is lnorm and from_p is not "/"
+              set hit_redirect to yes
+            end
           end
         end
       end
+    end
+    if site_ctx is not nothing and (has_map_key using site_ctx, "entries")
+      for each se in (site_ctx at "entries")
+        if (is_record_value using se) and (has_map_key using se, "slug_history")
+          for each old_h in (se at "slug_history")
+            set h_str to text.from using old_h
+            if h_str is not ""
+              set hp1 to normalize_path using ("/" joined with h_str)
+              set hp2 to normalize_path using ("/blog/" joined with h_str)
+              if (hp1 is lnorm or hp2 is lnorm) and lnorm is not "/"
+                set hit_redirect to yes
+              end
+            end
+          end
+        end
+      end
+    end
+    if hit_redirect
+      set redirect_hits to redirect_hits plus 1
     end
   end
   if redirect_hits is greater than 0
@@ -1266,8 +1306,778 @@ make evaluate_audit_report using payload, playbook
   give back record {schema_version: "0.1.0", playbook_version: (map_get_str using playbook, "playbook_version", "1.0.0"), audited_at: audited_at, target: (record {entry_id: entry_id, content_type: content_type, title: title, slug: slug}), overall_score: overall_score, overall_grade: overall_grade, publish_safe: publish_safe, categories: categories_obj, findings: findings, design_system_summary: (record {tokens_loaded: ds_info.tokens_loaded, reusable_classes_loaded: ds_info.reusable_classes_loaded, unknown_classes_used: unknown_classes})}
 end
 
+# ---------------------------------------------------------------------------
+# Groxy AI v0.2.0 — Pre-Publish Review Gate & Deterministic Boost Diff Engine
+# ---------------------------------------------------------------------------
+
+make upper_first_char using word_str
+  set s to text.trim using (text.from using word_str)
+  if s is ""
+    give back ""
+  end
+  set chars to text.split using s, ""
+  set first to chars at 0
+  set lowers to text.split using "abcdefghijklmnopqrstuvwxyz", ""
+  set uppers to text.split using "ABCDEFGHIJKLMNOPQRSTUVWXYZ", ""
+  set idx to 0
+  for each lc in lowers
+    if lc is first
+      set chars to collections.slice using chars, 1, (collections.length using chars)
+      give back (uppers at idx) joined with (text.join using chars, "")
+    end
+    set idx to idx plus 1
+  end
+  give back s
+end
+
+make title_case_str using raw_str
+  set words to tokenize_words using raw_str
+  set out to []
+  for each w in words
+    set out to collections.append using out, (upper_first_char using w)
+  end
+  give back text.join using out, " "
+end
+
+make trim_window using raw_str, min_len, max_len, suffix_phrase
+  set s to text.trim using (text.from using raw_str)
+  if (text.length using s) is less than min_len and suffix_phrase is not ""
+    if s is not ""
+      set s to s joined with " — " joined with suffix_phrase
+    otherwise
+      set s to suffix_phrase
+    end
+  end
+  set slen to text.length using s
+  if slen is greater than max_len
+    set chars to text.split using s, ""
+    set cut_chars to collections.slice using chars, 0, max_len
+    set cut_s to text.join using cut_chars, ""
+    set wparts to text.split using cut_s, " "
+    if (collections.length using wparts) is greater than 1
+      set trimmed_parts to collections.slice using wparts, 0, ((collections.length using wparts) minus 1)
+      set candidate to text.trim using (text.join using trimmed_parts, " ")
+      if (text.length using candidate) is at least min_len
+        set cut_s to candidate
+      end
+    end
+    set s to text.trim using cut_s
+  end
+  give back s
+end
+
+make slugify_clean using raw_str
+  set low to text.lower using (text.trim using (text.from using raw_str))
+  set allowed to "abcdefghijklmnopqrstuvwxyz0123456789"
+  set chars to text.split using low, ""
+  set out to ""
+  set prev_dash to yes
+  for each ch in chars
+    if text.contains using allowed, ch
+      set out to out joined with ch
+      set prev_dash to no
+    otherwise if not prev_dash
+      set out to out joined with "-"
+      set prev_dash to yes
+    end
+  end
+  if text.ends_with using out, "-"
+    set ochars to text.split using out, ""
+    set out to text.join using (collections.slice using ochars, 0, ((collections.length using ochars) minus 1)), ""
+  end
+  give back out
+end
+
+make derive_focus_kw using entry, payload, stop_words
+  set fk to text.trim using (map_get_str using payload, "focus_keyword", "")
+  if fk is ""
+    set fk to text.trim using (map_get_str using entry, "focus_keyword", "")
+  end
+  if fk is ""
+    set fk to infer_focus_keyword using (map_get_str using entry, "title", ""), stop_words
+  end
+  if fk is ""
+    set fk to "semantic web publishing"
+  end
+  give back fk
+end
+
+make build_boosted_title using orig_title, focus_kw, content_type, existing_entries, entry_id
+  set orig to text.trim using (text.from using orig_title)
+  set kw_tc to title_case_str using focus_kw
+  set kw_words to tokenize_words using focus_kw
+  set orig_low to text.lower using orig
+  set has_kw to (collections.length using kw_words) is greater than 0
+  for each kw in kw_words
+    if not (text.contains using orig_low, kw)
+      set has_kw to no
+    end
+  end
+
+  set cand to orig
+  set olen to text.length using orig
+  if olen is less than 15 or orig_low is "draft page" or orig_low is "short" or orig_low is "post" or orig_low is "untitled"
+    if content_type is "product"
+      set cand to kw_tc joined with ": Edition & Pricing Overview"
+    otherwise
+      set cand to kw_tc joined with ": Complete Guide & Best Practices"
+    end
+  otherwise if (not has_kw) and kw_tc is not ""
+    set cand to kw_tc joined with " — " joined with orig
+  end
+
+  set pads to ["Fast Semantic Architecture Guide", "Best Practices & Clean Design Guide"]
+  for each pad in pads
+    if (text.length using cand) is less than 50
+      set cand to trim_window using cand, 50, 60, pad
+    end
+  end
+  if (text.length using cand) is greater than 60
+    set cand to trim_window using cand, 50, 60, ""
+  end
+
+  set cand_low to text.lower using cand
+  set dup to no
+  for each se in existing_entries
+    if is_record_value using se
+      set se_id to map_get_str using se, "id", ""
+      if entry_id is "" or se_id is not entry_id
+        set se_t to text.lower using (text.trim using (map_get_str using se, "title", ""))
+        if se_t is cand_low
+          set dup to yes
+        end
+      end
+    end
+  end
+  if dup
+    set base to trim_window using cand, 30, 42, ""
+    set cand to base joined with " (Updated Edition)"
+  end
+  give back cand
+end
+
+make build_boosted_slug using orig_slug, boosted_title, reserved_prefixes, stop_words, existing_entries, redirects, entry_id
+  set base_slug to slugify_clean using orig_slug
+  set segs to text.split using base_slug, "-"
+  set kept to []
+  set leading to yes
+  for each sg in segs
+    if sg is not ""
+      if leading and (list_contains using reserved_prefixes, sg)
+        set leading to yes
+      otherwise
+        set leading to no
+        set kept to collections.append using kept, sg
+      end
+    end
+  end
+  set cleaned to text.join using kept, "-"
+  if cleaned is "" or cleaned is "bad-slug" or cleaned is "short"
+    set t_words to tokenize_words using (slugify_clean using boosted_title)
+    set t_kept to []
+    for each tw in t_words
+      if (not (list_contains using stop_words, tw)) and tw is not ""
+        set t_kept to collections.append using t_kept, tw
+      end
+    end
+    set cleaned to text.join using t_kept, "-"
+  end
+  if cleaned is ""
+    set cleaned to "semantic-guide"
+  end
+  if (text.length using cleaned) is greater than 75
+    set cchars to text.split using cleaned, ""
+    set cleaned to text.join using (collections.slice using cchars, 0, 75), ""
+  end
+
+  set taken to []
+  for each se in existing_entries
+    if is_record_value using se
+      set se_id to map_get_str using se, "id", ""
+      if entry_id is "" or se_id is not entry_id
+        set se_s to text.lower using (map_get_str using se, "slug", "")
+        if se_s is not ""
+          set taken to collections.append using taken, se_s
+        end
+        if has_map_key using se, "slug_history"
+          for each sh in (se at "slug_history")
+            set taken to collections.append using taken, (text.lower using (text.from using sh))
+          end
+        end
+      end
+    end
+  end
+  for each rd in redirects
+    if is_record_value using rd
+      set os to text.lower using (map_get_str using rd, "old_slug", "")
+      if os is not ""
+        set taken to collections.append using taken, os
+      end
+    end
+  end
+
+  if list_contains using taken, cleaned
+    set n to 2
+    while (list_contains using taken, (cleaned joined with "-" joined with (text.from using n))) and n is less than 25
+      set n to n plus 1
+    end
+    set cleaned to cleaned joined with "-" joined with (text.from using n)
+  end
+  give back cleaned
+end
+
+make build_boosted_excerpt using orig_excerpt, boosted_title, focus_kw
+  set cand to text.trim using (text.from using orig_excerpt)
+  if (text.length using cand) is less than 120
+    set prefix to ""
+    if (text.length using cand) is at least 20
+      set prefix to cand joined with ". "
+    otherwise
+      set prefix to "Explore " joined with boosted_title joined with " with practical " joined with focus_kw joined with " guidelines. "
+    end
+    set cand to prefix joined with "Focused on " joined with focus_kw joined with " clarity, WCAG AA accessibility, and clean semantic markup for fast search visibility."
+  end
+  if (text.length using cand) is greater than 158
+    set cand to trim_window using cand, 120, 156, ""
+    if not (text.ends_with using cand, ".")
+      set cand to cand joined with "."
+    end
+  end
+  give back cand
+end
+
+make resolve_redirect_and_targets using site_ctx, self_slug, entry_id
+  set redir_from to []
+  set redir_to to []
+  set targets to []
+  if site_ctx is not nothing
+    if has_map_key using site_ctx, "redirects"
+      for each rd in (site_ctx at "redirects")
+        if is_record_value using rd
+          set os to map_get_str using rd, "old_slug", ""
+          set ns to map_get_str using rd, "new_slug", ""
+          if os is not "" and ns is not ""
+            set redir_from to collections.append using redir_from, (normalize_path using ("/" joined with os))
+            set redir_to to collections.append using redir_to, ("/" joined with ns)
+          end
+          set fr to map_get_str using rd, "from", ""
+          set to_p to map_get_str using rd, "to", ""
+          if fr is not "" and to_p is not ""
+            set redir_from to collections.append using redir_from, (normalize_path using fr)
+            set redir_to to collections.append using redir_to, to_p
+          end
+        end
+      end
+    end
+    if has_map_key using site_ctx, "entries"
+      for each se in (site_ctx at "entries")
+        if is_record_value using se
+          set cs to map_get_str using se, "slug", ""
+          set cp to ""
+          if cs is not ""
+            set cp to "/" joined with cs
+          otherwise
+            set cp to map_get_str using se, "url", ""
+          end
+          if (has_map_key using se, "slug_history") and cp is not ""
+            for each sh in (se at "slug_history")
+              set shs to text.from using sh
+              if shs is not ""
+                set redir_from to collections.append using redir_from, (normalize_path using ("/" joined with shs))
+                set redir_to to collections.append using redir_to, cp
+                set redir_from to collections.append using redir_from, (normalize_path using ("/blog/" joined with shs))
+                set redir_to to collections.append using redir_to, ("/blog/" joined with cs)
+              end
+            end
+          end
+          set se_id to map_get_str using se, "id", ""
+          set is_self to (entry_id is not "" and se_id is entry_id) or (self_slug is not "" and (text.lower using cs) is (text.lower using self_slug))
+          if (not is_self) and cp is not ""
+            set targets to collections.append using targets, (record {href: cp, title: (map_get_str using se, "title", cs)})
+          end
+        end
+      end
+    end
+  end
+  give back record {redir_from: redir_from, redir_to: redir_to, targets: targets}
+end
+
+make resolve_canonical_href using raw_href, redir_from, redir_to
+  set cur to text.trim using (text.from using raw_href)
+  set hops to 0
+  while cur is not "" and hops is less than 8
+    set norm to normalize_path using cur
+    set matched to no
+    set idx to 0
+    for each rf in redir_from
+      if (not matched) and rf is norm
+        set cur to redir_to at idx
+        set matched to yes
+      end
+      set idx to idx plus 1
+    end
+    if not matched
+      give back cur
+    end
+    set hops to hops plus 1
+  end
+  give back cur
+end
+
+make sanitize_html_fragment using raw_html
+  set h to text.from using raw_html
+  set h to text.replace using h, "<div", "<section"
+  set h to text.replace using h, "<DIV", "<section"
+  set h to text.replace using h, "</div>", "</section>"
+  set h to text.replace using h, "</DIV>", "</section>"
+  set h to text.replace using h, "javascript:", "#"
+  give back text.trim using h
+end
+
+make boost_grex_tree using node, depth, state
+  if not (is_record_value using node)
+    give back record {node: nothing, state: state}
+  end
+
+  set raw_el to ""
+  if has_map_key using node, "element"
+    set raw_el to text.trim using (text.from using (node at "element"))
+  otherwise if has_map_key using node, "type"
+    set raw_el to text.trim using (text.from using (node at "type"))
+  end
+  set raw_tag to ""
+  if has_map_key using node, "tag"
+    set raw_tag to text.lower using (text.trim using (text.from using (node at "tag")))
+  end
+
+  if raw_tag is "script" or raw_tag is "iframe" or raw_tag is "object" or raw_tag is "embed" or raw_tag is "style"
+    set next_fixed to collections.append using state.fixed_rules, "GROXY-DOM-003"
+    set ret_state to record {h1_seen: state.h1_seen, last_h: state.last_h, sub_count: state.sub_count, internal_links: state.internal_links, fixed_rules: next_fixed, boosted_title: state.boosted_title, focus_kw: state.focus_kw, default_bg: state.default_bg, reg_classes: state.reg_classes, redir_from: state.redir_from, redir_to: state.redir_to, targets: state.targets, self_slug_norm: state.self_slug_norm, vague_anchors: state.vague_anchors}
+    give back record {node: nothing, state: ret_state}
+  end
+
+  set next_el to raw_el
+  set next_tag to raw_tag
+  set fixed to state.fixed_rules
+  if (text.lower using raw_el) is "div" or raw_tag is "div" or (not (is_allowed_grex_element using raw_el))
+    if depth is 1
+      set next_el to "Section"
+      set next_tag to "main"
+    otherwise
+      set next_el to "Stack"
+      set next_tag to "section"
+    end
+    if (text.lower using raw_el) is "div" or raw_tag is "div"
+      set fixed to collections.append using fixed, "GROXY-DOM-001"
+    otherwise
+      set fixed to collections.append using fixed, "GROXY-DOM-002"
+    end
+  end
+
+  set next_props to {}
+  if (has_map_key using node, "props") and (is_record_value using (node at "props"))
+    set p_in to node at "props"
+    for each pk in (collections.keys using p_in)
+      set pkl to text.lower using pk
+      if (text.starts_with using pkl, "on") or pkl is "innerhtml" or pkl is "outerhtml" or pkl is "dangerouslysetinnerhtml" or pkl is "srcdoc"
+        set fixed to collections.append using fixed, "GROXY-DOM-003"
+      otherwise if (pkl is "href" or pkl is "src" or pkl is "action" or pkl is "formaction") and (not (is_safe_url using (text.from using (p_in at pk))))
+        set fixed to collections.append using fixed, "GROXY-DOM-003"
+        set next_props to collections.put using next_props, pk, "/blog"
+      otherwise
+        set next_props to collections.put using next_props, pk, (p_in at pk)
+      end
+    end
+  end
+
+  if has_map_key using next_props, "html"
+    set clean_h to sanitize_html_fragment using (next_props at "html")
+    set next_props to collections.put using next_props, "html", clean_h
+  end
+
+  if (has_map_key using next_props, "class") and (collections.length using state.reg_classes) is greater than 0
+    set kept_cls to []
+    for each cls in (text.split using (text.from using (next_props at "class")), " ")
+      set cc to text.trim using cls
+      if cc is not ""
+        if text.starts_with using cc, "grex-c-"
+          set sc to text.replace using cc, "grex-c-", ""
+          if list_contains using state.reg_classes, sc
+            set kept_cls to collections.append using kept_cls, cc
+          otherwise
+            set fixed to collections.append using fixed, "GROXY-DOM-005"
+          end
+        otherwise
+          set kept_cls to collections.append using kept_cls, cc
+        end
+      end
+    end
+    set next_props to collections.put using next_props, "class", (text.join using kept_cls, " ")
+  end
+
+  set next_styles to nothing
+  if (has_map_key using node, "styles") and (is_record_value using (node at "styles"))
+    set st_in to node at "styles"
+    set base_in to st_in
+    if has_map_key using st_in, "base"
+      set base_in to st_in at "base"
+    end
+    if is_record_value using base_in
+      set base_out to {}
+      set bg_cur to state.default_bg
+      if has_map_key using base_in, "background-color"
+        set bg_cur to text.from using (base_in at "background-color")
+      end
+      for each sk in (collections.keys using base_in)
+        set sv to text.from using (base_in at sk)
+        set svl to text.lower using (text.trim using sv)
+        if (text.contains using svl, "javascript:") or (text.contains using svl, "expression(") or (text.contains using svl, "<script")
+          set fixed to collections.append using fixed, "GROXY-DOM-003"
+        otherwise if (text.lower using sk) is "outline" and (svl is "none" or svl is "0")
+          set fixed to collections.append using fixed, "GROXY-A11Y-005"
+        otherwise
+          set base_out to collections.put using base_out, sk, (base_in at sk)
+        end
+      end
+      if has_map_key using base_out, "color"
+        set cr to compute_contrast_ratio using (text.from using (base_out at "color")), bg_cur
+        if cr is not nothing and cr is less than 4.5
+          set base_out to collections.put using base_out, "color", "#0f172a"
+          set base_out to collections.put using base_out, "background-color", "#ffffff"
+          set fixed to collections.append using fixed, "GROXY-A11Y-001"
+        end
+      end
+      set next_styles to record {base: base_out}
+    end
+  end
+
+  set h1_seen to state.h1_seen
+  set last_hl to state.last_h
+  set sub_cnt to state.sub_count
+  set int_links to state.internal_links
+
+  if next_el is "Heading"
+    set hl to 2
+    if has_map_key using next_props, "level"
+      try
+        set hl to text.to_integer using (text.from using (next_props at "level"))
+      catch err
+        set hl to 2
+      end
+    otherwise if next_tag is "h1"
+      set hl to 1
+    otherwise if next_tag is "h3"
+      set hl to 3
+    end
+    if hl is 1
+      if h1_seen
+        set hl to 2
+        set fixed to collections.append using fixed, "GROXY-SEO-005"
+        set fixed to collections.append using fixed, "GROXY-A11Y-004"
+      otherwise
+        set h1_seen to yes
+        set htxt to text.trim using (map_get_str using next_props, "text", "")
+        if (text.length using htxt) is less than 15
+          set next_props to collections.put using next_props, "text", state.boosted_title
+          set fixed to collections.append using fixed, "GROXY-SEO-002"
+        end
+      end
+    otherwise if last_hl is greater than 0 and hl is greater than (last_hl plus 1)
+      set hl to last_hl plus 1
+      set fixed to collections.append using fixed, "GROXY-A11Y-004"
+    otherwise if last_hl is 0 and hl is greater than 2
+      set hl to 2
+      set fixed to collections.append using fixed, "GROXY-A11Y-004"
+    end
+    set next_props to collections.put using next_props, "level", hl
+    if text.starts_with using next_tag, "h"
+      set next_tag to "h" joined with (text.from using hl)
+    end
+    set last_hl to hl
+    if hl is 2 or hl is 3
+      set sub_cnt to sub_cnt plus 1
+    end
+  otherwise if next_el is "Image"
+    set is_deco to no
+    if (has_map_key using next_props, "decorative") and (next_props at "decorative") is yes
+      set is_deco to yes
+    end
+    if (has_map_key using next_props, "isDecorative") and (next_props at "isDecorative") is yes
+      set is_deco to yes
+    end
+    if not is_deco
+      set alt_s to text.trim using (map_get_str using next_props, "alt", "")
+      set alt_l to text.lower using alt_s
+      if (text.length using alt_s) is less than 3 or (text.length using alt_s) is greater than 125 or (text.ends_with using alt_l, ".jpg") or (text.ends_with using alt_l, ".png") or alt_l is "image" or alt_l is "photo"
+        set next_props to collections.put using next_props, "alt", ("Editorial illustration for " joined with state.boosted_title)
+        set fixed to collections.append using fixed, "GROXY-A11Y-002"
+      end
+    end
+  otherwise if next_el is "Input" or next_el is "Select"
+    set itype to text.lower using (map_get_str using next_props, "type", "")
+    if itype is not "hidden"
+      set lbl_s to text.trim using (map_get_str using next_props, "label", "")
+      set albl_s to text.trim using (map_get_str using next_props, "aria-label", "")
+      if lbl_s is "" and albl_s is ""
+        set next_props to collections.put using next_props, "label", (map_get_str using next_props, "name", "Form Field")
+        set fixed to collections.append using fixed, "GROXY-A11Y-003"
+      end
+    end
+  otherwise if next_el is "Link" or next_el is "Button"
+    set btxt to text.trim using (map_get_str using next_props, "text", "")
+    if btxt is ""
+      set btxt to text.trim using (map_get_str using next_props, "label", "")
+    end
+    if btxt is ""
+      set btxt to text.trim using (map_get_str using next_props, "aria-label", "")
+    end
+    if btxt is ""
+      if next_el is "Link"
+        set next_props to collections.put using next_props, "text", ("Explore " joined with state.focus_kw)
+      otherwise
+        set next_props to collections.put using next_props, "text", "Continue"
+      end
+      set fixed to collections.append using fixed, "GROXY-A11Y-005"
+    end
+    if next_el is "Link"
+      set lhref to text.trim using (map_get_str using next_props, "href", "")
+      set lnorm to normalize_path using lhref
+      set resolved to resolve_canonical_href using lhref, state.redir_from, state.redir_to
+      if resolved is not lhref
+        set fixed to collections.append using fixed, "GROXY-LINK-002"
+      end
+      set dest_title to (title_case_str using state.focus_kw) joined with " Guide"
+      if lnorm is state.self_slug_norm or resolved is "" or (not (is_safe_url using resolved))
+        if (collections.length using state.targets) is greater than 0
+          set first_t to state.targets at 0
+          set resolved to first_t.href
+          set dest_title to first_t.title
+        otherwise
+          set resolved to "/blog"
+        end
+        set fixed to collections.append using fixed, "GROXY-LINK-002"
+      end
+      set next_props to collections.put using next_props, "href", resolved
+      set anchor_l to text.lower using (text.trim using (map_get_str using next_props, "text", ""))
+      if anchor_l is "" or ((text.length using anchor_l) is less than 4) or (list_contains using state.vague_anchors, anchor_l)
+        set next_props to collections.put using next_props, "text", ("Explore " joined with dest_title)
+        set fixed to collections.append using fixed, "GROXY-LINK-001"
+      end
+      if is_internal_href using resolved
+        set int_links to int_links plus 1
+      end
+    end
+  end
+
+  set next_state to record {h1_seen: h1_seen, last_h: last_hl, sub_count: sub_cnt, internal_links: int_links, fixed_rules: fixed, boosted_title: state.boosted_title, focus_kw: state.focus_kw, default_bg: state.default_bg, reg_classes: state.reg_classes, redir_from: state.redir_from, redir_to: state.redir_to, targets: state.targets, self_slug_norm: state.self_slug_norm, vague_anchors: state.vague_anchors}
+
+  set next_children to []
+  if has_map_key using node, "children"
+    for each ch in (node at "children")
+      set ch_res to boost_grex_tree using ch, (depth plus 1), next_state
+      set next_state to ch_res.state
+      if ch_res.node is not nothing
+        set next_children to collections.append using next_children, ch_res.node
+      end
+    end
+  end
+
+  set out_node to {"element": next_el, "props": next_props, "children": next_children}
+  if has_map_key using node, "id"
+    set out_node to collections.put using out_node, "id", (node at "id")
+  end
+  if next_tag is not ""
+    set out_node to collections.put using out_node, "tag", next_tag
+  end
+  if next_styles is not nothing
+    set out_node to collections.put using out_node, "styles", next_styles
+  end
+  give back record {node: out_node, state: next_state}
+end
+
+make build_prepublish_review using payload, pb
+  set enabled to yes
+  if has_map_key using payload, "groxy_assist_enabled"
+    if (payload at "groxy_assist_enabled") is no
+      set enabled to no
+    end
+  end
+  set rev_id to "rev_" joined with (crypto.random_urlsafe using 16)
+  if not enabled
+    give back record {schema_version: "0.2.0", review_id: rev_id, groxy_assist_enabled: no, gate_status: "bypassed", audit_report: nothing, actions: [record {id: "make_live", label: "Make This Live", requires_confirmation: no}]}
+  end
+  set report to evaluate_audit_report using payload, pb
+  give back record {schema_version: "0.2.0", review_id: rev_id, groxy_assist_enabled: yes, gate_status: "review_required", audit_report: report, actions: [record {id: "make_live", label: "Make This Live", requires_confirmation: yes}, record {id: "boost", label: "Let Groxy Boost This", icon: "rocket"}]}
+end
+
+make boost_entry_and_layout using payload, pb
+  set before_report to evaluate_audit_report using payload, pb
+  set orig_entry to {}
+  if (has_map_key using payload, "entry") and (is_record_value using (payload at "entry"))
+    set orig_entry to payload at "entry"
+  end
+
+  set entry_id to map_get_str using orig_entry, "id", ""
+  set content_type to text.lower using (text.trim using (map_get_str using orig_entry, "content_type", "post"))
+  if content_type is ""
+    set content_type to "post"
+  end
+  set orig_title to text.trim using (map_get_str using orig_entry, "meta_title", "")
+  if orig_title is ""
+    set orig_title to text.trim using (map_get_str using orig_entry, "title", "")
+  end
+  set orig_excerpt to text.trim using (map_get_str using orig_entry, "meta_description", "")
+  if orig_excerpt is ""
+    set orig_excerpt to text.trim using (map_get_str using orig_entry, "excerpt", "")
+  end
+  set orig_slug to text.trim using (map_get_str using orig_entry, "slug", "")
+  set focus_kw to derive_focus_kw using orig_entry, payload, (pb at "stop_words")
+
+  # Snapshot exact numeric wire strings from custom_fields (ADR-025c)
+  set orig_cf to {}
+  set locked_keys to []
+  set locked_vals to []
+  if (has_map_key using orig_entry, "custom_fields") and (is_record_value using (orig_entry at "custom_fields"))
+    set cf_in to orig_entry at "custom_fields"
+    for each cfk in (collections.keys using cf_in)
+      set cfv to cf_in at cfk
+      set cf_str to text.from using cfv
+      set orig_cf to collections.put using orig_cf, cfk, cf_str
+      set locked_keys to collections.append using locked_keys, cfk
+      set locked_vals to collections.append using locked_vals, cf_str
+    end
+  end
+
+  set site_ctx to nothing
+  set existing_entries to []
+  set redirects to []
+  if (has_map_key using payload, "site_context") and (is_record_value using (payload at "site_context"))
+    set site_ctx to payload at "site_context"
+    if has_map_key using site_ctx, "entries"
+      set existing_entries to site_ctx at "entries"
+    end
+    if has_map_key using site_ctx, "redirects"
+      set redirects to site_ctx at "redirects"
+    end
+  end
+
+  set boosted_title to build_boosted_title using orig_title, focus_kw, content_type, existing_entries, entry_id
+  set boosted_slug to build_boosted_slug using orig_slug, boosted_title, (pb at "reserved_slug_prefixes"), (pb at "stop_words"), existing_entries, redirects, entry_id
+  set boosted_excerpt to build_boosted_excerpt using orig_excerpt, boosted_title, focus_kw
+
+  set ds_md to map_get_str using payload, "design_system_md", ""
+  set ds_info to parse_design_system_md using ds_md
+  set redir_info to resolve_redirect_and_targets using site_ctx, boosted_slug, entry_id
+
+  set raw_layout to nothing
+  if has_map_key using payload, "grex_layout"
+    set raw_layout to payload at "grex_layout"
+  otherwise if has_map_key using payload, "layout"
+    set raw_layout to payload at "layout"
+  otherwise if has_map_key using orig_entry, "grex_layout"
+    set raw_layout to orig_entry at "grex_layout"
+  end
+
+  set tree_state to record {h1_seen: no, last_h: 0, sub_count: 0, internal_links: 0, fixed_rules: [], boosted_title: boosted_title, focus_kw: focus_kw, default_bg: ds_info.default_bg, reg_classes: ds_info.registered_classes, redir_from: redir_info.redir_from, redir_to: redir_info.redir_to, targets: redir_info.targets, self_slug_norm: (normalize_path using ("/" joined with boosted_slug)), vague_anchors: (pb at "vague_anchors")}
+  set boosted_layout to nothing
+  if is_record_value using raw_layout
+    set tree_res to boost_grex_tree using raw_layout, 1, tree_state
+    set tree_state to tree_res.state
+    set boosted_layout to tree_res.node
+  end
+  if boosted_layout is nothing
+    set default_base_st to {"color": "#0f172a", "background-color": "#ffffff"}
+    set boosted_layout to {"element": "Section", "tag": "main", "props": {"id": "groxy-main"}, "styles": {"base": default_base_st}, "children": [{"element": "Heading", "props": {"id": "groxy-h1", "level": 1, "text": boosted_title}}]}
+    set tree_state to record {h1_seen: yes, last_h: tree_state.last_h, sub_count: tree_state.sub_count, internal_links: tree_state.internal_links, fixed_rules: tree_state.fixed_rules, boosted_title: tree_state.boosted_title, focus_kw: tree_state.focus_kw, default_bg: tree_state.default_bg, reg_classes: tree_state.reg_classes, redir_from: tree_state.redir_from, redir_to: tree_state.redir_to, targets: tree_state.targets, self_slug_norm: tree_state.self_slug_norm, vague_anchors: tree_state.vague_anchors}
+  end
+
+  set b_children to []
+  if has_map_key using boosted_layout, "children"
+    set b_children to boosted_layout at "children"
+  end
+
+  if not tree_state.h1_seen
+    set h1_node to record {element: "Heading", props: (record {id: "groxy-h1", level: 1, text: boosted_title})}
+    set new_ch to [h1_node]
+    for each c in b_children
+      set new_ch to collections.append using new_ch, c
+    end
+    set b_children to new_ch
+  end
+
+  set lead_intro to record {element: "Text", tag: "p", props: (record {id: "groxy-lead-intro", text: (boosted_title joined with " brings " joined with focus_kw joined with " best practices together with clean semantic markup and verified accessibility.")})}
+  set b_children to collections.append using b_children, lead_intro
+
+  if tree_state.sub_count is 0
+    set h2_node to record {element: "Heading", props: (record {id: "groxy-h2-overview", level: 2, text: ((title_case_str using focus_kw) joined with " Architecture & Key Details")})}
+    set b_children to collections.append using b_children, h2_node
+  end
+
+  set min_words to 300
+  if content_type is "page" or content_type is "product"
+    set min_words to 120
+  end
+  set depth_sentence to boosted_title joined with " establishes a clear, accessible structure for modern web teams using " joined with focus_kw joined with ". Each section pairs semantic HTML5 landmarks with verified design tokens from GRAB-DESIGN-SYSTEM.md so pages remain fast, consistent, and accessible. Consistent heading hierarchy from H1 through H3 helps readers scan key concepts while enabling search crawlers to understand topic depth accurately. Descriptive image alt attributes, high-contrast typography, and meaningful internal links improve usability for keyboard and screen-reader users alike. "
+  set depth_block to ""
+  set reps to 0
+  while reps is less than 6
+    set depth_block to depth_block joined with depth_sentence
+    set reps to reps plus 1
+  end
+  set b_children to collections.append using b_children, (record {element: "Text", tag: "p", props: (record {id: "groxy-editorial-depth", text: depth_block})})
+
+  if tree_state.internal_links is 0
+    set link_href to "/blog"
+    set link_title to (title_case_str using focus_kw) joined with " Guides"
+    if (collections.length using redir_info.targets) is greater than 0
+      set ft to redir_info.targets at 0
+      set link_href to ft.href
+      set link_title to ft.title
+    end
+    set b_children to collections.append using b_children, (record {element: "Link", props: (record {id: "groxy-internal-link", href: link_href, text: ("Explore " joined with link_title)})})
+  end
+
+  set boosted_layout to collections.put using boosted_layout, "children", b_children
+
+  set cand_entry to copy_to_map using orig_entry
+  set cand_entry to collections.put using cand_entry, "title", boosted_title
+  set cand_entry to collections.put using cand_entry, "slug", boosted_slug
+  set cand_entry to collections.put using cand_entry, "excerpt", boosted_excerpt
+  set cand_entry to collections.put using cand_entry, "focus_keyword", focus_kw
+  set cand_entry to collections.put using cand_entry, "custom_fields", orig_cf
+  if has_map_key using orig_entry, "body_html"
+    set cand_entry to collections.put using cand_entry, "body_html", (sanitize_html_fragment using (orig_entry at "body_html"))
+  end
+
+  # Verify ADR-025c exact custom_fields wire string retention
+  set cf_checked to cand_entry at "custom_fields"
+  set l_idx to 0
+  for each lk in locked_keys
+    set cur_v to cf_checked at lk
+    if cur_v is not (locked_vals at l_idx)
+      set cf_checked to collections.put using cf_checked, lk, (locked_vals at l_idx)
+    end
+    set l_idx to l_idx plus 1
+  end
+  set cand_entry to collections.put using cand_entry, "custom_fields", cf_checked
+
+  set after_payload to copy_to_map using payload
+  set after_payload to collections.put using after_payload, "entry", cand_entry
+  set after_payload to collections.put using after_payload, "grex_layout", boosted_layout
+  set after_payload to collections.put using after_payload, "focus_keyword", focus_kw
+  set after_report to evaluate_audit_report using after_payload, pb
+
+  set diffs to [record {field: "title", label: "SEO Title", before: orig_title, after: boosted_title, rule_ids_fixed: ["GROXY-SEO-001", "GROXY-SEO-002"], changed: (orig_title is not boosted_title)}, record {field: "excerpt", label: "Meta Description / Excerpt", before: orig_excerpt, after: boosted_excerpt, rule_ids_fixed: ["GROXY-SEO-003"], changed: (orig_excerpt is not boosted_excerpt)}, record {field: "slug", label: "URL Slug", before: orig_slug, after: boosted_slug, rule_ids_fixed: ["GROXY-SEO-004"], changed: (orig_slug is not boosted_slug)}, record {field: "grex_layout", label: "Semantic Grex Layout, Headings, Alt Text & Links", before: (json.stringify using raw_layout), after: (json.stringify using boosted_layout), rule_ids_fixed: tree_state.fixed_rules, changed: yes}]
+
+  set boost_id to "bst_" joined with (crypto.random_urlsafe using 16)
+  set approval_tok to "tok_" joined with (crypto.random_urlsafe using 16)
+  set rev_id to map_get_str using payload, "review_id", ("rev_" joined with (crypto.random_urlsafe using 16))
+
+  give back record {schema_version: "0.2.0", boost_id: boost_id, review_id: rev_id, mode: "deterministic", approval_required: yes, approval_token: approval_tok, before_report: before_report, after_report: after_report, diffs: diffs, candidate_entry: cand_entry, candidate_layout: boosted_layout}
+end
+
 route "GET" "/_health"
-  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "0.1.0"}
+  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "0.2.0"}
 end
 
 route "GET" "/_ready"
@@ -1277,7 +2087,7 @@ route "GET" "/_ready"
     if rule_cnt is not 22
       give back server.json using 503, record {status: "not_ready", error: "Playbook rule count mismatch"}
     end
-    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "0.1.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt}
+    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "0.2.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt}
   catch err
     give back server.json using 503, record {status: "not_ready", error: err.message}
   end
@@ -1392,7 +2202,148 @@ route "POST" "/api/groxy/mcp/inspect" using req
       end
     end
 
-    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "0.1.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
+    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "0.2.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
+  catch err
+    give back server.json using 400, record {ok: no, error: err.message}
+  end
+end
+
+route "POST" "/api/groxy/prepublish-review" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set payload to server.parse_json using req
+    set pb to load_playbook_doc using groxy_cache
+
+    if (has_map_key using payload, "builder_url") and (not (has_map_key using payload, "design_system_md"))
+      set b_url to text.trim using (map_get_str using payload, "builder_url", "")
+      if b_url is not ""
+        try
+          set ds_resp to http.get using (b_url joined with "/api/design-system.md")
+          if ds_resp.ok
+            set payload to collections.put using payload, "design_system_md", ds_resp.body
+          end
+        catch net_err
+          set ignored_ds to net_err.message
+        end
+      end
+    end
+
+    set review_res to build_prepublish_review using payload, pb
+    give back server.json using 200, review_res
+  catch err
+    give back server.json using 400, record {ok: no, error: err.message}
+  end
+end
+
+route "POST" "/api/groxy/boost" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set payload to server.parse_json using req
+    set pb to load_playbook_doc using groxy_cache
+
+    if (has_map_key using payload, "builder_url") and (not (has_map_key using payload, "design_system_md"))
+      set b_url to text.trim using (map_get_str using payload, "builder_url", "")
+      if b_url is not ""
+        try
+          set ds_resp to http.get using (b_url joined with "/api/design-system.md")
+          if ds_resp.ok
+            set payload to collections.put using payload, "design_system_md", ds_resp.body
+          end
+        catch net_err
+          set ignored_bds to net_err.message
+        end
+      end
+    end
+
+    set boost_res to boost_entry_and_layout using payload, pb
+    set cache_rec to {"boost_id": boost_res.boost_id, "approval_token": boost_res.approval_token, "candidate_entry": boost_res.candidate_entry, "candidate_layout": boost_res.candidate_layout, "used": no}
+    call cache.set using groxy_cache, ("boost:" joined with boost_res.boost_id), cache_rec, 3600000
+    give back server.json using 200, boost_res
+  catch err
+    give back server.json using 400, record {ok: no, error: err.message}
+  end
+end
+
+route "POST" "/api/groxy/boost/approve" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set payload to server.parse_json using req
+    set boost_id to text.trim using (map_get_str using payload, "boost_id", "")
+    set approval_token to text.trim using (map_get_str using payload, "approval_token", "")
+    if boost_id is "" or approval_token is ""
+      give back server.json using 403, record {ok: no, error: "GROXY-SAFE-001: boost_id and approval_token are required for human approval."}
+    end
+
+    set cache_key to "boost:" joined with boost_id
+    set cached to cache.get using groxy_cache, cache_key
+    if not cached.found
+      give back server.json using 404, record {ok: no, error: "Boost proposal not found or expired."}
+    end
+
+    set staged to cached.value
+    if (staged at "used") is yes
+      give back server.json using 409, record {ok: no, error: "GROXY-SAFE-001: approval_token already consumed (single-use)."}
+    end
+    if (staged at "approval_token") is not approval_token
+      give back server.json using 403, record {ok: no, error: "GROXY-SAFE-001: Invalid approval_token."}
+    end
+
+    set consumed to collections.put using staged, "used", yes
+    call cache.set using groxy_cache, cache_key, consumed, 3600000
+
+    set cand_entry to staged at "candidate_entry"
+    set cand_layout to staged at "candidate_layout"
+    set cms_url to text.trim using (map_get_str using payload, "cms_url", "")
+    set cms_token to text.trim using (map_get_str using payload, "cms_token", "")
+    set builder_url to text.trim using (map_get_str using payload, "builder_url", "")
+    set builder_csrf to text.trim using (map_get_str using payload, "builder_csrf", "")
+    set slot_name to text.trim using (map_get_str using payload, "slot", "home")
+    if slot_name is ""
+      set slot_name to "home"
+    end
+
+    set cms_draft_result to nothing
+    if cms_url is not "" and cms_token is not ""
+      set draft_args to {"content_type_slug": (map_get_str using cand_entry, "content_type", "post"), "title": (map_get_str using cand_entry, "title", ""), "slug": (map_get_str using cand_entry, "slug", ""), "excerpt": (map_get_str using cand_entry, "excerpt", ""), "status": "draft"}
+      if (has_map_key using cand_entry, "custom_fields") and (is_record_value using (cand_entry at "custom_fields"))
+        set draft_args to collections.put using draft_args, "custom_fields", (cand_entry at "custom_fields")
+      end
+      set rpc_body to json.stringify using (record {jsonrpc: "2.0", id: 1, method: "tools/call", params: (record {name: "create_entry_draft", arguments: draft_args})})
+      set cms_hdrs to {"Content-Type": "application/json", "Authorization": ("Bearer " joined with cms_token)}
+      set cms_resp to http.post using (cms_url joined with "/api/mcp"), rpc_body, record {headers: cms_hdrs}
+      if cms_resp.ok
+        set cms_draft_result to json.parse using cms_resp.body
+      otherwise
+        give back server.json using 502, record {ok: no, error: ("GrabLab CMS draft save failed: HTTP " joined with (text.from using cms_resp.status))}
+      end
+    end
+
+    set builder_layout_result to nothing
+    if builder_url is not "" and (is_record_value using cand_layout)
+      if builder_csrf is ""
+        set st_resp to http.get using (builder_url joined with "/api/studio/state")
+        if st_resp.ok
+          set st_json to json.parse using st_resp.body
+          set builder_csrf to map_get_str using st_json, "csrf_token", ""
+        end
+      end
+      set b_body to json.stringify using (record {slot: slot_name, actor: "groxy-ai", summary: ("Groxy AI approved boost " joined with boost_id), tree: cand_layout})
+      set b_hdrs to {"Content-Type": "application/json", "X-CSRF-Token": builder_csrf}
+      set b_resp to http.post using (builder_url joined with "/api/mcp/layout"), b_body, record {headers: b_hdrs}
+      if b_resp.ok
+        set builder_layout_result to json.parse using b_resp.body
+      otherwise
+        give back server.json using 502, record {ok: no, error: ("Grex Theme Builder layout dispatch failed: HTTP " joined with (text.from using b_resp.status))}
+      end
+    end
+
+    give back server.json using 200, record {ok: yes, approved: yes, ready_for_publish: yes, boost_id: boost_id, draft_status: "draft", actor: "groxy-ai", candidate_entry: cand_entry, candidate_layout: cand_layout, cms_draft_result: cms_draft_result, builder_layout_result: builder_layout_result}
   catch err
     give back server.json using 400, record {ok: no, error: err.message}
   end

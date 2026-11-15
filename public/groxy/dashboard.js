@@ -1,5 +1,5 @@
 /**
- * Groxy AI v0.1.0 — Zero-<div> Semantic Audit & Playbook Inspector UI.
+ * Groxy AI v0.2.0 — Zero-<div> Semantic Audit, Pre-Publish Grade Gate & Boost Diff UI.
  * Built strictly with Grex JS v1.0.0 signals and semantic HTML5 elements.
  * Zero innerHTML writes, zero eval(), zero wrapper <div> elements.
  */
@@ -13,6 +13,7 @@ import {
 } from "./grex.js";
 import { DEFAULT_SEO_PLAYBOOK } from "./playbook.js";
 import { auditEntryAndLayout } from "./auditor.js";
+import { boostEntryAndLayout, buildPrePublishReview } from "./booster.js";
 
 export const SAMPLE_AUDIT_PRESETS = Object.freeze({
   clean: {
@@ -93,7 +94,7 @@ export const SAMPLE_AUDIT_PRESETS = Object.freeze({
       focus_keyword: "fast grab themes",
       excerpt: "Too short.",
       body: "Short copy.",
-      custom_fields: { price: 19.95 },
+      custom_fields: { price: "19.95" },
     },
     grex_layout: {
       element: "div",
@@ -101,6 +102,14 @@ export const SAMPLE_AUDIT_PRESETS = Object.freeze({
       props: { id: "bad-wrapper" },
       styles: { base: { color: "#9ca3af", "background-color": "#ffffff" } },
       children: [
+        {
+          element: "Heading",
+          props: { id: "bad-h1", level: 1, text: "Draft" },
+        },
+        {
+          element: "Heading",
+          props: { id: "bad-h3-jump", level: 3, text: "Skipped H2 Details" },
+        },
         {
           element: "Image",
           props: { id: "bad-img", src: "/static/theme/preview-hero.svg" },
@@ -188,7 +197,8 @@ function readMetaCsrf(doc) {
 }
 
 /**
- * Mount the semantic, zero-<div> Groxy AI Inspector UI into `root`.
+ * Mount the semantic, zero-<div> Groxy AI Inspector, Pre-Publish Review Gate &
+ * "Let Groxy Boost This" Diff UI into `root`.
  *
  * @param {{
  *   root: Element,
@@ -207,9 +217,11 @@ export function mountGroxyDashboard(options = {}) {
 
   const playbook = options.playbook || DEFAULT_SEO_PLAYBOOK;
   const csrfToken = options.csrfToken || readMetaCsrf(doc);
-  const fetchFn = options.fetchImpl || (typeof globalThis.fetch === "function" ? globalThis.fetch.bind(globalThis) : null);
+  const fetchFn =
+    options.fetchImpl || (typeof globalThis.fetch === "function" ? globalThis.fetch.bind(globalThis) : null);
 
   const selectedPreset = signal("clean");
+  const assistEnabledSig = signal(true);
   const titleSig = signal(SAMPLE_AUDIT_PRESETS.clean.entry.title);
   const slugSig = signal(SAMPLE_AUDIT_PRESETS.clean.entry.slug);
   const typeSig = signal(SAMPLE_AUDIT_PRESETS.clean.entry.content_type);
@@ -218,6 +230,10 @@ export function mountGroxyDashboard(options = {}) {
   const priceSig = signal(SAMPLE_AUDIT_PRESETS.clean.entry.custom_fields.price);
   const layoutSig = signal(SAMPLE_AUDIT_PRESETS.clean.grex_layout);
   const pillarFilterSig = signal("all");
+
+  const reviewSig = signal(null);
+  const boostSig = signal(null);
+  const publishNoticeSig = signal("");
   const mcpStatusSig = signal({
     loading: false,
     summary: "Click Inspect MCP Bridge to verify live GrabLab CMS, Grex Theme Builder, and GRAB CLI capabilities.",
@@ -240,19 +256,43 @@ export function mountGroxyDashboard(options = {}) {
     return playbook.rules.filter((r) => r.category === f);
   });
 
+  function buildCurrentPayload() {
+    const presetData = SAMPLE_AUDIT_PRESETS[selectedPreset.peek()] || SAMPLE_AUDIT_PRESETS.clean;
+    return {
+      groxy_assist_enabled: assistEnabledSig.peek(),
+      entry: {
+        ...presetData.entry,
+        title: titleSig.peek(),
+        slug: slugSig.peek(),
+        content_type: typeSig.peek(),
+        focus_keyword: keywordSig.peek(),
+        excerpt: excerptSig.peek(),
+        custom_fields: {
+          ...(presetData.entry.custom_fields || {}),
+          price: priceSig.peek(),
+        },
+      },
+      grex_layout: layoutSig.peek(),
+      focus_keyword: keywordSig.peek(),
+    };
+  }
+
   clearChildren(root);
 
-  // 1. Audit Input Form Card
-  const formCard = createEl(doc, "section", { class: "groxy-card", "aria-label": "Deterministic SEO and DOM Auditor" });
-  const formHeading = createEl(doc, "h1", {}, "Groxy AI v0.1.0 — 4-Pillar SEO & Clean-DOM Inspector");
-  const formLead = createEl(
-    doc,
-    "p",
-    { class: "groxy-muted" },
-    "Audits GrabLab entries and Grex layouts deterministically across 22 curated rules (zero mandatory API fees, zero wrapper <div>s)."
+  // 1. Audit & Pre-Publish Input Card
+  const formCard = createEl(doc, "section", {
+    class: "groxy-card",
+    "aria-label": "Deterministic SEO and DOM Auditor",
+  });
+  formCard.appendChild(createEl(doc, "h1", {}, "Groxy AI v0.2.0 — 4-Pillar SEO, Pre-Publish Gate & Boost Inspector"));
+  formCard.appendChild(
+    createEl(
+      doc,
+      "p",
+      { class: "groxy-muted" },
+      "Audits GrabLab entries and Grex layouts deterministically across 22 curated rules, runs the Pre-Publish Grade Review Gate, and prepares safe Before/After Boost diffs."
+    )
   );
-  formCard.appendChild(formHeading);
-  formCard.appendChild(formLead);
 
   const formEl = createEl(doc, "form", { id: "groxy-audit-form" });
 
@@ -261,14 +301,37 @@ export function mountGroxyDashboard(options = {}) {
   const presetLabel = createEl(doc, "label", { for: "groxy-preset-select" }, "Load Sample Preset");
   const presetSelect = createEl(doc, "select", { id: "groxy-preset-select", name: "preset" });
   for (const [k, preset] of Object.entries(SAMPLE_AUDIT_PRESETS)) {
-    const opt = createEl(doc, "option", { value: k }, preset.label);
-    presetSelect.appendChild(opt);
+    presetSelect.appendChild(createEl(doc, "option", { value: k }, preset.label));
   }
   presetField.appendChild(presetLabel);
   presetField.appendChild(presetSelect);
   formEl.appendChild(presetField);
 
-  const inputsGrid = createEl(doc, "section", { class: "groxy-grid-2", "aria-label": "Entry Metadata Fields" });
+  // Opt-in groxy_assist_enabled toggle
+  const toggleRow = createEl(doc, "p", { class: "groxy-toggle-row" });
+  const assistCheckbox = createEl(doc, "input", {
+    id: "groxy-assist-toggle",
+    type: "checkbox",
+    checked: "checked",
+  });
+  assistCheckbox.checked = true;
+  assistCheckbox.addEventListener("change", (ev) => {
+    assistEnabledSig.set(Boolean(ev.target.checked));
+  });
+  const assistLabel = createEl(
+    doc,
+    "label",
+    { for: "groxy-assist-toggle" },
+    "Enable Groxy Pre-Publish Grade Review Gate (groxy_assist_enabled)"
+  );
+  toggleRow.appendChild(assistCheckbox);
+  toggleRow.appendChild(assistLabel);
+  formEl.appendChild(toggleRow);
+
+  const inputsGrid = createEl(doc, "section", {
+    class: "groxy-grid-2",
+    "aria-label": "Entry Metadata Fields",
+  });
 
   const addInputField = (id, labelText, initialVal, onInput) => {
     const wrap = createEl(doc, "p", { class: "groxy-field" });
@@ -286,7 +349,9 @@ export function mountGroxyDashboard(options = {}) {
   const titleInput = addInputField("groxy-entry-title", "Entry Title", titleSig.peek(), (v) => titleSig.set(v));
   const slugInput = addInputField("groxy-entry-slug", "URL Slug", slugSig.peek(), (v) => slugSig.set(v));
   const keywordInput = addInputField("groxy-focus-keyword", "Focus Keyword", keywordSig.peek(), (v) => keywordSig.set(v));
-  const priceInput = addInputField("groxy-decimal-price", "Exact GrabDecimal Price", priceSig.peek(), (v) => priceSig.set(v));
+  const priceInput = addInputField("groxy-decimal-price", "Exact GrabDecimal Price", priceSig.peek(), (v) =>
+    priceSig.set(v)
+  );
 
   const typeWrap = createEl(doc, "p", { class: "groxy-field" });
   const typeLbl = createEl(doc, "label", { for: "groxy-content-type" }, "Content Type");
@@ -313,7 +378,18 @@ export function mountGroxyDashboard(options = {}) {
   formEl.appendChild(inputsGrid);
 
   const actionsBar = createEl(doc, "p", { class: "groxy-actions" });
-  const runAuditBtn = createEl(doc, "button", { id: "groxy-run-audit-btn", type: "submit", class: "groxy-btn" }, "Run Deterministic Audit");
+  const runAuditBtn = createEl(
+    doc,
+    "button",
+    { id: "groxy-run-audit-btn", type: "submit", class: "groxy-btn" },
+    "Run Deterministic Audit"
+  );
+  const prepublishBtn = createEl(
+    doc,
+    "button",
+    { id: "groxy-prepublish-btn", type: "button", class: "groxy-btn groxy-btn-boost" },
+    "Open Pre-Publish Review Gate"
+  );
   const inspectMcpBtn = createEl(
     doc,
     "button",
@@ -321,30 +397,14 @@ export function mountGroxyDashboard(options = {}) {
     "Inspect MCP Bridge"
   );
   actionsBar.appendChild(runAuditBtn);
+  actionsBar.appendChild(prepublishBtn);
   actionsBar.appendChild(inspectMcpBtn);
   formEl.appendChild(actionsBar);
   formCard.appendChild(formEl);
   root.appendChild(formCard);
 
   async function executeAudit() {
-    const presetData = SAMPLE_AUDIT_PRESETS[selectedPreset.peek()] || SAMPLE_AUDIT_PRESETS.clean;
-    const payload = {
-      entry: {
-        ...presetData.entry,
-        title: titleSig.peek(),
-        slug: slugSig.peek(),
-        content_type: typeSig.peek(),
-        focus_keyword: keywordSig.peek(),
-        excerpt: excerptSig.peek(),
-        custom_fields: {
-          ...(presetData.entry.custom_fields || {}),
-          price: priceSig.peek(),
-        },
-      },
-      grex_layout: layoutSig.peek(),
-      focus_keyword: keywordSig.peek(),
-    };
-
+    const payload = buildCurrentPayload();
     if (fetchFn && csrfToken) {
       try {
         const resp = await fetchFn("/api/groxy/audit", {
@@ -364,10 +424,147 @@ export function mountGroxyDashboard(options = {}) {
         // Fallback deterministically in-memory if offline or unit test
       }
     }
-
     const localReport = auditEntryAndLayout(payload, { playbook });
     reportSig.set(localReport);
     return localReport;
+  }
+
+  async function triggerPrePublishReview() {
+    const payload = buildCurrentPayload();
+    publishNoticeSig.set("");
+    boostSig.set(null);
+
+    if (fetchFn && csrfToken) {
+      try {
+        const resp = await fetchFn("/api/groxy/prepublish-review", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": csrfToken,
+          },
+          body: JSON.stringify(payload),
+        });
+        if (resp && resp.ok) {
+          const remoteReview = await resp.json();
+          reviewSig.set(remoteReview);
+          if (remoteReview.audit_report) {
+            reportSig.set(remoteReview.audit_report);
+          }
+          return remoteReview;
+        }
+      } catch {
+        // Deterministic offline fallback
+      }
+    }
+
+    const localReview = buildPrePublishReview(payload, { playbook });
+    reviewSig.set(localReview);
+    if (localReview.audit_report) {
+      reportSig.set(localReview.audit_report);
+    }
+    return localReview;
+  }
+
+  async function triggerBoost() {
+    const payload = {
+      ...buildCurrentPayload(),
+      review_id: reviewSig.peek()?.review_id || "",
+    };
+    publishNoticeSig.set("");
+
+    if (fetchFn && csrfToken) {
+      try {
+        const resp = await fetchFn("/api/groxy/boost", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": csrfToken,
+          },
+          body: JSON.stringify(payload),
+        });
+        if (resp && resp.ok) {
+          const remoteBoost = await resp.json();
+          boostSig.set(remoteBoost);
+          return remoteBoost;
+        }
+      } catch {
+        // Deterministic offline fallback
+      }
+    }
+
+    const localBoost = boostEntryAndLayout(payload, { playbook });
+    boostSig.set(localBoost);
+    return localBoost;
+  }
+
+  async function approveBoost() {
+    const currentBoost = boostSig.peek();
+    if (!currentBoost) return null;
+
+    if (fetchFn && csrfToken) {
+      try {
+        const resp = await fetchFn("/api/groxy/boost/approve", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": csrfToken,
+          },
+          body: JSON.stringify({
+            boost_id: currentBoost.boost_id,
+            approval_token: currentBoost.approval_token,
+            candidate_entry: currentBoost.candidate_entry,
+            candidate_layout: currentBoost.candidate_layout,
+          }),
+        });
+        if (resp && resp.ok) {
+          const res = await resp.json();
+          applyApprovedCandidate(currentBoost);
+          publishNoticeSig.set(
+            `Approved & staged for live publish (${res.draft_status || "draft"} saved under human approval).`
+          );
+          return res;
+        }
+      } catch {
+        // Deterministic local fallback
+      }
+    }
+
+    applyApprovedCandidate(currentBoost);
+    const localRes = {
+      ok: true,
+      approved: true,
+      ready_for_publish: true,
+      boost_id: currentBoost.boost_id,
+      draft_status: "draft",
+      actor: "groxy-ai",
+    };
+    publishNoticeSig.set(
+      "Approved & staged for live publish (draft saved under human approval)."
+    );
+    return localRes;
+  }
+
+  function applyApprovedCandidate(currentBoost) {
+    const ce = currentBoost.candidate_entry || {};
+    titleSig.set(ce.title || titleSig.peek());
+    slugSig.set(ce.slug || slugSig.peek());
+    excerptSig.set(ce.excerpt || excerptSig.peek());
+    if (ce.focus_keyword) keywordSig.set(ce.focus_keyword);
+    if (currentBoost.candidate_layout) layoutSig.set(currentBoost.candidate_layout);
+
+    titleInput.value = titleSig.peek();
+    slugInput.value = slugSig.peek();
+    excerptInput.value = excerptSig.peek();
+    keywordInput.value = keywordSig.peek();
+    if (currentBoost.after_report) {
+      reportSig.set(currentBoost.after_report);
+    }
+    boostSig.set(null);
+  }
+
+  function discardBoost() {
+    boostSig.set(null);
+    publishNoticeSig.set("Boost proposal discarded; original entry unchanged.");
   }
 
   presetSelect.addEventListener("change", (ev) => {
@@ -390,6 +587,10 @@ export function mountGroxyDashboard(options = {}) {
     excerptInput.value = p.entry.excerpt;
     priceInput.value = String(p.entry.custom_fields?.price ?? "");
 
+    boostSig.set(null);
+    reviewSig.set(null);
+    publishNoticeSig.set("");
+
     const nextReport = auditEntryAndLayout(
       { entry: p.entry, grex_layout: p.grex_layout, focus_keyword: p.entry.focus_keyword },
       { playbook }
@@ -400,6 +601,10 @@ export function mountGroxyDashboard(options = {}) {
   formEl.addEventListener("submit", (ev) => {
     ev.preventDefault();
     void executeAudit();
+  });
+
+  prepublishBtn.addEventListener("click", () => {
+    void triggerPrePublishReview();
   });
 
   inspectMcpBtn.addEventListener("click", async () => {
@@ -439,20 +644,52 @@ export function mountGroxyDashboard(options = {}) {
     });
   });
 
-  // 2. Scorecard Card
-  const scoreCard = createEl(doc, "section", { id: "groxy-scorecard", class: "groxy-card", "aria-label": "4-Pillar Audit Scorecard" });
+  // 2. Pre-Publish Grade Review Gate Card (Zero wrapper <div>)
+  const prepublishCard = createEl(doc, "section", {
+    id: "groxy-prepublish-panel",
+    class: "groxy-card",
+    "aria-label": "Pre-Publish SEO and Performance Grade Review Screen",
+  });
+  root.appendChild(prepublishCard);
+
+  // 3. Side-by-Side Before vs. After Boost Diff Viewer (Zero wrapper <div>)
+  const boostCard = createEl(doc, "section", {
+    id: "groxy-boost-diff-panel",
+    class: "groxy-card",
+    "aria-label": "Let Groxy Boost This Before and After Diff Viewer",
+  });
+  root.appendChild(boostCard);
+
+  // 4. Scorecard Card
+  const scoreCard = createEl(doc, "section", {
+    id: "groxy-scorecard",
+    class: "groxy-card",
+    "aria-label": "4-Pillar Audit Scorecard",
+  });
   const scoreHeader = createEl(doc, "h2", {}, "4-Pillar Audit Scorecard");
   const overallSummary = createEl(doc, "p", { id: "groxy-overall-summary" }, "");
-  const pillarsGrid = createEl(doc, "section", { id: "groxy-pillars-grid", class: "groxy-grid-4", "aria-label": "Pillar Subscores" });
-  const findingsTable = createEl(doc, "table", { id: "groxy-findings-table", class: "groxy-table", "aria-label": "Audit Findings" });
+  const pillarsGrid = createEl(doc, "section", {
+    id: "groxy-pillars-grid",
+    class: "groxy-grid-4",
+    "aria-label": "Pillar Subscores",
+  });
+  const findingsTable = createEl(doc, "table", {
+    id: "groxy-findings-table",
+    class: "groxy-table",
+    "aria-label": "Audit Findings",
+  });
   scoreCard.appendChild(scoreHeader);
   scoreCard.appendChild(overallSummary);
   scoreCard.appendChild(pillarsGrid);
   scoreCard.appendChild(findingsTable);
   root.appendChild(scoreCard);
 
-  // 3. Playbook Explorer Card
-  const playbookCard = createEl(doc, "section", { id: "groxy-playbook-explorer", class: "groxy-card", "aria-label": "22-Rule Curated SEO Playbook" });
+  // 5. Playbook Explorer Card
+  const playbookCard = createEl(doc, "section", {
+    id: "groxy-playbook-explorer",
+    class: "groxy-card",
+    "aria-label": "22-Rule Curated SEO Playbook",
+  });
   playbookCard.appendChild(createEl(doc, "h2", {}, "Curated 22-Rule SEO & Clean-DOM Playbook"));
   const filterWrap = createEl(doc, "p", { class: "groxy-field" });
   const filterLabel = createEl(doc, "label", { for: "groxy-playbook-filter" }, "Filter Playbook Pillar");
@@ -470,18 +707,244 @@ export function mountGroxyDashboard(options = {}) {
   filterWrap.appendChild(filterLabel);
   filterWrap.appendChild(filterSelect);
   playbookCard.appendChild(filterWrap);
-  const playbookTable = createEl(doc, "table", { id: "groxy-playbook-table", class: "groxy-table", "aria-label": "Playbook Rules Table" });
+  const playbookTable = createEl(doc, "table", {
+    id: "groxy-playbook-table",
+    class: "groxy-table",
+    "aria-label": "Playbook Rules Table",
+  });
   playbookCard.appendChild(playbookTable);
   root.appendChild(playbookCard);
 
-  // 4. MCP Bridge Diagnostic Card
-  const mcpCard = createEl(doc, "section", { id: "groxy-mcp-panel", class: "groxy-card", "aria-label": "MCP Bridge Diagnostics" });
+  // 6. MCP Bridge Diagnostic Card
+  const mcpCard = createEl(doc, "section", {
+    id: "groxy-mcp-panel",
+    class: "groxy-card",
+    "aria-label": "MCP Bridge Diagnostics",
+  });
   mcpCard.appendChild(createEl(doc, "h2", {}, "Unified grab mcp & Design System Bridge"));
   const mcpSummaryEl = createEl(doc, "p", { id: "groxy-mcp-summary", class: "groxy-muted" }, "");
   mcpCard.appendChild(mcpSummaryEl);
   root.appendChild(mcpCard);
 
   // Reactive renders via Grex effects
+  const disposePrePublishEffect = effect(() => {
+    const rev = reviewSig.get();
+    const notice = publishNoticeSig.get();
+    clearChildren(prepublishCard);
+    prepublishCard.appendChild(createEl(doc, "h2", {}, "Pre-Publish Grade Review Gate"));
+
+    if (notice) {
+      prepublishCard.appendChild(createEl(doc, "p", { id: "groxy-publish-notice", class: "groxy-alert-pass" }, notice));
+    }
+
+    if (!rev) {
+      prepublishCard.appendChild(
+        createEl(
+          doc,
+          "p",
+          { class: "groxy-muted" },
+          "Click \"Open Pre-Publish Review Gate\" before publishing to inspect your 4-pillar grade and optional 🚀 Boost fixes."
+        )
+      );
+      return;
+    }
+
+    if (rev.gate_status === "bypassed") {
+      prepublishCard.appendChild(
+        createEl(
+          doc,
+          "p",
+          { id: "groxy-gate-bypassed", class: "groxy-muted" },
+          "Groxy Pre-Publish Assist is turned OFF (groxy_assist_enabled: false). Ready to publish directly."
+        )
+      );
+      const liveBtn = createEl(
+        doc,
+        "button",
+        { id: "groxy-make-live-btn", type: "button", class: "groxy-btn" },
+        "Make This Live"
+      );
+      liveBtn.addEventListener("click", () => {
+        publishNoticeSig.set("Entry cleared for direct publication (Groxy Assist bypassed).");
+      });
+      prepublishCard.appendChild(liveBtn);
+      return;
+    }
+
+    const rep = rev.audit_report;
+    prepublishCard.appendChild(
+      createEl(
+        doc,
+        "p",
+        { id: "groxy-prepublish-grade" },
+        `Pre-Publish Grade: ${rep.overall_grade} (${rep.overall_score}/100) — Review ID: ${rev.review_id}`
+      )
+    );
+
+    if (!rep.publish_safe) {
+      prepublishCard.appendChild(
+        createEl(
+          doc,
+          "p",
+          { class: "groxy-alert-danger" },
+          "Safety Warning: Critical wrapper-<div> or security issues detected. Click 🚀 Let Groxy Boost This to repair before making this live."
+        )
+      );
+    }
+
+    const reviewGrid = createEl(doc, "section", { class: "groxy-grid-4", "aria-label": "Pre-Publish Pillar Breakdown" });
+    for (const cat of Object.values(rep.categories || {})) {
+      const pCard = createEl(doc, "article", { class: "groxy-pillar-card" });
+      pCard.appendChild(createEl(doc, "h3", {}, cat.label));
+      pCard.appendChild(createEl(doc, "p", { class: "groxy-score-num" }, `${cat.score} (${cat.grade})`));
+      reviewGrid.appendChild(pCard);
+    }
+    prepublishCard.appendChild(reviewGrid);
+
+    const flagged = (rep.findings || []).filter((f) => f.severity !== "pass");
+    if (flagged.length > 0) {
+      const ul = createEl(doc, "ul", { id: "groxy-prepublish-findings" });
+      for (const f of flagged) {
+        ul.appendChild(
+          createEl(doc, "li", {}, `[${f.rule_id}] ${f.plain_english} — ${f.suggested_action}`)
+        );
+      }
+      prepublishCard.appendChild(ul);
+    }
+
+    const gateActions = createEl(doc, "p", { class: "groxy-actions" });
+    const makeLiveBtn = createEl(
+      doc,
+      "button",
+      { id: "groxy-make-live-btn", type: "button", class: "groxy-btn groxy-btn-secondary" },
+      "Make This Live"
+    );
+    makeLiveBtn.addEventListener("click", () => {
+      publishNoticeSig.set(
+        `Human author confirmed "Make This Live" as-is (Grade ${rep.overall_grade}, ${rep.overall_score}/100).`
+      );
+    });
+
+    const boostBtn = createEl(
+      doc,
+      "button",
+      { id: "groxy-boost-btn", type: "button", class: "groxy-btn groxy-btn-boost" },
+      "🚀 Let Groxy Boost This"
+    );
+    boostBtn.addEventListener("click", () => {
+      void triggerBoost();
+    });
+
+    gateActions.appendChild(makeLiveBtn);
+    gateActions.appendChild(boostBtn);
+    prepublishCard.appendChild(gateActions);
+  });
+
+  const disposeBoostEffect = effect(() => {
+    const b = boostSig.get();
+    clearChildren(boostCard);
+    boostCard.appendChild(createEl(doc, "h2", {}, "🚀 Let Groxy Boost This — Side-by-Side Diff & Refreshed Grade"));
+
+    if (!b) {
+      boostCard.appendChild(
+        createEl(
+          doc,
+          "p",
+          { class: "groxy-muted" },
+          "No active Boost preview. Click \"🚀 Let Groxy Boost This\" from the Pre-Publish Review Gate to inspect side-by-side improvements."
+        )
+      );
+      return;
+    }
+
+    boostCard.appendChild(
+      createEl(
+        doc,
+        "p",
+        { id: "groxy-boost-score-lift", class: "groxy-alert-pass" },
+        `Score Lift: ${b.before_report.overall_score} (${b.before_report.overall_grade}) → ${b.after_report.overall_score} (${b.after_report.overall_grade}) | Publish Safe: ${b.after_report.publish_safe ? "Yes" : "No"}`
+      )
+    );
+
+    const pillarDeltaGrid = createEl(doc, "section", {
+      class: "groxy-grid-4",
+      "aria-label": "Refreshed 4-Pillar Grade Comparison",
+    });
+    for (const [k, afterCat] of Object.entries(b.after_report.categories || {})) {
+      const beforeCat = b.before_report.categories?.[k] || { score: 0, grade: "F" };
+      const card = createEl(doc, "article", { class: "groxy-pillar-card" });
+      card.appendChild(createEl(doc, "h3", {}, afterCat.label));
+      card.appendChild(
+        createEl(
+          doc,
+          "p",
+          {},
+          `${beforeCat.score} (${beforeCat.grade}) → ${afterCat.score} (${afterCat.grade})`
+        )
+      );
+      pillarDeltaGrid.appendChild(card);
+    }
+    boostCard.appendChild(pillarDeltaGrid);
+
+    const diffList = createEl(doc, "section", {
+      id: "groxy-diff-list",
+      class: "groxy-diff-list",
+      "aria-label": "Side-by-Side Field Diffs",
+    });
+    for (const d of b.diffs || []) {
+      const item = createEl(doc, "article", { class: "groxy-diff-item", "data-diff-field": d.field });
+      item.appendChild(createEl(doc, "h3", {}, `${d.label} (${d.field})`));
+
+      if (Array.isArray(d.rule_ids_fixed) && d.rule_ids_fixed.length > 0) {
+        const tagsP = createEl(doc, "p", {});
+        for (const rid of d.rule_ids_fixed) {
+          tagsP.appendChild(createEl(doc, "span", { class: "groxy-rule-tag" }, rid));
+        }
+        item.appendChild(tagsP);
+      }
+
+      const cols = createEl(doc, "section", { class: "groxy-diff-cols", "aria-label": `${d.label} Before and After` });
+      const beforeBox = createEl(doc, "article", { class: "groxy-diff-box groxy-diff-before" });
+      beforeBox.appendChild(createEl(doc, "strong", {}, "Before"));
+      beforeBox.appendChild(createEl(doc, "p", { class: "groxy-diff-value" }, d.before || "(empty)"));
+
+      const afterBox = createEl(doc, "article", { class: "groxy-diff-box groxy-diff-after" });
+      afterBox.appendChild(createEl(doc, "strong", {}, "After"));
+      afterBox.appendChild(createEl(doc, "p", { class: "groxy-diff-value" }, d.after || "(empty)"));
+
+      cols.appendChild(beforeBox);
+      cols.appendChild(afterBox);
+      item.appendChild(cols);
+      diffList.appendChild(item);
+    }
+    boostCard.appendChild(diffList);
+
+    const approveBar = createEl(doc, "p", { class: "groxy-actions" });
+    const approveBtn = createEl(
+      doc,
+      "button",
+      { id: "groxy-approve-boost-btn", type: "button", class: "groxy-btn groxy-btn-approve" },
+      "Approve & Make This Live"
+    );
+    approveBtn.addEventListener("click", () => {
+      void approveBoost();
+    });
+
+    const discardBtn = createEl(
+      doc,
+      "button",
+      { id: "groxy-discard-boost-btn", type: "button", class: "groxy-btn groxy-btn-secondary" },
+      "Discard Boost"
+    );
+    discardBtn.addEventListener("click", () => {
+      discardBoost();
+    });
+
+    approveBar.appendChild(approveBtn);
+    approveBar.appendChild(discardBtn);
+    boostCard.appendChild(approveBar);
+  });
+
   const disposeReportEffect = effect(() => {
     const r = reportSig.get();
     setSafeText(
@@ -560,8 +1023,20 @@ export function mountGroxyDashboard(options = {}) {
     getCurrentReport() {
       return reportSig.peek();
     },
+    getReviewState() {
+      return reviewSig.peek();
+    },
+    getBoostState() {
+      return boostSig.peek();
+    },
     runAudit: executeAudit,
+    triggerPrePublishReview,
+    triggerBoost,
+    approveBoost,
+    discardBoost,
     dispose() {
+      disposePrePublishEffect();
+      disposeBoostEffect();
       disposeReportEffect();
       disposePlaybookEffect();
       disposeMcpEffect();

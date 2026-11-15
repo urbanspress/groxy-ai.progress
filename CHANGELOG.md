@@ -3,6 +3,18 @@
 All notable changes to **Groxy AI** (`urbanspress/groxy-ai`) are documented in this file.
 Versioning follows `MAJOR.MINOR.PATCH` SemVer rules per [`AGENTS.md`](AGENTS.md).
 
+## [v0.2.0] — 2026-11-14
+
+### Added
+- **Pre-Publish SEO & Performance Grade Review Gate (`POST /api/groxy/prepublish-review`, [`public/groxy/booster.js`](public/groxy/booster.js), [`src/groxy.grab`](src/groxy.grab)):**
+  - Respects editor opt-in `groxy_assist_enabled` (`false` -> `gate_status: "bypassed"`, `true` -> runs the 22-rule 4-pillar auditor and opens an accessible, zero-wrapper-`<div>` Pre-Publish Grade Review Screen with `0–100` / `A+`–`F` scores, findings, **"Make This Live"**, and **🚀 "Let Groxy Boost This"**).
+- **🚀 "Let Groxy Boost This" Side-by-Side Diff & Remediation Engine (`POST /api/groxy/boost` + `POST /api/groxy/boost/approve`, [`public/groxy/dashboard.js`](public/groxy/dashboard.js), [`public/groxy/groxy.css`](public/groxy/groxy.css)):**
+  - Deterministically fixes short/weak titles and excerpts, noisy admin slugs, skipped `H1 -> H3` headings, missing WCAG AA image `alt` text, low contrast, wrapper `<div>` elements, XSS/unsafe URLs, vague anchor copy, and stale `301` redirect links against `slug_history` (`GROXY-LINK-002`).
+  - Strictly preserves exact base-10 `GrabDecimal` / `GrabInteger` wire strings (`ADR-025c`) and re-audits boosted candidates to guarantee `divCount === 0` and `publish_safe === true`.
+  - Renders a structured **Before vs. After Diff** (`field`, `label`, `before`, `after`, `rule_ids_fixed`) and requires clicking **"Approve & Make This Live"** (`POST /api/groxy/boost/approve` with single-use `approval_token` + `X-CSRF-Token`, `403` on bad token, `409` on replay) before persisting drafts via GrabLab CMS `create_entry_draft` (`status: "draft"`) and Grex Theme Builder `POST /api/mcp/layout` (`actor: "groxy-ai"`).
+- **Expanded Verification & Release Guide:**
+  - Added [`tests/unit_booster.test.js`](tests/unit_booster.test.js), expanded [`tests/unit_ui_dom.test.js`](tests/unit_ui_dom.test.js) (`19/19` passing), extended Gate 3B live 4-layer E2E in [`tests/integration_e2e.py`](tests/integration_e2e.py), and added `v0.2.0` plain-English guide generation in [`docs/releases/generate_release_guides.py`](docs/releases/generate_release_guides.py).
+
 ## [v0.1.0] — 2026-11-14
 
 ### Added

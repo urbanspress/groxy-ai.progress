@@ -2,8 +2,8 @@
 
 **Step 4 of the Post-1.0 GRAB Ecosystem:** Autonomous Design, Content & SEO Intelligence Agent built natively on **GRAB `v1.1.0`**, **Grex JS `v1.0.0`**, **GrabLab CMS `v1.0.1`**, and **Grex Theme Builder `v1.0.0`**.
 
-- **Current Release:** `v0.1.0` (**Complete** — Core `grab mcp` Client, 22-Rule Curated SEO Playbook & Deterministic 4-Pillar Auditor)
-- **Next Milestone:** `v0.2.0` (Pre-Publish Grade Gate & 🚀 "Let Groxy Boost This" Diff Engine)
+- **Current Release:** `v0.2.0` (**Complete** — Pre-Publish SEO & Performance Grade Review Gate & 🚀 `"Let Groxy Boost This"` Side-by-Side Diff Engine)
+- **Next Milestone:** `v0.3.0` (Autonomous `GRAB-DESIGN-SYSTEM.md`-Aware Visual Page & Section Generator for Grex Theme Builder)
 - **Development Repo (`origin`):** `https://github.com/urbanspress/groxy-ai.progress`
 - **Production Release Repo (`stable`):** `https://github.com/urbanspress/groxy-ai.stable`
 
@@ -35,7 +35,7 @@ grab check --platform-config grab.platform.json src/groxy.grab
 # 2. Start Groxy AI Inspector UI & API server
 grab serve --addr 127.0.0.1:8090 --allow-scripts --platform-config grab.platform.json --allow-cache groxy:read-write --static public --allow-read . src/groxy.grab
 
-# 3. Run Node unit & DOM tests (14/14 tests)
+# 3. Run Node unit & DOM tests (19/19 tests)
 node --test tests/unit_*.test.js
 
 # 4. Run full 4-layer live cross-layer E2E verification (GRAB + GrabLab CMS + Grex Builder + Groxy AI)
@@ -62,6 +62,8 @@ python tests/integration_e2e.py
 - [Engineering Invariants (`GROXY-EXPERT.md`)](GROXY-EXPERT.md)
 - [Roadmap (`docs/ROADMAP.md`)](docs/ROADMAP.md)
 - [v0.1.0 Specification (`specifications/GROXY-AI-SPEC-001.md`)](specifications/GROXY-AI-SPEC-001.md)
+- [v0.2.0 Specification (`specifications/GROXY-AI-SPEC-002.md`)](specifications/GROXY-AI-SPEC-002.md)
 - [v0.1.0 Walkthrough Guide (`docs/releases/pdf/Groxy-AI-v0.1.0-Guide.pdf`)](docs/releases/pdf/Groxy-AI-v0.1.0-Guide.pdf)
+- [v0.2.0 Walkthrough Guide (`docs/releases/pdf/Groxy-AI-v0.2.0-Guide.pdf`)](docs/releases/pdf/Groxy-AI-v0.2.0-Guide.pdf)
 - [Changelog (`CHANGELOG.md`)](CHANGELOG.md)
 - [Handoff Log (`HANDOFF.md`)](HANDOFF.md)

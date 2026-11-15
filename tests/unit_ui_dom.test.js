@@ -124,3 +124,105 @@ test("mountGroxyDashboard renders cleanly with zero <div>, zero innerHTML, WCAG 
 
   handle.dispose();
 });
+
+test("Pre-Publish Review Gate & Side-by-Side Boost Diff Viewer maintain zero <div>, zero innerHTML, and human approval", async () => {
+  const { doc, root } = createDomDocument({ csrfToken: "csrf-v020-ui" });
+
+  let approveCalls = 0;
+  let lastApproveBody = null;
+  const mockFetch = async (url, init) => {
+    if (url === "/api/groxy/boost/approve") {
+      approveCalls += 1;
+      lastApproveBody = JSON.parse(init.body);
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          approved: true,
+          ready_for_publish: true,
+          boost_id: lastApproveBody.boost_id,
+          draft_status: "draft",
+          actor: "groxy-ai",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    return new Response("{}", { status: 404 });
+  };
+
+  const handle = mountGroxyDashboard({
+    root,
+    document: doc,
+    csrfToken: "csrf-v020-ui",
+    fetchImpl: mockFetch,
+  });
+
+  // Switch to unsafe preset (F grade)
+  const presetSelect = root.querySelector("#groxy-preset-select");
+  presetSelect.value = "unsafe";
+  presetSelect.dispatchEvent({ type: "change" });
+
+  // Open Pre-Publish Review Gate
+  await handle.triggerPrePublishReview();
+  const revState = handle.getReviewState();
+  assert.equal(revState.gate_status, "review_required");
+  assert.equal(revState.audit_report.overall_grade, "F");
+
+  const prepublishPanel = root.querySelector("#groxy-prepublish-panel");
+  assert.ok(prepublishPanel.querySelector("#groxy-make-live-btn"));
+  const boostBtn = prepublishPanel.querySelector("#groxy-boost-btn");
+  assert.ok(boostBtn);
+  assert.ok(boostBtn.textContent.includes("Let Groxy Boost This"));
+
+  // Check zero <div> & WCAG AA while Pre-Publish Review Gate is open
+  let domAudit = auditDom(root, doc);
+  assert.equal(domAudit.divCount, 0);
+  assert.equal(domAudit.innerHTMLWriteCount, 0);
+  assert.equal(domAudit.headingOrderOk, true);
+  assert.deepEqual(domAudit.unlabeledControls, []);
+
+  // Trigger 🚀 Let Groxy Boost This
+  await handle.triggerBoost();
+  const boostState = handle.getBoostState();
+  assert.ok(boostState);
+  assert.equal(boostState.before_report.overall_grade, "F");
+  assert.ok(boostState.after_report.overall_score >= 90);
+  assert.equal(boostState.after_report.publish_safe, true);
+  assert.equal(boostState.candidate_entry.custom_fields.price, "19.95");
+  assert.equal(approveCalls, 0, "Nothing may be persisted or approved before human clicks Approve & Make This Live");
+
+  const diffPanel = root.querySelector("#groxy-boost-diff-panel");
+  assert.ok(diffPanel.querySelector("#groxy-boost-score-lift").textContent.includes("→"));
+  assert.ok(diffPanel.querySelector("#groxy-diff-list").children.length >= 3);
+  assert.ok(diffPanel.querySelector("#groxy-approve-boost-btn"));
+  assert.ok(diffPanel.querySelector("#groxy-discard-boost-btn"));
+
+  // Check zero <div> & WCAG AA while Side-by-Side Diff Viewer is open
+  domAudit = auditDom(root, doc);
+  assert.equal(domAudit.divCount, 0);
+  assert.equal(domAudit.innerHTMLWriteCount, 0);
+  assert.equal(domAudit.headingOrderOk, true);
+  assert.deepEqual(domAudit.unlabeledControls, []);
+
+  // Click Approve & Make This Live
+  await handle.approveBoost();
+  assert.equal(approveCalls, 1);
+  assert.equal(lastApproveBody.boost_id, boostState.boost_id);
+  assert.equal(lastApproveBody.approval_token, boostState.approval_token);
+  assert.equal(handle.getCurrentReport().publish_safe, true);
+  assert.ok(handle.getCurrentReport().overall_score >= 90);
+  assert.ok(root.querySelector("#groxy-publish-notice").textContent.includes("Approved"));
+
+  // Toggle groxy_assist_enabled OFF and verify bypassed gate
+  const assistToggle = root.querySelector("#groxy-assist-toggle");
+  assistToggle.checked = false;
+  assistToggle.dispatchEvent({ type: "change" });
+  const bypassed = await handle.triggerPrePublishReview();
+  assert.equal(bypassed.gate_status, "bypassed");
+  assert.ok(root.querySelector("#groxy-gate-bypassed"));
+
+  domAudit = auditDom(root, doc);
+  assert.equal(domAudit.divCount, 0);
+  assert.equal(domAudit.innerHTMLWriteCount, 0);
+
+  handle.dispose();
+});
