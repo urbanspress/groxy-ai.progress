@@ -121,11 +121,12 @@ Scope:
 
 ## `v1.5.0` — Bespoke Store Schema Quiz & Opt-In "Talk to Groxy" Database & Store Consultant
 
-**Status:** Planned — Backwards-Compatible Minor Feature
+**Status:** Approved target; specification in review — Backwards-Compatible Minor Feature ([SPEC-150](../specifications/GROXY-AI-SPEC-150.md)). Target approval does not authorize implementation.
 
 Scope:
 - **Store Architecture Quiz (`POST /api/groxy/db/architect-quiz`):** Generates lean, zero-bloat `.grab` database migrations (`ADR-024f` + `ADR-025c`) tailored to the operator's exact business model and dispatches approved plans to **Groxy Desk** / **Gashboard** SSH tunnels for human-approved provisioning (`GROXY-SAFE-001`).
-- **Opt-In Database & Store Consultant (`groxy_db_consultant_enabled`):** Reads live `.grab` schema, row counts, active `ForEach` Query Loops, `slug_history` redirects, and order records (`SCHEMA-CONTEXT.md` + `SITE-CONTEXT.md`) to deliver plain-English **Impact & Risk Assessments** (*Safe / Caution / High-Risk Data Loss*) prior to any table, column, or data change, automatically triggering a **Grabtaculous** Pre-Deploy Snapshot before applying approved adjustments.
+- **Opt-In Database & Store Consultant (`groxy_db_consultant_enabled`):** Reads live `.grab` schema, row counts, active `ForEach` Query Loops, `slug_history` redirects, and order records (`SCHEMA-CONTEXT.md` + `SITE-CONTEXT.md`) to deliver plain-English **Impact & Risk Assessments** (*Safe / Caution / High-Risk Data Loss*) prior to any table, column, or data change, requiring an automatic Pre-Mutation SHA-256 Snapshot (`snap_db_*`) before applying explicitly approved adjustments.
+- **Review contract:** SPEC-150 defines `/api/groxy/db/consult` and `/api/groxy/db/apply`, read-only opt-in inspection, recursive canonical `payload_sha256`, `dtok_<hex>` bound to plan/migration/payload/target, CSRF, atomic `201`/`409` consumption, exact decimal columns, offline deterministic rules and optional Ollama/BYOK. Section 9 requires full static, DOM/WCAG, injection, snapshot/recovery and live Gate 3B verification after owner approval.
 
 ---
 

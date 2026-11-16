@@ -1,9 +1,18 @@
 # HANDOFF.md — Groxy AI
 
-- **Current Owner:** Google Antigravity (v1.4.0 complete; Codex release handoff)
-- **Current Milestone State:** `v1.0.0` through `v1.4.0` are `Approved & Frozen — Complete`. SPEC-140 was owner-approved on 2026-11-16; every Section 9 implementation and verification gate passes.
-- **Current Milestone:** `v1.4.0` — Approved & Frozen — Complete ([SPEC-140](specifications/GROXY-AI-SPEC-140.md)).
-- **Next Milestone Action:** Begin SPEC-150 planning after the owner accepts this release handoff. Preserve frozen releases, all eight sibling repositories, and untracked `playbook/genres/`.
+- **Current Owner:** Google Antigravity (SPEC-150 review handoff)
+- **Current Milestone State:** `v1.0.0` through `v1.4.0` remain `Approved & Frozen — Complete`; `v1.5.0` is `Approved target; specification in review`.
+- **Current Milestone:** `v1.5.0` — Approved target; specification in review ([SPEC-150](specifications/GROXY-AI-SPEC-150.md)).
+- **Next Milestone Action:** Obtain explicit owner approval of SPEC-150 before implementation. Preserve frozen releases, all eight sibling repositories, and untracked `playbook/genres/`.
+
+## `v1.5.0` Specification Review Checkpoint — 2026-11-16
+- **Draft:** [SPEC-150](specifications/GROXY-AI-SPEC-150.md) defines the bespoke store schema quiz, opt-in read-only database/store consultant, deterministic Impact & Risk Assessments, and explicitly approved database apply.
+- **Safety:** Explicit `ADR-024f` migrations, exact `ADR-025c` columns/wire strings, dry-run before/after previews, CSRF, recursive canonical `payload_sha256`, and single-use `dtok_<hex>` bound to plan/migration/payload/site/operator/target. Atomic consumption produces one successful `201` and valid replay/concurrency `409`; verified `snap_db_*` snapshots precede mutation. Missing executor, locking or recovery capabilities block apply without modifying frozen upstreams.
+- **Scope:** Only SPEC-150, `docs/ROADMAP.md`, and this handoff are authorized for commit/push to `origin/main`. No implementation code, frozen milestone sections/specifications, version metadata, tags, releases, or `stable` changes. Preserve untracked `playbook/genres/`.
+- **Verification boundary:** Documentation links, scope and frozen-section preservation are checked for this checkpoint. No v1.5.0 implementation gate is claimed passed; Section 9 requires all static, decimal, DOM/WCAG, injection, concurrency, snapshot/recovery and live Gate 3B checks after implementation approval.
+- **Synchronization:** Run `sync-notebook-sources.ps1` and `generate-codex-handoff.ps1` after this documentation commit/push; report execution results in the session.
+- **Pending:** Explicit owner approval of SPEC-150, then implementation and all acceptance gates. This current checkpoint supersedes historical next-step guidance; past release records remain unchanged.
+- **Handoff:** Core task complete—ready to hand off to Google Antigravity. Type `use-antigravity` to continue. Use Google Hydrogen (Medium) for specification revisions; switch to Orchestrator (Argon) before cross-layer implementation/audit because execution, snapshot consistency and concurrent approvals span frozen database/SSH contracts.
 
 ## `v1.4.0` Implementation & Verification Checkpoint — 2026-11-16
 - **Status:** Approved & Frozen — Complete. SPEC-140 Section 9 passed; release artifacts and synchronized repositories are prepared below.
@@ -135,9 +144,9 @@ Completed multi-repository security, DOM, accessibility, precision, container, a
   - `/api/groxy/commerce/recovery`, `/concierge`, `/bundles`, `/reviews-mine`, and `/campaign-plan` generate grounded exact-price drafts and semantic Grex sections.
   - `/api/groxy/commerce/apply` requires CSRF and canonical target-bound `ctok_<hex>` approval, atomic single-winner consumption, draft-only CMS/undoable Builder dispatch, and truthful partial-failure recovery.
   - Preserve frozen `v1.0.0`–`v1.3.0`, upstream contracts, and untracked `playbook/genres/`; no implementation begins before owner approval.
-- **Milestone `v1.5.0` — Bespoke Store Schema Quiz & Opt-In "Talk to Groxy" Database & Store Consultant:** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified):
+- **Milestone `v1.5.0` — Bespoke Store Schema Quiz & Opt-In "Talk to Groxy" Database & Store Consultant:** `Status: Approved target; specification in review` ([SPEC-150](specifications/GROXY-AI-SPEC-150.md); no v1.5.0 implementation authorized):
   - **Store Architecture Quiz (`POST /api/groxy/db/architect-quiz`):** Generates lean, zero-bloat `.grab` database migrations (`ADR-024f` + `ADR-025c`) tailored to the user's exact business model and dispatches to **Groxy Desk** / **Gashboard** SSH tunnels for human-approved provisioning (`GROXY-SAFE-001`).
-  - **Opt-In Database & Store Consultant (`groxy_db_consultant_enabled`):** Reads live `.grab` schema, row counts, active `ForEach` Query Loops, `slug_history` redirects, and order records (`SCHEMA-CONTEXT.md` + `SITE-CONTEXT.md`) to provide honest **Impact & Risk Assessments** (*Safe / Caution / High-Risk Data Loss*) before any table/column/data change, triggering an automatic **Grabtaculous** Pre-Deploy Snapshot before applying approved adjustments.
+  - **Opt-In Database & Store Consultant (`groxy_db_consultant_enabled`):** Reads live `.grab` schema, row counts, active `ForEach` Query Loops, `slug_history` redirects, and order records (`SCHEMA-CONTEXT.md` + `SITE-CONTEXT.md`) to provide honest **Impact & Risk Assessments** (*Safe / Caution / High-Risk Data Loss*) before any table/column/data change, requiring an automatic Pre-Mutation SHA-256 Snapshot (`snap_db_*`) before applying explicitly approved adjustments.
 - **Milestone `v1.6.0` — Lovable/Base44-Style Iterative Section Co-Pilot & Golden-Ratio Design-Craft Engine:** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified):
   - **Targeted Section Refinement (`POST /api/groxy/section-refine`):** Conversational per-section editing inside **Grex Theme Builder** patching only the selected subtree via `POST /api/mcp/layout` (`actor: "groxy-ai"`, 1-click `Ctrl+Z` undo, `GROXY-SAFE-001` approval gate).
   - **Design-Craft & Visual Rhythm Playbook (`playbook/design-craft.v1.json`):** Enforces `8pt` spacing rhythm, `60–65ch` readable line measure, 1-primary-CTA-per-fold hierarchy, Light/Dark surface elevation (`--grex-surface-1` / `--grex-surface-2`), and automatic full-stack wiring of generated forms and `ForEach` grids to live **GrabLab CMS** content types and `ADR-025c` `GrabDecimal` product fields.
@@ -153,7 +162,7 @@ Completed multi-repository security, DOM, accessibility, precision, container, a
 
 ---
 
-## Next Step Guidance (`Groxy AI v1.4.0`)
-1. **Frozen Baselines:** Keep Groxy AI `v1.0.0`, `v1.1.0`, `v1.2.0`, and `v1.3.0` and all upstream contracts frozen and unchanged.
-2. **Current Task:** Await explicit owner approval of SPEC-140. No v1.4.0 implementation or stable promotion during specification review.
-3. **Recommended Model:** Google Hydrogen (Medium) for specification revisions; switch to Orchestrator (Argon) before cross-layer implementation/audit to check draft storage, Builder undo, and single-winner dispatch/reconciliation.
+## Next Step Guidance (`Groxy AI v1.5.0`)
+1. **Frozen Baselines:** Keep Groxy AI `v1.0.0` through `v1.4.0` and all upstream contracts frozen and unchanged.
+2. **Current Task:** Await explicit owner approval of SPEC-150. No v1.5.0 implementation or stable promotion during specification review.
+3. **Recommended Model:** Google Hydrogen (Medium) for specification revisions; switch to Orchestrator (Argon) before cross-layer implementation/audit to check database execution, snapshot/restore, SSH and atomic approval boundaries.
