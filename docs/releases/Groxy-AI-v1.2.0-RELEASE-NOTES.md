@@ -3,6 +3,8 @@
 - **Affected Layer(s):** Autonomous Design, Content & SEO Agent (`urbanspress/groxy-ai`)
 - **Neighboring Layer Upgrade Required?** No — 100% drop-in compatible
 
+### Ecosystem Compatibility Matrix
+
 | Ecosystem Layer | Repository | Required Version Range | Touched in This Release? | Neighbor Upgrade Required? |
 |---|---|---|---|---|
 | **Core Language, Bytecode VM & Grisp Server** | `urbanspress/grab` | `>= v1.1.0 (< v2.0.0)` | No | No |
