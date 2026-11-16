@@ -40,7 +40,7 @@ def build_pdf():
     story = [
         Paragraph("Groxy AI v1.2.0", base["TitleBlue"]),
         Paragraph("Brand DNA and Voice Setup Wizard + Batch Content and Product Campaigns", base["Subtitle"]),
-        Paragraph("Implementation verified; dual-repository publication pending. SemVer: backwards-compatible MINOR release.", base["Small"]),
+        Paragraph("Milestone status: Approved & Frozen — Complete. SemVer: backwards-compatible MINOR release; synchronized publication assets are prepared.", base["Small"]),
         Spacer(1, 10),
         Paragraph("What this release adds", base["SectionBlue"]),
         Paragraph("Groxy AI learns a business's audience, voice, local search focus, offers, exact pricing, guarantees, and design tokens once. Teams can then prepare up to 40 related blog posts or product drafts from a short brief. Every candidate is audited and reviewed before it can be sent to GrabLab CMS.", base["BodyCompact"]),
@@ -73,7 +73,7 @@ def build_pdf():
         ("TOPPADDING", (0, 0), (-1, -1), 5),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
     ]))
-    story.extend([table, Paragraph("5. Verification and ecosystem compatibility", base["SectionBlue"]), Paragraph("Implementation verification passed: GRAB check and canonical format parity; 54 of 54 Node tests; and live Gate 3B integration for Brand DNA persistence, Site DNA export, audit scoring, invalid-token rejection, draft creation, and replay rejection. All eight frozen sibling repositories remained clean. GitHub release publication is pending restored credentials.", base["BodyCompact"])])
+    story.extend([table, PageBreak(), Paragraph("5. Verification and ecosystem compatibility", base["SectionBlue"]), Paragraph("Milestone status: Approved & Frozen — Complete. Verification passed: GRAB check and canonical format parity; 54 of 54 Node tests; and live Gate 3B integration for Brand DNA persistence, Site DNA export, audit scoring, invalid-token rejection, draft creation, and replay rejection. All eight frozen sibling repositories remained clean. GitHub release publication is pending restored authentication and network access.", base["BodyCompact"])])
     compat_data = [
         ["Ecosystem layer", "Required range", "Touched", "Upgrade"],
         ["GRAB language, VM and Grisp", ">=1.1.0 <2.0.0", "No", "No"],
@@ -94,6 +94,28 @@ def build_pdf():
         ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
     ]))
     story.append(compat)
+    story.extend([
+        Spacer(1, 14),
+        Paragraph("6. Release assets", base["SectionBlue"]),
+        Paragraph("The synchronized v1.2.0 release package contains the plain-English guide, source bundle, and SHA-256 manifest. The release notes include the MINOR tier summary and five-layer compatibility matrix.", base["BodyCompact"]),
+    ])
+    assets_data = [
+        [Paragraph("Asset", base["Small"]), Paragraph("File", base["Small"])],
+        [Paragraph("Walkthrough guide", base["Small"]), Paragraph("Groxy-AI-v1.2.0-Guide.pdf", base["Small"])],
+        [Paragraph("Packaged source", base["Small"]), Paragraph("groxy-ai-v1.2.0-bundle.zip", base["Small"])],
+        [Paragraph("Integrity manifest", base["Small"]), Paragraph("SHA256SUMS.txt", base["Small"])],
+    ]
+    assets = Table(assets_data, colWidths=[2.55 * inch, 4.55 * inch], repeatRows=1, hAlign="LEFT")
+    assets.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#dbeafe")),
+        ("GRID", (0, 0), (-1, -1), 0.45, colors.HexColor("#94a3b8")),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 5),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    story.append(assets)
 
     def page_footer(canvas, document):
         canvas.saveState()

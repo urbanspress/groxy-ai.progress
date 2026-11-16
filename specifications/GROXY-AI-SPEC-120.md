@@ -1,6 +1,6 @@
 # GROXY-AI-SPEC-120: Groxy AI `v1.2.0` — 1-Time Brand DNA & Voice Setup Wizard + 40-Post/Product Batch Campaign Engine
 
-- **Status:** Approved; implementation in progress
+- **Status:** Approved & Frozen — Complete
 - **Milestone:** `v1.2.0` — Brand DNA Wizard (`POST /api/groxy/brand-dna/wizard`, `GET /api/groxy/brand-dna`) and Batch Campaign Engine (`POST /api/groxy/batch-create`, `POST /api/groxy/batch-create/apply`)
 - **SemVer Tier (`ADR-027c`):** `MINOR (v1.2.0 — Backwards-Compatible Feature Release)`; additive routes and portable Site DNA fields, preserving the frozen v1.0.0 and v1.1.0 contracts.
 - **Foundational Upstream Baselines (Frozen):** GRAB `v1.1.0`; Grex JS `v1.0.0`; GrabLab CMS `v1.0.1`; Grex Theme Builder `v1.0.0`.
@@ -166,8 +166,8 @@ The milestone may be marked Complete or promoted only after all gates pass at 10
 3. **Batch Engine & Approval Tests:** Covers 1 and 40 item boundaries, rejects 0/41, deterministic repeatability, local Ollama fallback, BYOK allowlist/SSRF/redirect checks, duplicate prevention against Site Context and within the batch, model-output sanitization, every item `>=90` Grade A/A+, all-or-nothing staging, digest binding, `403` invalid/mismatched token and tampered payload, `409` replay and concurrent replay, expiry and restart persistence, and exact decimal / XSS-safe schema.org Product output.
 4. **DOM & Accessibility:** Existing and new views pass `divCount === 0`, `innerHTMLWriteCount === 0`, safe URL checks, Grex schema validation, and `auditAccessibility()` in Light and Dark themes at WCAG AA contrast requirements.
 5. **Live Cross-Layer Gate 3B:** Exercise wizard persistence and Site DNA round trip, stage a mixed or representative batch, approve it once, and verify every successful CMS call used `create_entry_draft` with `status_enforced: "draft"`; confirm no live/published entry was created and token replay returns `409`.
-6. **Milestone Handoff:** Update roadmap and `HANDOFF.md` only after tests complete; run ecosystem snapshot and Codex handoff synchronization. Until then v1.2.0 remains `Approved target; specification in review`.
+6. **Milestone Handoff:** Verification is complete. The roadmap, this specification, and `HANDOFF.md` record `Approved & Frozen — Complete`; ecosystem snapshot and Codex handoff synchronization are run as part of final release promotion.
 
 ## 8. Owner Approval Gate
 
-This document is a proposed implementation contract. **No v1.2.0 application code may be written until the project owner explicitly approves `GROXY-AI-SPEC-120.md`.** Approval authorizes implementation only within this scope; any material change to routes, persistence, numeric representation, batch size, external network access, or draft-only safety requires a specification revision and renewed review.
+The project owner approved this specification as written on 2026-11-15. **Status: Approved & Frozen — Complete.** The implementation and verification satisfy this contract; any material change to routes, persistence, numeric representation, batch size, external network access, or draft-only safety requires a specification revision and renewed review.

@@ -13,6 +13,8 @@
 
 ## Groxy AI v1.2.0
 
+**Milestone status:** Approved & Frozen — Complete.
+
 Adds a ten-step Brand DNA and voice wizard and a batch campaign studio for creating 1–40 blog post or product drafts. Brand DNA is stored under `storage/` and included in portable Site DNA exports. Campaign generation supports deterministic built-in output, optional local Ollama with deterministic fallback, and configured allowlisted BYOK enrichment.
 
 Every item passes the 22-rule four-pillar audit at Grade A or A+, and product prices preserve exact `ADR-025c` decimal strings. A single-use approval token is bound to the batch ID, item count, and SHA-256 content digest. Applying a batch requires CSRF and sends entries only through GrabLab CMS `create_entry_draft` with `status_enforced: "draft"`.

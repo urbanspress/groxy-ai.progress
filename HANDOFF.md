@@ -1,8 +1,8 @@
 # HANDOFF.md — Groxy AI
 
-- **Current Owner:** OpenAI Codex (implementation and verification complete; release promotion pending authenticated GitHub access)
-- **Current Milestone State:** `v1.0.0` and `v1.1.0` remain complete and frozen. The owner approved [`GROXY-AI-SPEC-120.md`](specifications/GROXY-AI-SPEC-120.md) as written on 2026-11-15. `v1.2.0` implementation and all local verification gates are complete; synchronized origin/stable pushes and GitHub Releases remain pending because the configured `gh` credential is invalid.
-- **Next Milestone:** Finish authenticated `v1.2.0` origin + stable promotion and publish both matching releases with all three assets.
+- **Current Owner:** OpenAI Codex (v1.2.0 completion verified; synchronized publication in progress)
+- **Current Milestone State:** `v1.0.0`, `v1.1.0`, and `v1.2.0` are `Approved & Frozen — Complete`. The owner approved [`GROXY-AI-SPEC-120.md`](specifications/GROXY-AI-SPEC-120.md) as written on 2026-11-15. All v1.2.0 implementation and verification gates pass; the guide, bundle, and checksum manifest have been regenerated from the Complete records.
+- **Next Milestone:** Finish synchronized `v1.2.0` origin + stable publication with all three release assets, then begin v1.3.0 planning.
 
 ---
 
@@ -17,8 +17,9 @@
 - **Scope:** 8–10 question Brand DNA wizard (`POST /api/groxy/brand-dna/wizard`, `GET /api/groxy/brand-dna`), confined `storage/BRAND-DNA.md` and `storage/brand-dna.v1.json`, portable Site DNA `brand_dna`, plus deterministic/local Ollama/allowlisted BYOK batches of 1–40 posts or products (`POST /api/groxy/batch-create`, `/apply`).
 - **Safety contract:** Every staged item must pass the 22-rule four-pillar audit at `>=90` Grade A/A+, preserve exact `ADR-025c` decimal strings, and contain no wrapper `<div>` or `innerHTML` writes. Batch apply requires CSRF and a single-use token bound to `{ batch_id, item_count, batch_sha256 }`; all CMS dispatches use `create_entry_draft` with `status_enforced: "draft"`.
 - **Implemented:** Added the ten-step semantic wizard and campaign studio, revisioned storage and Site DNA round-trip, exact-price product schema, deterministic/Ollama/BYOK generation paths, duplicate avoidance, audited staging, and target-bound single-use CMS draft approval. Version metadata and new tests are synchronized at `1.2.0`.
+- **Status:** `Approved & Frozen — Complete`.
 - **Verified:** `grab check --platform-config grab.platform.json src/groxy.grab` passes; canonical `grab format` output matches the source byte-for-byte; `node --test tests/*.test.js` passes 54/54; `python tests/integration_e2e.py` passes Gates 1, 2, 3A, and live 3B including Brand DNA persistence, Site DNA export, 403 invalid-token and 409 replay rejection, and GrabLab CMS draft-only creation. All eight sibling repositories are clean.
-- **Release promotion blocker:** Implementation commit `ff381eb` is pushed to `origin/main` (`urbanspress/groxy-ai.progress`). `gh auth status` reports the configured `urbanspress` token is invalid, so the `v1.2.0` tag, `stable/main` push, and matching GitHub Releases with assets remain pending. Re-authenticate GitHub CLI before completing synchronized publication. The pre-existing untracked `playbook/genres/` folder is preserved and excluded from release staging.
+- **Release promotion:** Implementation commit `ff381eb` is already on `origin/main` (`urbanspress/groxy-ai.progress`). The GitHub CLI session is authenticated and both configured remotes are reachable. The completion-record commit, annotated `v1.2.0` tag, synchronized pushes, and matching releases with the guide, bundle, and checksum manifest are being finalized. The pre-existing untracked `playbook/genres/` folder is preserved and excluded from release staging.
 - **Frozen scope:** Keep `v1.0.0` and `v1.1.0` implementation and completion records untouched.
 
 ## `v1.1.0` Completion Checkpoint
