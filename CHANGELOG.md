@@ -3,11 +3,20 @@
 All notable changes to **Groxy AI** (`urbanspress/groxy-ai`) are documented in this file.
 Versioning follows `MAJOR.MINOR.PATCH` SemVer rules per [`AGENTS.md`](AGENTS.md).
 
+## [v1.4.0] - 2026-11-16
+
+- Added deterministic commerce engine builders for recovery, concierge, bundles, review mining, and campaign packages, plus the semantic Commerce Studio preview panel.
+- Added exact base-10 string calculations, explicit discount validation, unsubscribe/address placeholders, deduplicated review evidence, canonical JSON, and safe FAQ JSON-LD serialization.
+- Added five staged commerce routes, durable single-use approvals, source/target freshness checks, draft-only CMS and undoable Builder dispatch, and persisted partial-failure outcomes.
+- Added Grex schema and Light/Dark WCAG AA audits for generated layouts, keyboard-operable preview dialog with Escape and focus restoration, and escaped JSON-string delimiters for untrusted provider briefs.
+- Verified: `grab check`, byte-for-byte canonical formatting for both `.grab` files, 72/72 Node tests, and live Gate 3B including the two-process `201`/`409` approval race, downstream CMS/Builder recovery, hostile input, provider fallback, and secret redaction.
+- Status: Approved & Frozen - Complete. Draft delivery/publication and campaign activation remain disabled.
+
 ## [v1.3.0] - 2026-11-16
 
 - Added the deterministic brand-grounded four-step post-purchase email flow generator and semantic preview studio.
 - Added exact decimal validation, safe footer placeholders, CSRF protection, staged target-bound approval, and draft-only CMS persistence.
-- Status: implementation in progress. GRAB check/format, 58 Node tests, and expanded live integration pass; recursive canonical digesting, configured email-flow provider modes, and atomic concurrent token consumption remain before completion.
+- Status: Approved & Frozen — Complete. GRAB check/format, 61 Node tests, and live integration pass, including recursive canonical digest parity, configured provider modes, and atomic single-winner approval consumption.
 
 ## [v1.2.0] - 2026-11-15
 

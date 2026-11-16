@@ -5,7 +5,7 @@
 import { auditAccessibility, computeContrastRatio, GrexSecurityError, validateElementNode } from "./grex.js";
 import { generatePageOrSection } from "./generator.js";
 
-export const GROXY_VERSION = "1.3.0";
+export const GROXY_VERSION = "1.4.0";
 export const MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024;
 const MIME_FORMATS = Object.freeze({ "image/png": "png", "image/jpeg": "jpeg", "image/webp": "webp" });
 const FORBIDDEN_MARKERS = ["<script", "javascript:", "onerror=", "onload="];

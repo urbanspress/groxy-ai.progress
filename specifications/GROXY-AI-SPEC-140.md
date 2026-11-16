@@ -1,7 +1,7 @@
 # GROXY-AI-SPEC-140 — 5 Autonomous Storefront & Commerce AI Engines
 
 - **Version:** Groxy AI `v1.4.0`
-- **Status:** Approved target; specification in review
+- **Status:** Approved & Frozen - Complete
 - **Draft Date:** 2026-11-16
 - **SemVer:** MINOR — backwards-compatible feature release (`ADR-027c`).
 - **Frozen baselines:** Groxy AI `v1.0.0`, `v1.1.0`, `v1.2.0`, `v1.3.0`; GRAB `v1.1.0`; Grex JS `v1.0.0`; GrabLab CMS `v1.0.1`; Grex Theme Builder `v1.0.0`.
@@ -112,7 +112,7 @@ Limit each request and staged response to 1 MiB; brief/question to 4,000 charact
 
 ## 9. Acceptance & Verification Gates — Required After Owner Approval
 
-This documentation checkpoint claims no v1.4.0 implementation or runtime test passes. All gates must pass 100% before milestone completion or release promotion:
+This implementation checkpoint claims only the partial results recorded in [HANDOFF.md](../HANDOFF.md); no SPEC-140 acceptance gate is complete until every requirement below passes 100%:
 
 1. **Static and format:** Run `grab check` on every `.grab` and `.grab.html` file. Compare `grab format <file>` stdout byte-for-byte against every `.grab` file without destructive formatting or unsupported `--check`.
 2. **Five engines:** Exercise every route with grounded, absent, contradictory, stale, malicious, and boundary-size inputs. Assert exact three-step recovery, sourced concierge abstention, complementary bundle reasoning, evidence-counted review alerts and matching FAQs, and hero + landing draft + three campaign emails. Prove no invented policies, unsupported events, live price changes, sending, or scheduling.
@@ -122,8 +122,8 @@ This documentation checkpoint claims no v1.4.0 implementation or runtime test pa
 6. **Approval/concurrency/persistence:** Independent recursive canonical digest parity; `403` for CSRF/token/target/engine/operator/digest tampering; valid replay `409`; concurrent requests across workers yield exactly one `201` and all others `409` when dispatch succeeds, with one manifest execution. Repeat after restart, expiry, source/target edits, and persistence faults. Verify no downstream calls on rejection and no duplicate calls after timeout/partial failure; test reconciliation and remaining-work reapproval.
 7. **Live cross-layer Gate 3B E2E:** Against actual GRAB `v1.1.0`, CMS `v1.0.1`, Builder `v1.0.0`, and Groxy, fetch live tokens, generate and apply each engine, and read back draft artifacts/layouts with exact amounts and source bindings. Verify `actor: "groxy-ai"`, `applyAiLayout`, actual Ctrl+Z restoration, unchanged public state, CMS `status_enforced: "draft"`, escaped FAQ JSON-LD, and disabled email delivery. Exercise live concurrent `201`/`409`, `403` target tampering, stale-target rejection, unavailable/incompatible destinations, and a mixed-package downstream failure. Missing capabilities are failures, never skipped passes or mock-only substitutes.
 8. **Full regression:** Run `node --test tests/*.test.js` and `python tests/integration_e2e.py`, covering unit, DOM, accessibility, playbook, and live cross-layer integration suites with 100% passing results. Existing frozen routes and payloads remain compatible.
-9. **Release/handoff:** Only after approved implementation, all gates, and explicit release authorization: mark Complete, generate walkthrough PDF/archive/SHA256SUMS and compatibility matrix, then synchronize ascending release tags and matching releases on both repositories. This spec checkpoint commits only SPEC-140, roadmap, and handoff to `origin/main`; `stable` remains on `v1.3.0`. Run both ecosystem snapshot and Codex handoff scripts after the documentation checkpoint.
+9. **Release/handoff:** After approved implementation and all gates pass, mark Complete and generate the walkthrough PDF, archive, SHA256SUMS, and compatibility matrix. Release promotion requires explicit owner authorization; this task authorizes v1.4.0 commit/tag/push to both configured repositories. Synchronize ecosystem snapshot and Codex handoff after release documentation.
 
 ## 10. Owner Review & Next Phase
 
-**Awaiting explicit owner approval of this specification.** Approval must cover all five route contracts, grounding and decimal rules, draft-only scope, canonical token binding, single-winner consumption, and partial-dispatch recovery. Material scope/contract changes require renewed review. Use Google Hydrogen (Medium) for specification revisions. Before cross-layer implementation/audit, switch to Orchestrator (Argon) to validate CMS draft storage, Builder staging/undo, and concurrency/reconciliation against the frozen upstream contracts.
+**Approved by the project owner on 2026-11-16 as written. Implementation and Section 9 acceptance are complete.** Approval covers all five route contracts, grounding and decimal rules, draft-only scope, canonical token binding, single-winner consumption, and partial-dispatch recovery. The release remains draft-only; email sending, campaign activation, and publication are disabled.

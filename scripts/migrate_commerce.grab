@@ -1,0 +1,5 @@
+use data
+
+set commerce to data.open using "commerce"
+set result to data.migrate using commerce, [record {version: 1, name: "create_commerce_approval_ledger", steps: ["CREATE TABLE groxy_commerce_plans (plan_id TEXT PRIMARY KEY, engine TEXT NOT NULL, target_slot TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)"]}]
+show result

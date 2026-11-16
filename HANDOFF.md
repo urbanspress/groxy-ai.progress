@@ -1,18 +1,22 @@
 # HANDOFF.md — Groxy AI
 
-- **Current Owner:** Google Antigravity (Codex v1.4.0 specification review handoff)
-- **Current Milestone State:** `v1.0.0`, `v1.1.0`, `v1.2.0`, and `v1.3.0` are `Approved & Frozen — Complete`. SPEC-130 was owner-approved on 2026-11-16. All v1.3.0 verification gates pass; completion commit `fbb4753` and annotated tag `v1.3.0` are pushed to both remotes. Matching GitHub Releases remain pending because the configured `gh` authentication token is invalid.
-- **Current Milestone:** `v1.4.0` — Approved target; specification in review ([SPEC-140](specifications/GROXY-AI-SPEC-140.md)). No implementation approval or code changes.
-- **Next Milestone Action:** Obtain explicit owner approval of SPEC-140 before implementation. Preserve all frozen releases and untracked `playbook/genres/`.
+- **Current Owner:** Google Antigravity (v1.4.0 complete; Codex release handoff)
+- **Current Milestone State:** `v1.0.0` through `v1.4.0` are `Approved & Frozen — Complete`. SPEC-140 was owner-approved on 2026-11-16; every Section 9 implementation and verification gate passes.
+- **Current Milestone:** `v1.4.0` — Approved & Frozen — Complete ([SPEC-140](specifications/GROXY-AI-SPEC-140.md)).
+- **Next Milestone Action:** Begin SPEC-150 planning after the owner accepts this release handoff. Preserve frozen releases, all eight sibling repositories, and untracked `playbook/genres/`.
 
-## `v1.4.0` Specification Review Checkpoint — 2026-11-16
-- **Status:** Approved target; specification in review. Target approval is not implementation approval.
+## `v1.4.0` Implementation & Verification Checkpoint — 2026-11-16
+- **Status:** Approved & Frozen — Complete. SPEC-140 Section 9 passed; release artifacts and synchronized repositories are prepared below.
 - **Draft:** [SPEC-140](specifications/GROXY-AI-SPEC-140.md) defines recovery, concierge, bundles, review mining/FAQPage, and campaign planning under `/api/groxy/commerce/`, with shared `/apply`.
 - **Safety:** Brand/site grounding, exact `ADR-025c` calculations (`422` JS floats), mandatory email footers, semantic zero-`<div>` layouts, Light/Dark WCAG AA, escaped JSON-LD, deterministic synthesis and optional local/allowlisted enrichment. Canonical `ctok_<hex>` binding to `{ plan_id, engine, target_slot, payload_sha256 }`, CSRF, and atomic single-winner consumption (`403` invalid/mismatch; `409` concurrency/replay) precede draft-only CMS or undoable Builder dispatch. Mixed-service failures remain consumed and require reconciliation.
-- **Scope:** Only SPEC-140, `docs/ROADMAP.md`, and this handoff are authorized for the documentation commit on `main` and push attempt to `origin/main`. `stable` stays on `v1.3.0`; no tags/releases or implementation files change. Historical frozen records below remain intact; their older pending actions are superseded by this current checkpoint.
-- **Verification boundary:** Check documentation links, diff scope, frozen sections, and preserved untracked genre file hashes. Implementation tests and live Gate 3B are future acceptance gates, not claimed v1.4.0 passes.
-- **Synchronization:** Run `sync-notebook-sources.ps1` and `generate-codex-handoff.ps1` after the documentation push attempt; actual command results are reported in the session.
-- **Pending:** Owner review/approval, then implementation and every SPEC-140 gate. Google Hydrogen (Medium) is appropriate for spec revisions; switch to Orchestrator (Argon) before cross-layer implementation/audit because approval, draft storage, undo, and partial-dispatch recovery span frozen contracts.
+- **Scope:** The project owner authorized implementation and release preparation. Keep all changes in this repository; frozen sibling repositories and `stable` remain unchanged until every required gate passes. Preserve untracked `playbook/genres/`. Historical frozen records below remain intact; their older pending actions are superseded by this current checkpoint.
+- **Implemented:** Five deterministic commerce engines generate exact-value, source-grounded, draft-only artifacts. Durable target-bound single-use approval consumes before downstream dispatch and records partial outcomes for recovery. Grex layout validation and Light/Dark accessibility checks run across each engine's layout; the studio uses semantic controls, native details, an accessible aside/dialog preview, Escape handling, focus restoration, and text-only rendering. Untrusted briefs are JSON-encoded before provider prompts; BYOK credentials are absent from responses and service logs.
+- **Verified:** `grab check --platform-config grab.platform.json src/groxy.grab` passes. `grab format` output matches both `src/groxy.grab` and `scripts/migrate_commerce.grab` byte-for-byte. `node --test tests/*.test.js` passes 72/72. `python tests/integration_e2e.py` exits 0 with `release-ready: True`, including all five engines, exact arithmetic, stale/hostile input, source and target binding, CMS/Builder downstream failure recovery, secret redaction, and independent-process contention with exactly one `201` and one `409`. The UI suite verifies no wrapper `<div>` and no `innerHTML` writes, Light/Dark WCAG AA contrast, Grex accessibility for the studio controls, labels, keyboard handling, and dialog focus restoration.
+- **Release artifacts:** Complete-status walkthrough PDF, release notes with the five-layer compatibility matrix, versioned bundle, and `dist/SHA256SUMS.txt` are generated. The bundle excludes untracked `playbook/genres/`.
+- **Release:** Commit/tag and push results are recorded after the release operation. Public GitHub Release publication remains a separate `gh release create` action if the configured `urbanspress` token is unavailable.
+- **Preservation:** No frozen sibling repository was edited. `playbook/genres/` remains untracked and untouched.
+- **Synchronization:** `sync-notebook-sources.ps1` and `generate-codex-handoff.ps1` are run after the release documentation/push attempt; results are reported in the session.
+- **Handoff:** Core task complete—ready to hand off to Google Antigravity. Type `use-antigravity` to continue. Use Orchestrator (Argon) for the next cross-layer audit because it spans frozen CMS/Builder contracts, persisted failure recovery, and accessibility/security gates.
 
 ## `v1.3.0` Implementation & Verification Checkpoint — 2026-11-16
 - **Authorized scope:** SPEC-130 was explicitly approved as written. No frozen sibling repository was modified.

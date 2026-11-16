@@ -2,8 +2,8 @@
 
 **Step 4 of the Post-1.0 GRAB Ecosystem:** Autonomous Design, Content & SEO Intelligence Agent built natively on **GRAB `v1.1.0`**, **Grex JS `v1.0.0`**, **GrabLab CMS `v1.0.1`**, and **Grex Theme Builder `v1.0.0`**.
 
-- **Current Release:** `v1.1.0` (**Approved & Frozen - Complete**)
-- **Active Milestone:** `v1.3.0` (**Approved; implementation in progress**) - Draft-only post-purchase email flow designer (`/api/groxy/email-flows/design`, `/api/groxy/email-flows/apply`)
+- **Current Release:** `v1.4.0` (**Approved & Frozen - Complete**)
+- **Active Milestone:** `v1.5.0` (**Planned**) - Bespoke store schema quiz and opt-in database consultant.
 - **Frozen `v1.x` Contract:** All `22` routes in `src/groxy.grab`, 22-rule Playbook (`playbook/seo-playbook.v1.json`), `8 × 5` (`40`) WCAG AA Style Pack × Blueprint combinations, `GROXY-SAFE-001`, and `ADR-025c` wire precision are frozen under SemVer `v1.x` (`ADR-027c`).
 - **Development Repo (`origin`):** `https://github.com/urbanspress/groxy-ai.progress`
 - **Production Release Repo (`stable`):** `https://github.com/urbanspress/groxy-ai.stable`

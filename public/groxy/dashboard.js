@@ -5,7 +5,7 @@
  * Zero innerHTML writes, zero eval(), zero wrapper <div> elements.
  */
 
-export const GROXY_VERSION = "1.3.0";
+export const GROXY_VERSION = "1.4.0";
 
 import {
   auditAccessibility,
@@ -38,6 +38,7 @@ import { extractVisualProfile, verifyScreenshot } from "./vision-clone.js";
 import { mountBrandDnaWizard } from "./brand-dna.js";
 import { mountBatchCampaignStudio } from "./batch-campaign.js";
 import { mountEmailFlowStudio } from "./email-flows.js";
+import { mountCommerceStudio } from "./commerce-engines.js";
 
 export const SAMPLE_AUDIT_PRESETS = Object.freeze({
   clean: {
@@ -635,7 +636,7 @@ export function mountGroxyDashboard(options = {}) {
     class: "groxy-card",
     "aria-label": "Deterministic SEO and DOM Auditor",
   });
-  formCard.appendChild(createEl(doc, "h1", {}, "Groxy AI v1.3.0 — Visual Generator Studio, Site Intelligence, Pre-Publish Gate & Audit Inspector"));
+  formCard.appendChild(createEl(doc, "h1", {}, "Groxy AI v1.4.0 — Visual Generator Studio, Site Intelligence, Pre-Publish Gate & Audit Inspector"));
   formCard.appendChild(
     createEl(
       doc,
@@ -2289,6 +2290,7 @@ export function mountGroxyDashboard(options = {}) {
   const brandDnaStudio = mountBrandDnaWizard({ root, document: doc, csrfToken, fetchFn });
   const batchCampaignStudio = mountBatchCampaignStudio({ root, document: doc, csrfToken, fetchFn });
   const emailFlowStudio = mountEmailFlowStudio({ root, document: doc, csrfToken, fetchFn });
+  const commerceStudio = mountCommerceStudio({ root, document: doc, csrfToken, fetchFn });
 
   return {
     auditDomSafety() {
@@ -2340,6 +2342,7 @@ export function mountGroxyDashboard(options = {}) {
     getBrandDnaState() { return brandDnaStudio.getProfile(); },
     getBatchCampaignState() { return batchCampaignStudio.getStaged(); },
     getEmailFlowState() { return emailFlowStudio.getStaged(); },
+    getCommercePlanState() { return commerceStudio.getStaged(); },
     runAudit: executeAudit,
     triggerPrePublishReview,
     triggerBoost,
@@ -2371,6 +2374,7 @@ export function mountGroxyDashboard(options = {}) {
       brandDnaStudio.dispose();
       batchCampaignStudio.dispose();
       emailFlowStudio.dispose();
+      commerceStudio.dispose();
     },
   };
 }

@@ -15,6 +15,25 @@
   --groxy-radius: 10px;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --groxy-bg: #0f172a;
+    --groxy-surface: #1e293b;
+    --groxy-border: #64748b;
+    --groxy-text: #f8fafc;
+    --groxy-muted: #cbd5e1;
+    --groxy-primary: #34d399;
+    --groxy-primary-hover: #6ee7b7;
+    --groxy-danger: #fca5a5;
+    --groxy-danger-bg: #450a0a;
+    --groxy-warn: #fcd34d;
+    --groxy-warn-bg: #422006;
+    --groxy-pass: #6ee7b7;
+    --groxy-pass-bg: #064e3b;
+    --groxy-button-text: #052e16;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -138,7 +157,7 @@ main#groxy-inspector-root {
   font-size: 0.95rem;
   cursor: pointer;
   background: var(--groxy-primary);
-  color: #ffffff;
+  color: var(--groxy-button-text, #ffffff);
 }
 
 .groxy-btn:hover {
@@ -159,6 +178,39 @@ main#groxy-inspector-root {
   outline: 3px solid var(--groxy-primary);
   outline-offset: 2px;
 }
+
+.groxy-commerce-studio {
+  color: var(--groxy-text);
+  background: var(--groxy-surface);
+}
+.groxy-commerce-studio label,
+.groxy-commerce-studio output,
+.groxy-commerce-studio summary { color: var(--groxy-text); }
+.groxy-commerce-studio input,
+.groxy-commerce-studio select,
+.groxy-commerce-studio textarea,
+.groxy-commerce-dialog {
+  color: var(--groxy-text);
+  background: var(--groxy-surface);
+  border: 1px solid var(--groxy-border);
+}
+.groxy-commerce-studio button { min-height: 2.75rem; }
+.groxy-commerce-studio button:disabled { opacity: 0.72; }
+.groxy-commerce-dialog {
+  width: min(48rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  border-radius: var(--groxy-radius);
+  padding: 1.25rem;
+}
+.groxy-commerce-dialog::backdrop { background: rgb(15 23 42 / 0.72); }
+.groxy-commerce-dialog pre {
+  max-height: 55vh;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.groxy-commerce-keyboard-help summary { cursor: pointer; }
 
 .groxy-pillar-card {
   background: var(--groxy-bg);

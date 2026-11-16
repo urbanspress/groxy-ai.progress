@@ -1,0 +1,5 @@
+{
+  "connections": {
+    "commerce": {"driver": "sqlite", "path": "storage/groxy-commerce.db"}
+  }
+}

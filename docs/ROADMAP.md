@@ -106,7 +106,7 @@ Scope:
 
 ## `v1.4.0` — 5 Autonomous Storefront & Commerce AI Engines
 
-**Status:** Approved target; specification in review — Backwards-Compatible Minor Feature ([SPEC-140](../specifications/GROXY-AI-SPEC-140.md)). Target approval does not authorize implementation; explicit specification approval is pending.
+**Status:** Approved & Frozen — Complete — Backwards-Compatible Minor Feature ([SPEC-140](../specifications/GROXY-AI-SPEC-140.md)). The project owner approved SPEC-140 as written on 2026-11-16.
 
 Scope:
 - **Recovery (`POST /api/groxy/commerce/recovery`):** Three brand-grounded abandoned-cart email drafts with exact `ADR-025c` line prices/subtotals/discounts, unsubscribe placeholders, and physical-address footers. No assumed commerce event subscription or sending.
@@ -115,7 +115,7 @@ Scope:
 - **Reviews (`POST /api/groxy/commerce/reviews-mine`):** Evidence-linked recurring objections and SKU quality alerts, XSS-safe `</script>`-escaped `FAQPage` JSON-LD, and zero-`<div>` `<details>` FAQ layouts.
 - **Campaigns (`POST /api/groxy/commerce/campaign-plan`):** Coordinated hero banner, landing-page draft, and three-email launch sequence with exact promotional pricing; no live activation.
 - **Shared staging (`POST /api/groxy/commerce/apply`):** Deterministic zero-fee synthesis by default, optional local Ollama/offline fallback or `GRAB-E402`-allowlisted BYOK. CSRF and single-use `ctok_<hex>` bind `{ plan_id, engine, target_slot, payload_sha256 }` through recursive canonical JSON; `403` invalid/mismatch, `409` concurrent/replay. Atomic single-winner consumption precedes Builder `POST /api/mcp/layout` (`actor: "groxy-ai"`, Ctrl+Z) and/or CMS `create_entry_draft` (`status_enforced: "draft"`); partial downstream outcomes require reconciliation.
-- **Acceptance:** `grab check`, byte-for-byte canonical `grab format`, exact decimal strings (`422` JS floats), zero wrapper `<div>`/`innerHTML` writes, Light/Dark WCAG AA `>=4.5:1`, safe JSON-LD, concurrent approval tests, full regression, and live cross-layer Gate 3B. No v1.4.0 implementation or gate passes claimed. Prior releases stay frozen; `playbook/genres/` stays untracked and untouched; this checkpoint targets `origin/main` only.
+- **Acceptance:** Complete. `grab check`, byte-for-byte canonical `grab format` for both `.grab` files, 72/72 Node tests, and live Gate 3B pass. Generated layouts and the Commerce Studio controls pass Grex schema and Light/Dark `auditAccessibility()` checks; tests cover WCAG AA contrast, zero wrapper `<div>`/`innerHTML`, dialog Escape/focus restoration, native details/keyboard controls, prompt-injection JSON escaping, hostile HTML/URL input, deterministic no-provider generation, BYOK redaction, CMS/Builder failure recovery, replay rejection, and the two-process `201`/`409` race. Prior releases and upstream repositories remain frozen; untracked `playbook/genres/` is preserved.
 
 ---
 

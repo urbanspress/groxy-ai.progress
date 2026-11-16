@@ -24,7 +24,7 @@ def sha256_file(path: Path) -> str:
 
 def collect_release_files():
     include_dirs = ["src", "views", "public", "assets", "playbook", "deploy"]
-    include_files = ["grab.platform.json", "README.md", "CHANGELOG.md", "GROXY-EXPERT.md", "LICENSE"]
+    include_files = ["grab.platform.json", "grab.data.json", "scripts/migrate_commerce.grab", "README.md", "CHANGELOG.md", "GROXY-EXPERT.md", "LICENSE"]
     files = []
     tracked = set(
         subprocess.check_output(
@@ -42,10 +42,17 @@ def collect_release_files():
         "assets/email-flows.js",
         "tests/unit_email_flows.test.js",
     }
+    new_v140_modules = {
+        "grab.data.json",
+        "assets/commerce-engines.js",
+        "public/groxy/commerce-engines.js",
+        "tests/unit_commerce_engines.test.js",
+        "scripts/migrate_commerce.grab",
+    }
 
     for fname in include_files:
         p = REPO_ROOT / fname
-        if p.exists() and p.is_file() and fname in tracked:
+        if p.exists() and p.is_file() and (fname in tracked or fname in new_v140_modules):
             files.append(p)
 
     for dname in include_dirs:
@@ -57,7 +64,7 @@ def collect_release_files():
             if (
                 item.is_file()
                 and "__pycache__" not in item.parts
-                and (rel in tracked or rel in new_v120_modules or rel in new_v130_modules)
+                and (rel in tracked or rel in new_v120_modules or rel in new_v130_modules or rel in new_v140_modules)
             ):
                 files.append(item)
 
