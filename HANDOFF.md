@@ -1,9 +1,18 @@
 # HANDOFF.md — Groxy AI
 
-- **Current Owner:** Google Antigravity (v1.3.0 specification ready for owner review)
+- **Current Owner:** OpenAI Codex (v1.3.0 implementation)
 - **Current Milestone State:** `v1.0.0`, `v1.1.0`, and `v1.2.0` are `Approved & Frozen — Complete`. The owner approved [`GROXY-AI-SPEC-120.md`](specifications/GROXY-AI-SPEC-120.md) as written on 2026-11-15. All v1.2.0 implementation and verification gates pass. Annotated tag `v1.2.0` points to completion commit `90ff9d3`; matching releases are published on both repositories with the guide, bundle, checksum manifest, SemVer summary, and compatibility matrix.
-- **Current Milestone:** `v1.3.0` — `Approved target; specification in review` ([SPEC-130](specifications/GROXY-AI-SPEC-130.md)). Explicit owner approval of the specification is pending; no implementation is authorized.
-- **Next Milestone Action:** Review SPEC-130 before implementation; preserve the frozen v1.0.0, v1.1.0, and v1.2.0 releases.
+- **Current Milestone:** `v1.3.0` — `Approved; implementation in progress` ([SPEC-130](specifications/GROXY-AI-SPEC-130.md)). The owner approved SPEC-130 as written on 2026-11-16.
+- **Next Milestone Action:** Complete implementation, verification gates, release artifacts, and checkpoint synchronization while preserving frozen upstream repositories and the untracked `playbook/genres/` folder.
+
+## `v1.3.0` Implementation Checkpoint — 2026-11-16
+- **Authorized scope:** Owner approved SPEC-130 as written. No frozen sibling repository is in scope.
+- **Implemented:** Added deterministic four-step flow staging, exact decimal-string checks and previews, semantic dashboard UI, CSRF and target-bound `etok_*` approval, CMS compatibility preflight, draft-only `create_entry_draft`, draft enforcement response checks, exact-price readback integration assertions, and replay rejection. Walkthrough PDF, bundle, and SHA256SUMS are generated as review artifacts.
+- **Verified:** GRAB check and canonical source format parity passed. `node --test tests/*.test.js` passed 58/58. `python tests/integration_e2e.py` passed Gates 1, 2, 3A, and expanded live 3B including four-step preview, float rejection, 403 target mismatch, exact `"19.90"` / `"0.10"` CMS draft readback, draft enforcement, and 409 replay rejection.
+- **Remaining release blockers:** The server digest still uses runtime JSON serialization instead of recursive canonical UTF-8 key sorting, provider modes have not been implemented for email-flow enrichment, and consumed-state persistence is not an atomic single-winner transition under concurrent requests. The current tests do not yet cover the full spec acceptance matrix. Therefore SPEC-130 and v1.3.0 remain `Approved; implementation in progress`; no release tag or stable promotion is authorized by this checkpoint.
+- **Artifacts:** `docs/releases/pdf/Groxy-AI-v1.3.0-Guide.pdf`, `dist/groxy-ai-v1.3.0-bundle.zip`, and `dist/SHA256SUMS.txt` are pre-release review artifacts and explicitly disclose pending hardening.
+- **Preservation:** The pre-existing untracked `playbook/genres/` directory is preserved and excluded from the bundle. No frozen sibling repository was modified.
+- **Next:** Implement recursive canonical digest generation, configured Ollama/BYOK behavior, atomic single-use persistence, and the remaining acceptance tests; rerun all gates and sibling cleanliness checks before marking Complete or promoting.
 
 ---
 

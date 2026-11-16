@@ -1,7 +1,7 @@
 # GROXY-AI-SPEC-130 — Autonomous Post-Purchase Email Flow Designer & Copywriter
 
 - **Version:** Groxy AI `v1.3.0`
-- **Status:** Approved target; specification in review
+- **Status:** Approved; implementation in progress
 - **Draft Date:** 2026-11-16
 - **SemVer:** MINOR — backwards-compatible feature release (`ADR-027c`).
 - **Frozen baselines:** Groxy AI `v1.0.0`, `v1.1.0`, `v1.2.0`; GRAB `v1.1.0`; Grex JS `v1.0.0`; GrabLab CMS `v1.0.1`; Grex Theme Builder `v1.0.0`.
@@ -9,7 +9,7 @@
 
 ## 1. Purpose, Scope & Approval Boundary
 
-Design a brand-grounded, multi-step post-purchase email sequence, let an operator review every message and timing suggestion, and save the approved sequence strictly as drafts. Approval of the milestone target is not approval of this specification or permission to implement it. No `src/`, `views/`, `public/`, `assets/`, `playbook/`, or `tests/` implementation changes are authorized by this draft.
+Design a brand-grounded, multi-step post-purchase email sequence, let an operator review every message and timing suggestion, and save the approved sequence strictly as drafts. The project owner approved this specification as written on 2026-11-16. Implementation is authorized within the scope below.
 
 The additive routes are `POST /api/groxy/email-flows/design` and `POST /api/groxy/email-flows/apply`. Existing routes, payloads, releases, and upstream source remain unchanged. No compiler/runtime duplication, framework, bundler, or build step is introduced.
 
@@ -104,6 +104,6 @@ No implementation verification is claimed by this draft. All gates must pass at 
 
 ## 10. Owner Review & Next Phase
 
-**Pending:** Explicit project-owner approval of this specification. No implementation has begun. Material changes to routes, flow shape, token binding, persistence/dispatch, provider access, or activation boundaries require renewed specification review.
+**Approved:** The project owner approved this specification as written on 2026-11-16. Material changes to routes, flow shape, token binding, persistence/dispatch, provider access, or activation boundaries require renewed specification review.
 
 Use Google Hydrogen (Medium) for specification revisions. Before cross-layer implementation/audit, switch to Orchestrator (Argon) to review draft storage compatibility and approval/dispatch boundaries across the frozen CMS and Builder contracts. Handoff ownership returns to Google Antigravity; implementation remains blocked on owner approval regardless of model selection.

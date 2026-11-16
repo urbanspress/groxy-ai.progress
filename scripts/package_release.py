@@ -37,6 +37,11 @@ def collect_release_files():
         "public/groxy/batch-campaign.js",
         "public/groxy/brand-dna.js",
     }
+    new_v130_modules = {
+        "public/groxy/email-flows.js",
+        "assets/email-flows.js",
+        "tests/unit_email_flows.test.js",
+    }
 
     for fname in include_files:
         p = REPO_ROOT / fname
@@ -52,7 +57,7 @@ def collect_release_files():
             if (
                 item.is_file()
                 and "__pycache__" not in item.parts
-                and (rel in tracked or rel in new_v120_modules)
+                and (rel in tracked or rel in new_v120_modules or rel in new_v130_modules)
             ):
                 files.append(item)
 

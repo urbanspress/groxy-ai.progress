@@ -1,5 +1,5 @@
-/** Groxy AI v1.2.0 — deterministic, review-first campaign helpers. */
-export const BATCH_CAMPAIGN_VERSION = "1.2.0";
+/** Groxy AI v1.3.0 — deterministic, review-first campaign helpers. */
+export const BATCH_CAMPAIGN_VERSION = "1.3.0";
 const DECIMAL = /^(?:0|[1-9]\d*)(?:\.\d+)?$/;
 
 export function assertBatchBounds(count) {

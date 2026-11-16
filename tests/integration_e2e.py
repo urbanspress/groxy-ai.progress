@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Groxy AI v1.2.0 — Full Cross-Layer End-to-End Verification Suite.
+Groxy AI v1.3.0 — Full Cross-Layer End-to-End Verification Suite.
 
 Runs 3 non-negotiable gates:
   Gate 1: Static analysis (grab check), non-destructive canonical formatting (grab format byte-for-byte),
@@ -10,7 +10,7 @@ Runs 3 non-negotiable gates:
             - Core GRAB v1.1.0 `grab mcp` stdio JSON-RPC 2.0 server
             - GrabLab CMS v1.0.1 (isolated temp copy)
             - Grex Theme Builder v1.0.0 (isolated temp copy)
-            - Groxy AI v1.2.0 (src/groxy.grab)
+            - Groxy AI v1.3.0 (src/groxy.grab)
 """
 
 import http.cookiejar
@@ -321,7 +321,7 @@ def gate_3a_grab_mcp_stdio(grab_bin: str):
 
 
 def gate_3b_live_cross_layer(grab_bin: str):
-    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v1.2.0...")
+    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v1.3.0...")
     cms_src = Path(os.environ.get("GRABLAB_CMS_DIR", r"C:\Development\grablab-cms"))
     builder_src = Path(os.environ.get("GREX_BUILDER_DIR", r"C:\Development\grex-builder"))
     if not (cms_src / "src" / "app.grab").exists():
@@ -438,7 +438,25 @@ def gate_3b_live_cross_layer(grab_bin: str):
         procs.append(builder_proc)
         wait_for_health(builder_url, builder_proc, "Grex Theme Builder v1.0.0", log_path=builder_log)
 
-        # 3. Start Groxy AI v1.2.0 from an isolated copy so its storage writes
+        # Setup GrabLab CMS admin & mint the server-side token used by the new
+        # draft-only email-flow routes.
+        cms_cj = http.cookiejar.CookieJar()
+        cms_opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cms_cj))
+        st_setup, _, setup_body = http_request(
+            f"{cms_url}/api/auth/setup", method="POST",
+            json_body={"email": "admin@example.com", "display_name": "Urban Press Admin", "password": "GroxyE2EPassword123!"},
+            opener=cms_opener,
+        )
+        assert st_setup == 201, f"GrabLab setup failed ({st_setup}): {setup_body}"
+        cms_csrf = json.loads(setup_body)["csrf_token"]
+        st_tok, _, tok_body = http_request(
+            f"{cms_url}/api/auth/mcp-token", method="POST",
+            headers={"X-CSRF-Token": cms_csrf}, json_body={}, opener=cms_opener,
+        )
+        assert st_tok == 201, f"GrabLab mcp-token mint failed ({st_tok}): {tok_body}"
+        cms_token = json.loads(tok_body)["token"]
+
+        # 3. Start Groxy AI v1.3.0 from an isolated copy so its storage writes
         #    never modify the developer's working tree.
         groxy_log = tmp_root / "groxy.log"
         groxy_fh = open(groxy_log, "wb+")
@@ -462,14 +480,17 @@ def gate_3b_live_cross_layer(grab_bin: str):
                 "storage",
                 "--allow-net",
                 f"127.0.0.1:{cms_port},127.0.0.1:{builder_port}",
+                "--allow-env",
+                "GROXY_CMS_URL,GROXY_CMS_MCP_TOKEN,GROXY_BUILDER_URL,GROXY_OPERATOR_ID",
                 "src/groxy.grab",
             ],
             cwd=str(groxy_tmp),
+            env={**os.environ, "GROXY_CMS_URL": cms_url, "GROXY_CMS_MCP_TOKEN": cms_token, "GROXY_BUILDER_URL": builder_url, "GROXY_OPERATOR_ID": "e2e-admin"},
             stdout=groxy_fh,
             stderr=subprocess.STDOUT,
         )
         procs.append(groxy_proc)
-        health_json = wait_for_health(groxy_url, groxy_proc, "Groxy AI v1.2.0", log_path=groxy_log)
+        health_json = wait_for_health(groxy_url, groxy_proc, "Groxy AI v1.3.0", log_path=groxy_log)
         assert health_json.get("status") == "ok", (
             f"Unexpected /_health payload from Groxy AI: {health_json}"
         )
@@ -485,7 +506,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         st, _, html = http_request(f"{groxy_url}/groxy")
         assert st == 200
         assert re.search(r"<div\b", html, re.IGNORECASE) is None, "/groxy HTML must have zero <div> elements"
-        assert '<meta name="groxy-version" content="1.2.0">' in html, "Missing groxy-version 1.2.0 meta tag"
+        assert '<meta name="groxy-version" content="1.3.0">' in html, "Missing groxy-version 1.3.0 meta tag"
         m = re.search(r'<meta\s+name="groxy-csrf"\s+content="([^"]+)"', html)
         assert m, "Missing groxy-csrf meta tag in /groxy HTML"
         groxy_csrf = m.group(1)
@@ -508,7 +529,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         pb = json.loads(pb_body)
         assert len(pb.get("rules", [])) == 22
         assert pb.get("playbook_version") == "1.0.0"
-        assert pb.get("service_version") == "1.2.0"
+        assert pb.get("service_version") == "1.3.0"
 
         # Verify CSRF enforcement on all POST routes
         for post_path in [
@@ -524,35 +545,11 @@ def gate_3b_live_cross_layer(grab_bin: str):
             "/api/groxy/brand-dna/wizard",
             "/api/groxy/batch-create",
             "/api/groxy/batch-create/apply",
+            "/api/groxy/email-flows/design",
+            "/api/groxy/email-flows/apply",
         ]:
             st_no_csrf, _, _ = http_request(f"{groxy_url}{post_path}", method="POST", json_body={"entry": {}})
             assert st_no_csrf == 403, f"Expected 403 without CSRF on {post_path}, got {st_no_csrf}"
-
-        # Setup GrabLab CMS admin user & mint bearer MCP token
-        cms_cj = http.cookiejar.CookieJar()
-        cms_opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cms_cj))
-        st_setup, _, setup_body = http_request(
-            f"{cms_url}/api/auth/setup",
-            method="POST",
-            json_body={
-                "email": "admin@example.com",
-                "display_name": "Urban Press Admin",
-                "password": "GroxyE2EPassword123!",
-            },
-            opener=cms_opener,
-        )
-        assert st_setup == 201, f"GrabLab setup failed ({st_setup}): {setup_body}"
-        cms_csrf = json.loads(setup_body)["csrf_token"]
-
-        st_tok, _, tok_body = http_request(
-            f"{cms_url}/api/auth/mcp-token",
-            method="POST",
-            headers={"X-CSRF-Token": cms_csrf},
-            json_body={},
-            opener=cms_opener,
-        )
-        assert st_tok == 201, f"GrabLab mcp-token mint failed ({st_tok}): {tok_body}"
-        cms_token = json.loads(tok_body)["token"]
 
         # Verify Groxy AI live /api/groxy/mcp/inspect across GrabLab CMS & Grex Theme Builder
         st_insp, _, insp_body = http_request(
@@ -564,7 +561,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         assert st_insp == 200, f"/api/groxy/mcp/inspect failed ({st_insp}): {insp_body}"
         insp = json.loads(insp_body)
         assert insp["ok"] is True
-        assert insp["version"] == "1.2.0"
+        assert insp["version"] == "1.3.0"
         assert insp["grablab_cms"]["connected"] is True
         assert insp["grablab_cms"]["elements_count"] == 20
         assert "create_entry_draft" in insp["grablab_cms"]["tools"]
@@ -1521,6 +1518,56 @@ def gate_3b_live_cross_layer(grab_bin: str):
         st_dna_brand, _, dna_brand_raw = http_request(f"{groxy_url}/api/groxy/site-dna/export")
         assert st_dna_brand == 200 and json.loads(dna_brand_raw).get("brand_dna", {}).get("revision") == brand_doc["revision"], f"Site DNA Brand DNA round-trip failed ({st_dna_brand}): {dna_brand_raw}"
 
+        # v1.3.0: stage one complete four-message flow, then save one draft.
+        flow_payload = {
+            "brief": "Welcome new customers and help them use the purchase.",
+            "mode": "deterministic",
+            "products": [{"name": "Accessibility review", "price": "19.90"}, {"name": "Monthly support", "price": "0.10"}],
+            "order": {"total": "20.00", "currency": "USD"},
+        }
+        st_flow_float, _, flow_float_body = http_request(
+            f"{groxy_url}/api/groxy/email-flows/design", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={**flow_payload, "order": {"total": 20.0, "currency": "USD"}},
+        )
+        assert st_flow_float == 422, f"Expected 422 for float email-flow total, got {st_flow_float}: {flow_float_body}"
+        st_flow, _, flow_raw = http_request(
+            f"{groxy_url}/api/groxy/email-flows/design", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body=flow_payload,
+        )
+        assert st_flow == 200, f"Email flow staging failed ({st_flow}): {flow_raw}"
+        flow_doc = json.loads(flow_raw)
+        assert flow_doc["schema_version"] == "1.3.0" and flow_doc["step_count"] == 4
+        assert [step["sequence"] for step in flow_doc["steps"]] == [1, 2, 3, 4]
+        assert flow_doc["steps"][0]["plain_text"].find("20.00") >= 0
+        assert flow_doc["steps"][3]["plain_text"].find("0.10") >= 0
+        for step in flow_doc["steps"]:
+            assert "{{unsubscribe_url}}" in step["plain_text"] and "{{sender_postal_address}}" in step["plain_text"]
+        flow_apply = {key: flow_doc[key] for key in ("flow_id", "step_count", "flow_sha256", "approval_token")}
+        st_flow_tamper, _, _ = http_request(
+            f"{groxy_url}/api/groxy/email-flows/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body={**flow_apply, "step_count": 3},
+        )
+        assert st_flow_tamper == 403, f"Expected 403 for target mismatch, got {st_flow_tamper}"
+        st_flow_apply, _, flow_apply_raw = http_request(
+            f"{groxy_url}/api/groxy/email-flows/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body=flow_apply,
+        )
+        assert st_flow_apply == 201, f"Email flow CMS draft apply failed ({st_flow_apply}): {flow_apply_raw}"
+        flow_saved = json.loads(flow_apply_raw)
+        assert flow_saved["status_enforced"] == "draft" and flow_saved["sending_enabled"] is False
+        st_flow_read, _, flow_read_raw = http_request(f"{cms_url}/api/entries", opener=cms_opener)
+        assert st_flow_read == 200, f"CMS flow draft readback failed ({st_flow_read}): {flow_read_raw}"
+        flow_entries = json.loads(flow_read_raw).get("entries", [])
+        saved_flow = next((entry for entry in flow_entries if entry.get("slug") == flow_doc["flow_id"]), None)
+        assert saved_flow is not None and saved_flow["status"] == "draft", f"CMS flow draft was not stored as a draft: {flow_read_raw}"
+        assert "19.90" in saved_flow["body_html"] and "0.10" in saved_flow["body_html"] and "sender_postal_address" in saved_flow["body_html"], "CMS draft readback lost exact product prices or required footer placeholders"
+        st_flow_replay, _, _ = http_request(
+            f"{groxy_url}/api/groxy/email-flows/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body=flow_apply,
+        )
+        assert st_flow_replay == 409, f"Expected 409 for email-flow approval replay, got {st_flow_replay}"
+
         st_bad_count, _, _ = http_request(
             f"{groxy_url}/api/groxy/batch-create", method="POST",
             headers={"X-CSRF-Token": groxy_csrf},
@@ -1581,7 +1628,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         )
         assert st_replay == 409, f"Expected 409 batch token replay, got {st_replay}"
 
-        print("  [PASS] Gate 3B complete (live 4-layer GRAB + GrabLab CMS + Grex Builder + Groxy AI v1.2.0 verified 100%).")
+        print("  [PASS] Gate 3B complete (live 4-layer GRAB + GrabLab CMS + Grex Builder + Groxy AI v1.3.0 verified 100%).")
     finally:
         for p in reversed(procs):
             terminate_process(p)
@@ -1600,7 +1647,7 @@ def main():
     gate_2_node_tests()
     gate_3a_grab_mcp_stdio(grab_bin)
     gate_3b_live_cross_layer(grab_bin)
-    print("\nALL GROXY AI v1.2.0 VERIFICATION GATES PASSED 100%.")
+    print("\nALL GROXY AI v1.3.0 VERIFICATION GATES PASSED 100%.")
 
 
 if __name__ == "__main__":

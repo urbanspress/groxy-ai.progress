@@ -12,6 +12,7 @@ import * as pubSiteContext from "../public/groxy/site-context.js";
 import * as pubMcpClient from "../public/groxy/mcp-client.js";
 import * as pubDashboard from "../public/groxy/dashboard.js";
 import * as pubVisionClone from "../public/groxy/vision-clone.js";
+import * as pubEmailFlows from "../public/groxy/email-flows.js";
 
 import * as assetPlaybook from "../assets/playbook.js";
 import * as assetAuditor from "../assets/auditor.js";
@@ -21,11 +22,12 @@ import * as assetSiteContext from "../assets/site-context.js";
 import * as assetMcpClient from "../assets/mcp-client.js";
 import * as assetDashboard from "../assets/dashboard.js";
 import * as assetVisionClone from "../assets/vision-clone.js";
+import * as assetEmailFlows from "../assets/email-flows.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..");
 
-test("v1.2.0 runtime version metadata is synchronized across src/, views/, public/groxy/, and assets/", () => {
+test("v1.3.0 runtime version metadata is synchronized across src/, views/, public/groxy/, and assets/", () => {
   const runtimeModules = [
     ["public/groxy/playbook.js", pubPlaybook],
     ["public/groxy/auditor.js", pubAuditor],
@@ -35,6 +37,7 @@ test("v1.2.0 runtime version metadata is synchronized across src/, views/, publi
     ["public/groxy/mcp-client.js", pubMcpClient],
     ["public/groxy/dashboard.js", pubDashboard],
     ["public/groxy/vision-clone.js", pubVisionClone],
+    ["public/groxy/email-flows.js", pubEmailFlows],
     ["assets/playbook.js", assetPlaybook],
     ["assets/auditor.js", assetAuditor],
     ["assets/booster.js", assetBooster],
@@ -43,23 +46,24 @@ test("v1.2.0 runtime version metadata is synchronized across src/, views/, publi
     ["assets/mcp-client.js", assetMcpClient],
     ["assets/dashboard.js", assetDashboard],
     ["assets/vision-clone.js", assetVisionClone],
+    ["assets/email-flows.js", assetEmailFlows],
   ];
 
   for (const [label, mod] of runtimeModules) {
-    assert.equal(mod.GROXY_VERSION, "1.2.0", `${label} must export GROXY_VERSION === "1.2.0"`);
+    assert.equal(mod.GROXY_VERSION, "1.3.0", `${label} must export GROXY_VERSION === "1.3.0"`);
   }
 
   const groxyGrab = fs.readFileSync(path.join(REPO_ROOT, "src", "groxy.grab"), "utf8");
-  assert.ok(groxyGrab.includes('record {status: "ok", service: "groxy-ai", version: "1.2.0"}'));
-  assert.ok(groxyGrab.includes('record {status: "ready", service: "groxy-ai", version: "1.2.0"'));
+  assert.ok(groxyGrab.includes('record {status: "ok", service: "groxy-ai", version: "1.3.0"}'));
+  assert.ok(groxyGrab.includes('record {status: "ready", service: "groxy-ai", version: "1.3.0"'));
   assert.ok(groxyGrab.includes('set pb_out to copy_to_map using pb'));
-  assert.ok(groxyGrab.includes('set pb_out to collections.put using pb_out, "service_version", "1.2.0"'));
-  assert.ok(groxyGrab.includes('record {ok: yes, service: "groxy-ai", version: "1.2.0"'));
+  assert.ok(groxyGrab.includes('set pb_out to collections.put using pb_out, "service_version", "1.3.0"'));
+  assert.ok(groxyGrab.includes('record {ok: yes, service: "groxy-ai", version: "1.3.0"'));
 
   const viewHtml = fs.readFileSync(path.join(REPO_ROOT, "views", "dashboard.grab.html"), "utf8");
-  assert.ok(viewHtml.includes('<meta name="groxy-version" content="1.2.0">'));
-  assert.ok(viewHtml.includes('<span class="groxy-badge">v1.2.0</span>'));
-  assert.ok(viewHtml.includes("Groxy AI v1.2.0"));
+  assert.ok(viewHtml.includes('<meta name="groxy-version" content="1.3.0">'));
+  assert.ok(viewHtml.includes('<span class="groxy-badge">v1.3.0</span>'));
+  assert.ok(viewHtml.includes("Groxy AI v1.3.0"));
   assert.equal(/<div\b/i.test(viewHtml), false, "dashboard.grab.html must contain zero <div> tags");
 });
 

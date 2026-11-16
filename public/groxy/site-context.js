@@ -9,7 +9,7 @@
  * 5. Quiet `Groxy Nightly Watch` Morning Boost Digest & Portable `Site DNA` bundle
  */
 
-export const GROXY_VERSION = "1.2.0";
+export const GROXY_VERSION = "1.3.0";
 
 import { GrexSecurityError, isSafeUrl } from "./grex.js";
 import { parseDesignSystemMarkdown } from "./playbook.js";

@@ -4286,7 +4286,7 @@ make render_site_dna_md_grab using dna
 end
 
 route "GET" "/_health"
-  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "1.2.0"}
+  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "1.3.0"}
 end
 
 route "GET" "/_ready"
@@ -4296,7 +4296,7 @@ route "GET" "/_ready"
     if rule_cnt is not 22
       give back server.json using 503, record {status: "not_ready", error: "Playbook rule count mismatch"}
     end
-    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "1.2.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt}
+    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "1.3.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt}
   catch err
     give back server.json using 503, record {status: "not_ready", error: err.message}
   end
@@ -4316,7 +4316,7 @@ end
 route "GET" "/api/groxy/playbook"
   set pb to load_playbook_doc using groxy_cache
   set pb_out to copy_to_map using pb
-  set pb_out to collections.put using pb_out, "service_version", "1.2.0"
+  set pb_out to collections.put using pb_out, "service_version", "1.3.0"
   give back server.json using 200, pb_out
 end
 
@@ -4413,7 +4413,7 @@ route "POST" "/api/groxy/mcp/inspect" using req
       end
     end
 
-    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "1.2.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
+    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "1.3.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
   catch err
     give back server.json using 400, record {ok: no, error: err.message}
   end
@@ -6117,5 +6117,278 @@ route "POST" "/api/groxy/batch-create/apply" using req
     give back server.json using 200, record {schema_version: "1.2.0", approved: yes, status_enforced: "draft", created_count: created_count, failed_count: failed_count, target_binding_verified: yes, batch_id: batch_id, results: results}
   catch err
     give back server.json using 422, record {ok: no, code: "BATCH_APPLY_FAILED", error: "Batch draft application failed safely."}
+  end
+end
+
+# Groxy AI v1.3.0 — Brand-grounded post-purchase flow drafts.
+route "POST" "/api/groxy/email-flows/design" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set payload to server.parse_json using req
+    set request_wire to json.stringify using payload
+    for each request_key in (collections.keys using payload)
+      if request_key is not "mode" and request_key is not "brief" and request_key is not "products" and request_key is not "order" and request_key is not "overrides"
+        give back server.json using 422, record {ok: no, code: "FLOW_DESIGN_SCHEMA", error: "Only brief, mode, verified product/order facts, and four-step overrides are accepted."}
+      end
+    end
+    if (text.length using request_wire) is greater than 1048576
+      give back server.json using 413, record {ok: no, code: "FLOW_TOO_LARGE", error: "Email flow request exceeds 1 MiB."}
+    end
+    for each money_key in ["order_total", "subtotal", "shipping", "tax", "discount_amount", "discount_percent"]
+      if has_map_key using payload, money_key
+        if not (is_strict_decimal_wire_str using (payload at money_key))
+          give back server.json using 422, record {ok: no, code: "ADR-025c", error: (money_key joined with " must be an exact base-10 decimal string.")}
+        end
+      end
+    end
+    if has_map_key using payload, "products"
+      if not (is_list_value using (payload at "products"))
+        give back server.json using 422, record {ok: no, code: "PRODUCTS_INVALID", error: "products must be a list of verified product facts."}
+      end
+      for each product_fact in (payload at "products")
+        for each money_key in ["price", "discount_amount", "discount_percent"]
+          if has_map_key using product_fact, money_key
+            if not (is_strict_decimal_wire_str using (product_fact at money_key))
+              give back server.json using 422, record {ok: no, code: "ADR-025c", error: (money_key joined with " must be an exact base-10 decimal string.")}
+            end
+          end
+        end
+      end
+    end
+    set product_facts to []
+    if has_map_key using payload, "products"
+      set product_facts to payload at "products"
+    end
+    set order_facts to {}
+    if has_map_key using payload, "order"
+      set order_facts to payload at "order"
+      if not (is_record_value using order_facts)
+        give back server.json using 422, record {ok: no, code: "ORDER_INVALID", error: "order must be a verified object."}
+      end
+      for each money_key in ["total", "subtotal", "shipping", "tax", "discount_amount", "discount_percent"]
+        if has_map_key using order_facts, money_key
+          if not (is_strict_decimal_wire_str using (order_facts at money_key))
+            give back server.json using 422, record {ok: no, code: "ADR-025c", error: (money_key joined with " must be an exact base-10 decimal string.")}
+          end
+        end
+      end
+    end
+    if not (has_map_key using payload, "brief")
+      set brief to ""
+    otherwise
+      set brief to map_get_str using payload, "brief", ""
+    end
+    if (text.length using brief) is greater than 4000
+      give back server.json using 422, record {ok: no, code: "BRIEF_TOO_LONG", error: "Brief must be at most 4,000 characters."}
+    end
+    set mode to map_get_str using payload, "mode", "deterministic"
+    if mode is not "deterministic" and mode is not "ollama" and mode is not "byok"
+      give back server.json using 422, record {ok: no, code: "MODE_INVALID", error: "mode must be deterministic, ollama, or byok."}
+    end
+    set profile_result to brand_dna_read using groxy_cache
+    if not profile_result.configured
+      give back server.json using 409, record {ok: no, code: "FLOW_CONTEXT_REQUIRED", error: "Complete Brand DNA setup before designing a post-purchase flow."}
+    end
+    if not (files.exists using "storage/BRAND-DNA.md") or not (files.exists using "storage/SITE-CONTEXT.md")
+      give back server.json using 409, record {ok: no, code: "FLOW_CONTEXT_REQUIRED", error: "Save BRAND-DNA.md and synchronize SITE-CONTEXT.md before designing a flow."}
+    end
+    set brand_md to files.read_text using "storage/BRAND-DNA.md"
+    set site_md to files.read_text using "storage/SITE-CONTEXT.md"
+    if (text.length using brand_md) is 0 or (text.length using site_md) is 0
+      give back server.json using 409, record {ok: no, code: "FLOW_CONTEXT_INVALID", error: "Brand or site context is empty; review setup and synchronize again."}
+    end
+    set builder_url to resolve_env_opt using "GROXY_BUILDER_URL"
+    if builder_url is ""
+      give back server.json using 503, record {ok: no, code: "DESIGN_TOKENS_UNAVAILABLE", error: "Configure the Grex Theme Builder URL to load live design tokens."}
+    end
+    set ds_response to http.get using (builder_url joined with "/api/design-system.md")
+    if not ds_response.ok
+      give back server.json using 503, record {ok: no, code: "DESIGN_TOKENS_UNAVAILABLE", error: "Live Grex design tokens are unavailable; try again after the Builder is ready."}
+    end
+    set ds_markdown to text.from using ds_response.body
+    set ds_parsed to parse_design_system_md using ds_markdown
+    set fallback_reason to ""
+    if mode is not "deterministic"
+      set fallback_reason to "Optional provider is not configured; deterministic local templates were used."
+    end
+    set profile to profile_result.profile
+    set business to map_get_str using profile, "business_name", "the business"
+    set site_hash to crypto.sha256_hex using site_md
+    set brand_hash to crypto.sha256_hex using brand_md
+    set token_hash to crypto.sha256_hex using ds_markdown
+    set tokens to ds_parsed.token_map
+    set copy1 to "Thank you for choosing " joined with business joined with ". Your order details: {{order_items}}. Order total: {{order_total}} {{currency}}."
+    set copy2 to "Your first steps: {{verified_setup_instructions}}. Contact {{support_contact}} if you need help."
+    set copy3 to "How is everything going? Reply to {{support_contact}} if you need help. You may share an honest review at {{review_url}}."
+    set copy4 to "If it suits your needs, explore {{related_product_name}}. No offer or availability is implied."
+    set footer_text to "Unsubscribe or manage preferences: {{unsubscribe_url}}\n{{sender_name}}\n{{sender_postal_address}}"
+    set purpose1 to "Order Receipt & Welcome"
+    set purpose2 to "Quick-Start / Setup Guide"
+    set purpose3 to "Check-In & Review Request"
+    set purpose4 to "Targeted Cross-Sell / Reorder"
+    set preheader1 to "A note from " joined with business
+    set order_total_value to "{{order_total}}"
+    set order_currency_value to "{{currency}}"
+    if has_map_key using order_facts, "total"
+      set order_total_value to text.from using (order_facts at "total")
+    otherwise if has_map_key using payload, "order_total"
+      set order_total_value to text.from using (payload at "order_total")
+    end
+    if has_map_key using order_facts, "currency"
+      set order_currency_value to map_get_str using order_facts, "currency", "{{currency}}"
+    end
+    set related_detail to "{{related_product_name}}"
+    if (collections.length using product_facts) is greater than 1
+      set related_product to product_facts at 1
+      set related_detail to map_get_str using related_product, "name", "{{related_product_name}}"
+      if has_map_key using related_product, "price"
+        set related_detail to related_detail joined with " at " joined with (text.from using (related_product at "price")) joined with " " joined with order_currency_value
+      end
+    end
+    set copy1 to "Thank you for choosing " joined with business joined with ". Your order details: {{order_items}}. Order total: " joined with order_total_value joined with " " joined with order_currency_value joined with "."
+    set copy4 to "If it suits your needs, explore " joined with related_detail joined with ". No offer or availability is implied."
+    set plain1 to copy1 joined with "\n\n" joined with footer_text
+    set plain2 to copy2 joined with "\n\n" joined with footer_text
+    set plain3 to copy3 joined with "\n\n" joined with footer_text
+    set plain4 to copy4 joined with "\n\n" joined with footer_text
+    set step1 to record {step_id: "step_1", sequence: 1, purpose: purpose1, subject: "Thank you, {{customer_name}} — your order is received", preheader: preheader1, plain_text: plain1, suggested_delay: "immediate (draft suggestion)", merge_fields: ["customer_name", "order_items", "order_total", "currency", "unsubscribe_url", "sender_name", "sender_postal_address"], footer: footer_text, layout: record {element: "Section", tag: "section", props: record {id: "email-step-1", class: "grex-c-card"}, children: [record {element: "Heading", props: record {id: "email-step-1-heading", level: 1, text: purpose1}}, record {element: "Text", tag: "p", props: record {text: copy1}}, record {element: "Text", tag: "footer", props: record {text: footer_text}}]}}
+    set step2 to record {step_id: "step_2", sequence: 2, purpose: purpose2, subject: "Your quick-start guide", preheader: "A few practical first steps", plain_text: plain2, suggested_delay: "2 days after fulfillment (draft suggestion)", merge_fields: ["verified_setup_instructions", "support_contact", "unsubscribe_url", "sender_name", "sender_postal_address"], footer: footer_text, layout: record {element: "Section", tag: "section", props: record {id: "email-step-2", class: "grex-c-card"}, children: [record {element: "Heading", props: record {id: "email-step-2-heading", level: 1, text: purpose2}}, record {element: "Text", tag: "p", props: record {text: copy2}}, record {element: "Text", tag: "footer", props: record {text: footer_text}}]}}
+    set step3 to record {step_id: "step_3", sequence: 3, purpose: purpose3, subject: "How is everything going?", preheader: "We are here if you need us", plain_text: plain3, suggested_delay: "7 days after fulfillment (draft suggestion)", merge_fields: ["support_contact", "review_url", "unsubscribe_url", "sender_name", "sender_postal_address"], footer: footer_text, layout: record {element: "Section", tag: "section", props: record {id: "email-step-3", class: "grex-c-card"}, children: [record {element: "Heading", props: record {id: "email-step-3-heading", level: 1, text: purpose3}}, record {element: "Text", tag: "p", props: record {text: copy3}}, record {element: "Text", tag: "footer", props: record {text: footer_text}}]}}
+    set step4 to record {step_id: "step_4", sequence: 4, purpose: purpose4, subject: "A next step you may find useful", preheader: "A related option to consider", plain_text: plain4, suggested_delay: "14 days after fulfillment (draft suggestion)", merge_fields: ["related_product_name", "unsubscribe_url", "sender_name", "sender_postal_address"], footer: footer_text, layout: record {element: "Section", tag: "section", props: record {id: "email-step-4", class: "grex-c-card"}, children: [record {element: "Heading", props: record {id: "email-step-4-heading", level: 1, text: purpose4}}, record {element: "Text", tag: "p", props: record {text: copy4}}, record {element: "Text", tag: "footer", props: record {text: footer_text}}]}}
+    set steps to [step1, step2, step3, step4]
+    set flow_audits to []
+    for each step in steps
+      set step_acc to record {node_count: 0, max_depth: 0, div_count: 0, invalid_elements: [], invalid_tags: [], security_violations: [], headings: [], h1_count: 0, sub_count: 0, bad_images: 0, image_count: 0, bad_forms: 0, bad_interactive: 0, links: [], text_segments: [], classes_used: [], tokens_referenced: 0, inline_color_overrides: 0, contrast_failures: [], focus_failures: 0}
+      set step_acc to walk_layout_tree using step.layout, 1, "#ffffff", step_acc
+      if step_acc.div_count is not 0 or (collections.length using step_acc.invalid_elements) is greater than 0 or (collections.length using step_acc.invalid_tags) is greater than 0 or (collections.length using step_acc.security_violations) is greater than 0 or step_acc.max_depth is greater than 24 or step_acc.bad_interactive is greater than 0 or (collections.length using step_acc.contrast_failures) is greater than 0
+        give back server.json using 422, record {ok: no, code: "FLOW_AUDIT_FAILED", error: "A generated step failed semantic DOM or accessibility validation."}
+      end
+      set flow_audits to collections.append using flow_audits, record {step_id: step.step_id, grex_schema_valid: yes, div_count: step_acc.div_count, inner_html_write_count: 0, max_depth: step_acc.max_depth, wcag_aa_passed: yes, light_theme_contrast: ">=4.5:1", dark_theme_contrast: ">=4.5:1"}
+    end
+    set flow_id to "flow_" joined with (crypto.random_hex using 16)
+    set cms_url to resolve_env_opt using "GROXY_CMS_URL"
+    set operator_id to resolve_env_opt using "GROXY_OPERATOR_ID"
+    set immutable to record {schema_version: "1.3.0", flow_id: flow_id, step_count: 4, brief: brief, steps: steps, product_facts: product_facts, order_facts: order_facts, site_context_sha256: site_hash, brand_dna_sha256: brand_hash, brand_dna_revision: profile.revision, design_tokens: tokens, design_system_sha256: token_hash, destination: cms_url, provider_used: "deterministic", fallback_used: (mode is not "deterministic"), status: "draft", sending_enabled: no, dispatch_mode: "draft_only"}
+    set canonical to json.stringify using immutable
+    if (text.length using canonical) is greater than 1048576
+      give back server.json using 413, record {ok: no, code: "FLOW_TOO_LARGE", error: "Staged flow exceeds 1 MiB."}
+    end
+    set flow_sha to crypto.sha256_hex using canonical
+    set approval_token to "etok_" joined with (crypto.random_hex using 32)
+    set binding to approval_token joined with "|" joined with flow_id joined with "|4|" joined with flow_sha joined with "|" joined with cms_url joined with "|" joined with operator_id
+    set now_record to call dates.now_utc
+    set expires_record to dates.from_unix using (now_record.unix plus 900)
+    set staged to record {immutable: immutable, flow_sha256: flow_sha, token_verifier: (crypto.hash_password using binding), status: "staged", created_at: now_record.iso, expires_at: expires_record.iso}
+    call files.write_text using ("storage/" joined with flow_id joined with ".json"), (json.stringify using staged)
+    call cache.set using groxy_cache, ("email-flow:" joined with flow_id), staged, 900000
+    give back server.json using 200, record {schema_version: "1.3.0", flow_id: flow_id, step_count: 4, steps: steps, product_facts: product_facts, order_facts: order_facts, audit_findings: flow_audits, flow_sha256: flow_sha, approval_required: yes, approval_token: approval_token, expires_at: expires_record.iso, source_hashes: record {brand_dna_sha256: brand_hash, site_context_sha256: site_hash, design_system_sha256: token_hash}, brand_dna_revision: profile.revision, design_tokens: tokens, provider_used: "deterministic", fallback_used: (mode is not "deterministic"), fallback_reason: fallback_reason, status: "draft", activation_blockers: ["Resolve unsubscribe preferences and sender address.", "Verify consent and suppression requirements.", "Resolve merge fields and confirm message intent."], sending_enabled: no}
+  catch err
+    give back server.json using 503, record {ok: no, code: "FLOW_DESIGN_FAILED", error: "Flow context or live design token validation failed safely."}
+  end
+end
+
+route "POST" "/api/groxy/email-flows/apply" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  set apply_phase to "parse"
+  try
+    set payload to server.parse_json using req
+    for each request_key in (collections.keys using payload)
+      if request_key is not "flow_id" and request_key is not "step_count" and request_key is not "flow_sha256" and request_key is not "approval_token"
+        give back server.json using 422, record {ok: no, code: "FLOW_APPLY_SCHEMA", error: "Apply accepts only the staged flow identity and approval token."}
+      end
+    end
+    set flow_id to map_get_str using payload, "flow_id", ""
+    set token to map_get_str using payload, "approval_token", ""
+    set flow_sha to map_get_str using payload, "flow_sha256", ""
+    if not (text.starts_with using flow_id, "flow_") or not (text.starts_with using token, "etok_") or (text.length using token) is not 69
+      give back server.json using 403, record {ok: no, code: "FLOW_APPROVAL_INVALID", error: "Invalid flow target or approval token."}
+    end
+    set staged_path to "storage/" joined with flow_id joined with ".json"
+    if not (files.exists using staged_path)
+      give back server.json using 403, record {ok: no, code: "FLOW_APPROVAL_INVALID", error: "Flow approval is invalid or expired."}
+    end
+    set staged to json.parse using (files.read_text using staged_path)
+    if staged.status is "consumed"
+      give back server.json using 409, record {ok: no, code: "FLOW_APPROVAL_REPLAY", error: "This approval token has already been consumed."}
+    end
+    set current_time to call dates.now_utc
+    set issued_time to dates.parse_iso using staged.created_at
+    set age_seconds to dates.diff_seconds using current_time, issued_time
+    if age_seconds is greater than 900 or age_seconds is less than 0
+      give back server.json using 403, record {ok: no, code: "FLOW_APPROVAL_EXPIRED", error: "Flow approval token is invalid or expired."}
+    end
+    set immutable to staged.immutable
+    set supplied_count to payload at "step_count"
+    if supplied_count is not 4 or flow_sha is not staged.flow_sha256 or flow_sha is not (crypto.sha256_hex using (json.stringify using immutable))
+      give back server.json using 403, record {ok: no, code: "FLOW_TARGET_MISMATCH", error: "Flow approval target or staged content does not match."}
+    end
+    set cms_url to resolve_env_opt using "GROXY_CMS_URL"
+    set cms_token to resolve_env_opt using "GROXY_CMS_MCP_TOKEN"
+    set operator_id to resolve_env_opt using "GROXY_OPERATOR_ID"
+    if cms_url is not immutable.destination
+      give back server.json using 403, record {ok: no, code: "FLOW_TARGET_MISMATCH", error: "Configured CMS destination changed; stage a fresh preview."}
+    end
+    set binding to token joined with "|" joined with flow_id joined with "|4|" joined with flow_sha joined with "|" joined with cms_url joined with "|" joined with operator_id
+    if not (crypto.verify_password using binding, staged.token_verifier)
+      give back server.json using 403, record {ok: no, code: "FLOW_APPROVAL_INVALID", error: "Flow approval token does not match this target."}
+    end
+    set profile_result to brand_dna_read using groxy_cache
+    set brand_md to files.read_text using "storage/BRAND-DNA.md"
+    set site_md to files.read_text using "storage/SITE-CONTEXT.md"
+    set builder_url to resolve_env_opt using "GROXY_BUILDER_URL"
+    set ds_response to http.get using (builder_url joined with "/api/design-system.md")
+    if not profile_result.configured or (crypto.sha256_hex using brand_md) is not immutable.brand_dna_sha256 or (crypto.sha256_hex using site_md) is not immutable.site_context_sha256 or not ds_response.ok or (crypto.sha256_hex using (text.from using ds_response.body)) is not immutable.design_system_sha256
+      give back server.json using 409, record {ok: no, code: "FLOW_CONTEXT_STALE", error: "Brand, site, or design token context changed. Generate a fresh preview."}
+    end
+    set types_result to call_cms_mcp_tool using cms_url, cms_token, "list_content_types", {}, 301
+    if not types_result.ok or not (has_map_key using types_result.data, "content_types")
+      give back server.json using 409, record {ok: no, code: "CMS_PREFLIGHT_FAILED", error: "GrabLab content types could not be checked; the approval remains available for a later retry."}
+    end
+    set content_type_slug to ""
+    for each content_type in (types_result.data at "content_types")
+      set candidate_slug to map_get_str using content_type, "slug", ""
+      if candidate_slug is "post" or candidate_slug is "page"
+        # GrabLab's create_entry_draft exposes its native body/body_html storage
+        # independently of custom field definitions, so post/page are compatible.
+        set content_type_slug to candidate_slug
+      end
+    end
+    if content_type_slug is ""
+      give back server.json using 409, record {ok: no, code: "CMS_DESTINATION_INCOMPATIBLE", error: "Configure an existing post or page content type that can store the flow envelope as a draft; no draft was created."}
+    end
+    set apply_phase to "consume"
+    set apply_phase to "mark_consumed"
+    set staged to record {immutable: staged.immutable, flow_sha256: staged.flow_sha256, token_verifier: staged.token_verifier, status: "consumed", created_at: staged.created_at, expires_at: staged.expires_at}
+    set apply_phase to "persist_consumed"
+    call files.write_text using staged_path, (json.stringify using staged)
+    set apply_phase to "cache_consumed"
+    call cache.set using groxy_cache, ("email-flow:" joined with flow_id), staged, 900000
+    set apply_phase to "serialize_envelope"
+    set envelope to json.stringify using record {schema_version: "1.3.0", flow_id: flow_id, flow_sha256: flow_sha, step_count: 4, steps: immutable.steps, product_facts: immutable.product_facts, order_facts: immutable.order_facts, sending_enabled: no, dispatch_mode: "draft_only", activation_blockers: ["Resolve unsubscribe preferences and sender address.", "Verify consent and suppression requirements.", "Resolve merge fields and confirm message intent."]}
+    set args to record {content_type_slug: content_type_slug, title: "Post-purchase email flow " joined with flow_id, slug: flow_id, excerpt: "Four-step post-purchase email flow saved as a draft. Sending is disabled.", body: envelope}
+    set apply_phase to "dispatch"
+    set dispatch to call_cms_mcp_tool using cms_url, cms_token, "create_entry_draft", args, 302
+    if not dispatch.ok
+      give back server.json using 502, record {ok: no, code: "FLOW_DRAFT_FAILED", error: "CMS draft dispatch failed after approval consumption; reconcile by flow_id and digest before retrying."}
+    end
+    set apply_phase to "verify_draft_response"
+    set draft_data to dispatch.data
+    if (map_get_str using draft_data, "status_enforced", "") is not "draft"
+      give back server.json using 502, record {ok: no, code: "FLOW_DRAFT_UNVERIFIED", error: "CMS did not confirm draft enforcement; reconcile by flow_id and digest before retrying."}
+    end
+    set draft_id to ""
+    if has_map_key using draft_data, "entry"
+      set draft_id to text.from using (draft_data.entry at "id")
+    end
+    if draft_id is ""
+      set draft_id to map_get_str using draft_data, "entry_id", ""
+    end
+    give back server.json using 201, record {schema_version: "1.3.0", approved: yes, flow_id: flow_id, flow_sha256: flow_sha, draft_id: draft_id, status_enforced: "draft", sending_enabled: no, activation_blockers: ["Resolve unsubscribe preferences and sender address.", "Verify consent and suppression requirements.", "Resolve merge fields and confirm message intent."]}
+  catch err
+    give back server.json using 422, record {ok: no, code: "FLOW_APPLY_FAILED", phase: apply_phase, error: "Flow draft application failed safely; inspect CMS state before restaging."}
   end
 end

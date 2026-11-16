@@ -94,13 +94,13 @@ Scope:
 
 ## `v1.3.0` — Autonomous Post-Purchase Email Flow Designer & Copywriter
 
-**Status:** Approved target; specification in review — Backwards-Compatible Minor Feature ([`specifications/GROXY-AI-SPEC-130.md`](../specifications/GROXY-AI-SPEC-130.md)). Target approval does not authorize implementation; explicit specification approval is pending.
+**Status:** Approved; implementation in progress — Backwards-Compatible Minor Feature ([`specifications/GROXY-AI-SPEC-130.md`](../specifications/GROXY-AI-SPEC-130.md)). The project owner approved SPEC-130 as written on 2026-11-16.
 
 Scope:
 - **Brand-grounded four-step designer (`POST /api/groxy/email-flows/design`):** Reads `storage/BRAND-DNA.md`, `storage/SITE-CONTEXT.md`, and live `GET /api/design-system.md` `--grex-*` tokens for Order Receipt & Welcome, Quick-Start / Setup Guide, Check-In & Review Request, and Targeted Cross-Sell / Reorder. Deterministic zero-fee templates, optional local Ollama with offline fallback, and `GRAB-E402`-allowlisted BYOK enrichment.
 - **Exact values and safe templates:** Preserve `ADR-025c` `GrabDecimal` prices, discounts, and order totals as strings (`422` for JS floats); zero wrapper `<div>`s / `innerHTML` writes, Light/Dark WCAG AA `>= 4.5:1`, automatic unsubscribe placeholders and physical-address footers.
 - **Preview and draft-only apply (`POST /api/groxy/email-flows/apply`):** Require `X-CSRF-Token` plus single-use `etok_<hex>` bound to `{ flow_id, step_count, flow_sha256 }`; `403` invalid/mismatch and `409` replay. Save the flow and templates through `create_entry_draft`, never send, activate triggers, or overwrite human copy. Future `email_outbox` / Builder `mode: "email"` integration requires separately available and approved upstream contracts.
-- **Acceptance:** Pure Grex JS Studio, numeric/footer/DOM/accessibility/token tests and live cross-layer Gate 3B. Keep `v1.0.0`, `v1.1.0`, and `v1.2.0` frozen; no implementation before explicit approval of SPEC-130.
+- **Acceptance:** Pure Grex JS Studio, numeric/footer/DOM/accessibility/token tests and live cross-layer Gate 3B. Keep `v1.0.0`, `v1.1.0`, and `v1.2.0` frozen; implementation started after explicit SPEC-130 approval.
 
 ---
 

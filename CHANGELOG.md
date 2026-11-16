@@ -3,6 +3,12 @@
 All notable changes to **Groxy AI** (`urbanspress/groxy-ai`) are documented in this file.
 Versioning follows `MAJOR.MINOR.PATCH` SemVer rules per [`AGENTS.md`](AGENTS.md).
 
+## [v1.3.0] - 2026-11-16
+
+- Added the deterministic brand-grounded four-step post-purchase email flow generator and semantic preview studio.
+- Added exact decimal validation, safe footer placeholders, CSRF protection, staged target-bound approval, and draft-only CMS persistence.
+- Status: implementation in progress. GRAB check/format, 58 Node tests, and expanded live integration pass; recursive canonical digesting, configured email-flow provider modes, and atomic concurrent token consumption remain before completion.
+
 ## [v1.2.0] - 2026-11-15
 
 ### Added
