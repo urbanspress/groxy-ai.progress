@@ -1,8 +1,8 @@
 # HANDOFF.md — Groxy AI
 
-- **Current Owner:** Google Antigravity (`Google Hydrogen (High)` — `v1.0.0` Production Release Complete; ready for **Step 5 (`Gashboard + Grabtaculous + grabman`)** on **`Google Hydrogen (Extra)`**)
-- **Current Milestone State:** **Groxy AI `v1.0.0` Complete** (`specifications/GROXY-AI-SPEC-005.md` and `docs/ROADMAP.md` marked `Approved & Frozen — Complete`; synchronized `v1.0.0` releases published to `origin` and `stable`)
-- **Next Milestone:** **Step 5 of the Post-1.0 GRAB Ecosystem (`Gashboard + Grabtaculous + grabman`)** — Desktop VPS Control Panel, 1-Click App Marketplace & Portable `Site DNA` / `grabman.lock` Orchestration (recommended model: **`Google Hydrogen (Extra)`**)
+- **Current Owner:** Google Antigravity / OpenAI Codex (`v1.0.0` Production Release Complete; **Milestone `v1.1.0 — Screenshot-to-Grex Visual Replica`** marked `Approved target; specification in review` in [`specifications/GROXY-AI-SPEC-110.md`](specifications/GROXY-AI-SPEC-110.md))
+- **Current Milestone State:** **Groxy AI `v1.0.0` Complete** (frozen on `stable`); **Milestone `v1.1.0` (`specifications/GROXY-AI-SPEC-110.md`)** drafted and ready for owner approval & implementation on **`Google Hydrogen (High)`** or **`OpenAI Codex`**
+- **Next Milestone:** **Groxy AI `v1.1.0` — Screenshot-to-Grex Visual Replica (`POST /api/groxy/vision-clone` & `POST /api/groxy/vision-clone/apply`)** (`Status: Approved target; specification in review` — [`specifications/GROXY-AI-SPEC-110.md`](specifications/GROXY-AI-SPEC-110.md))
 
 ---
 
@@ -76,10 +76,11 @@ Completed multi-repository security, DOM, accessibility, precision, container, a
 
 ## Planned Backwards-Compatible Minor Track (`v1.1.0` – `v1.8.0`)
 
-- **Milestone `v1.1.0` — Screenshot-to-Grex Visual Replica (`POST /api/groxy/vision-clone`):** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified; specification & implementation pending owner scheduling after Step 5):
-  - Accepts user-uploaded reference screenshots (`PNG`/`JPEG`/`WebP` verified via magic bytes + max size caps).
-  - Extracts visual hierarchy, spacing rhythm, typography scale, and color tokens via a configured vision model (local Ollama `llama3.2-vision`/`qwen2.5-vl` or API key).
-  - Compiles a clean `Grex JS v1.0.0` layout (`divCount === 0`, WCAG AA `>= 4.5:1` contrast auto-repaired, `ADR-025c` exact decimals, `GRAB-DESIGN-SYSTEM.md` tokens) gated behind `X-CSRF-Token` + single-use `approval_token` (`GROXY-SAFE-001`) before dispatching to `POST /api/mcp/layout` (`actor: "groxy-ai"`).
+- **Milestone `v1.1.0` — Screenshot-to-Grex Visual Replica (`POST /api/groxy/vision-clone`):** `Status: Approved target; specification in review` ([`specifications/GROXY-AI-SPEC-110.md`](specifications/GROXY-AI-SPEC-110.md); zero `v1.0.0` implementation code modified during spec phase):
+  - Magic-byte-verified `PNG`/`JPEG`/`WebP` reference screenshot upload with bounded max payload limits (`5 MiB` cap, `GRAB-E401` confinement).
+  - Structural hierarchy, spacing rhythm, typography scale, and palette extraction via user-configured vision model (local Ollama `llama3.2-vision`/`qwen2.5-vl` on `127.0.0.1:11434` or optional BYOK API key governed by `GRAB-E402`).
+  - Compiles strictly into `Grex JS v1.0.0`'s 20 semantic components (`divCount === 0`, `innerHTMLWriteCount === 0`, WCAG AA `>= 4.5:1` Light/Dark contrast auto-repaired, `ADR-025c` exact base-10 wire strings, `GRAB-DESIGN-SYSTEM.md` `--grex-*` tokens).
+  - Human-in-the-loop preview canvas + 4-pillar `A`/`A+` scorecard gated behind `X-CSRF-Token` + single-use target-bound `approval_token` (`GROXY-SAFE-001`) before dispatching to `POST /api/mcp/layout` (`actor: "groxy-ai"`, 1-click `Ctrl+Z` undo parity).
 - **Milestone `v1.2.0` — 1-Time Brand DNA & Voice Setup Wizard (`BRAND-DNA.md`) & Batch Content/Product Campaign Engine (`POST /api/groxy/batch-create`):** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified):
   - 8–10 question onboarding wizard saving `storage/BRAND-DNA.md` + `Site DNA`, powering 1-sentence batch creation of up to 40+ SEO/WCAG-audited blog posts or products with exact `ADR-025c` `GrabDecimal` prices, gated behind `create_entry_draft` (`status: "draft"`) and single-use `approval_token` (`GROXY-SAFE-001`).
 - **Milestone `v1.3.0` — Autonomous Post-Purchase Email Flow Designer & Copywriter:** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified):
@@ -106,6 +107,7 @@ Completed multi-repository security, DOM, accessibility, precision, container, a
 
 ---
 
-## Next Step Guidance (Step 5 — `Gashboard + Grabtaculous + grabman`)
-1. **Step 4 (`groxy-ai v1.0.0`) Is Complete:** All `v1.x` contracts, `--read-only` deployment manifests, walkthrough PDF, release bundles, and synchronized `origin`/`stable` GitHub Releases are shipped and verified `100%`.
-2. **Recommended Model for Step 5:** Switch to **`Google Hydrogen (Extra)`** to begin **Step 5 (`Gashboard + Grabtaculous + grabman`)** — multi-server orchestration, desktop VPS control panel, 1-click app marketplace, and `Site DNA` / `grabman.lock` deployment automation.
+## Next Step Guidance (`Groxy AI v1.1.0` Implementation)
+1. **All 6 Core Ecosystem Layers (`v1.0.0+`) Are Frozen & Complete:** `GRAB v1.1.0`, `grex-js v1.0.0`, `grablab-cms v1.0.1`, `grex-builder v1.0.0`, `groxy-ai v1.0.0`, Step 5 (`grabman`, `grabtaculous`, `gashboard v1.0.0`), and Step 6 (`groxy-desk v1.0.0`) are shipped and verified `100%`.
+2. **Next Active Task (`Groxy AI v1.1.0`):** Upon project-owner approval of [`specifications/GROXY-AI-SPEC-110.md`](specifications/GROXY-AI-SPEC-110.md), implement `public/groxy/vision-clone.js`, `POST /api/groxy/vision-clone`, `POST /api/groxy/vision-clone/apply`, the zero-`<div>` Screenshot-to-Grex Studio panel in `views/dashboard.grab.html`, `tests/unit_vision_clone.test.js`, and live E2E verification in `tests/integration_e2e.py`.
+3. **Recommended Model for `v1.1.0` Implementation:** Switch to **`Google Hydrogen (High)`** (or hand off to **`OpenAI Codex`**) to implement `GROXY-AI-SPEC-110.md`.
