@@ -74,7 +74,7 @@ Completed multi-repository security, DOM, accessibility, precision, container, a
 
 ---
 
-## Planned Backwards-Compatible Minor Track (`v1.1.0` – `v1.7.0`)
+## Planned Backwards-Compatible Minor Track (`v1.1.0` – `v1.8.0`)
 
 - **Milestone `v1.1.0` — Screenshot-to-Grex Visual Replica (`POST /api/groxy/vision-clone`):** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified; specification & implementation pending owner scheduling after Step 5):
   - Accepts user-uploaded reference screenshots (`PNG`/`JPEG`/`WebP` verified via magic bytes + max size caps).
@@ -100,6 +100,9 @@ Completed multi-repository security, DOM, accessibility, precision, container, a
   - **Genre-Specific Storytelling Playbooks (`playbook/genres/*.v1.json`):** Covers *Thriller/Mystery*, *Sci-Fi/Fantasy*, *Romance*, *Horror*, *Literary Fiction*, *Business/How-To*, *Memoir/Biography*, and *Self-Help*, enforcing proven pacing beats (*Three-Act*, *Hero's Journey*, *Save the Cat*, *Hook-Problem-Framework-Action*).
   - **Interactive Story, Genre & Audience Quiz (`POST /api/groxy/author/brief`) & Hemingway Readability Auditor:** Saves a persistent `BOOK-BIBLE.md` continuity file (`POV`, tone, character/world rules) plus Hemingway-grade readability, passive-voice, pacing, and continuity auditing (`GROXY-SAFE-001` approval-gated draft creation).
   - **Autonomous Book SEO & XSS-Safe `schema.org/Book` JSON-LD Engine:** Deterministic book SEO & XSS-safe `schema.org/Book` / `Chapter` / `Person` / `Offer` (`ADR-025c` `GrabDecimal` price & `ISBN`) JSON-LD generator.
+- **Milestone `v1.8.0` — Baked-In Offline Knowledge Vault, Allowlisted Real-Time Web Research & Browser Co-Pilot:** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified):
+  - **Baked-In Static Reference Vault (`playbook/knowledge/*.v1.json`):** Zero-network reference datasets (Schema.org v30.1 vocabularies, WCAG AA contrast rules, country/postal formats, and offline AnswerThePublic-style question/keyword intent frameworks).
+  - **Opt-In Allowlisted Real-Time Web Search (`POST /api/groxy/research/search`, `groxy_web_research_enabled`):** Enforces `GRAB-E402` outbound domain allowlisting (blocking private/loopback/metadata IPs `127.0.0.1`/`169.254.169.254`) to query user-configured self-hosted **SearXNG**, DuckDuckGo Instant Answers, Wikipedia/Wikidata, or user BYOK search APIs—returning real-time answers with source URL citations.
 
 ---
 
