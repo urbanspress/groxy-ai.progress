@@ -1,7 +1,7 @@
 # GROXY-AI-SPEC-150 — Bespoke Store Schema Quiz & Opt-In "Talk to Groxy" Database & Store Consultant
 
 - **Version:** Groxy AI `v1.5.0`
-- **Status:** Approved target; specification in review
+- **Status:** Approved; implementation in progress
 - **Draft Date:** 2026-11-16
 - **SemVer:** MINOR — backwards-compatible feature release (`ADR-027c`).
 - **Frozen baselines:** Groxy AI `v1.0.0` through `v1.4.0`; GRAB `v1.1.0`; Grex JS `v1.0.0`; GrabLab CMS `v1.0.1`; Grex Theme Builder `v1.0.0`; existing Groxy Desk/Gashboard contracts.
@@ -98,7 +98,7 @@ Atomically compare-and-transition `staged` to `applying` and consume approval du
 
 Capture an automatic **Pre-Mutation SHA-256 Snapshot** named `snap_db_*` before the first operation. Include consistent schema, affected data/constraints, migration ledger and recovery metadata; use a full consistent database backup when destructive DDL requires it. Verify snapshot durability, digest and target binding before execution. Missing storage, insufficient space, corruption, or snapshot failure means zero mutations. A fleet Pre-Deploy Snapshot may supplement but cannot replace this database snapshot. Display snapshot ID, digest, scope and restore limitations in receipts.
 
-Dispatch through the authorized existing Groxy Desk/Gashboard executor over host-key-pinned loopback SSH tunnels, or the supported local GrabLab database maintenance path. Groxy Desk's existing `/api/db/mutate/plan` and `/api/db/mutate/apply` remain independently approval-gated; bind any downstream plan/digest into the reviewed manifest and keep downstream tokens server-side. Never substitute a Groxy token for a Desk token, create a changed downstream plan after approval, or bypass an upstream confirmation. If bridging cannot preserve the same reviewed bytes and approval semantics, block for capability review. Local CMS content creation still uses `create_entry_draft`; the CMS draft API is not a DDL endpoint. Any separately approved layout update still uses `POST /api/mcp/layout`, `actor: "groxy-ai"`, and reversible command-stack staging.
+Dispatch through the authorized existing Groxy Desk/Gashboard executor over host-key-pinned loopback SSH tunnels, or the supported local GrabLab database maintenance path. Groxy Desk's existing `/api/db/mutate/plan` and `/api/db/mutate/apply` (and Gashboard's `/api/db/mutate/plan` and `/api/db/mutate/execute`, plus `/api/db/snapshots/restore` on both) remain independently approval-gated; bind any downstream plan/digest into the reviewed manifest and keep downstream tokens server-side. Never substitute a Groxy token for a Desk token, create a changed downstream plan after approval, or bypass an upstream confirmation. If bridging cannot preserve the same reviewed bytes and approval semantics, block for capability review. Local CMS content creation still uses `create_entry_draft`; the CMS draft API is not a DDL endpoint. Any separately approved layout update still uses `POST /api/mcp/layout`, `actor: "groxy-ai"`, and reversible command-stack staging.
 
 Execute explicit `ADR-024f` migrations through the existing GRAB runner with structured argv, never shell interpolation or runtime auto-migration. Use a bounded database transaction where supported. For nontransactional DDL require a verified maintenance/backup/restore execution path; otherwise block before dispatch. Journal intent and receipts durably, and verify final schema, exact affected values/counts and health/readiness before `201` with `status: "applied"`, both hashes, snapshot receipt and restoration guidance. Successful concurrent attempts yield exactly one `201` and all other valid contenders `409` with one snapshot/mutation execution.
 
@@ -112,7 +112,7 @@ Limit request and staged payload to 1 MiB each, question to 4,000 characters, qu
 
 ## 9. Acceptance & Verification Gates — Required After Owner Approval
 
-This is a specification-only checkpoint. No v1.5.0 implementation or acceptance pass is claimed. Every gate below must pass 100% before milestone completion:
+These acceptance gates apply to the approved v1.5.0 implementation. No gate is claimed passed at this checkpoint. Every gate below must pass 100% before milestone completion:
 
 1. **Static and canonical format:** `grab check` on all `.grab` and `.grab.html` files and every generated migration fixture; compare `grab format <file>` stdout byte-for-byte with each `.grab` file non-destructively. No unsupported `--check`. Validate minimal physical, ebook/download, subscription, mixed, variants/inventory, currency/tax, bundles/tiers, facility and white-label plans; prove omitted features generate no unused tables and no startup/reload migrations occur.
 2. **Consultation and dependency risk:** Default-disabled `403`, authorized opt-in, read-only credentials and zero DB writes on quiz/consult. Verify actual schema/row counts, exact versus estimates, `SITE-CONTEXT.md`/`SCHEMA-CONTEXT.md`, live `ForEach` selection/filter/sort/join dependencies, redirects and orders/inventory. Test every risk tier, drop/rename breakage, historical order loss, missing/stale/incomplete evidence, revocation, high-risk acknowledgement and blocked unresolved dependencies.
@@ -126,6 +126,6 @@ This is a specification-only checkpoint. No v1.5.0 implementation or acceptance 
 
 ## 10. Owner Review & Next Phase
 
-**Awaiting explicit project-owner approval of SPEC-150 as written or with requested revisions.** Approval must cover the quiz, opt-in read-only inspection, deterministic risk classification, exact numeric schema rules, immutable approval binding, pre-mutation snapshots, destination capability gates and recovery limits before implementation starts.
+**Approved by the project owner as written on 2026-11-16. Implementation is in progress.** Approval covers the quiz, opt-in read-only inspection, deterministic risk classification, exact numeric schema rules, immutable approval binding, pre-mutation snapshots, destination capability gates and recovery limits.
 
-Use Google Hydrogen (Medium) for specification revisions. Switch to Orchestrator (Argon) before cross-layer implementation/audit because database execution, pinned tunnels, consistent snapshots and concurrent approval consumption span frozen upstream contracts. Discovery of a missing mandatory upstream capability requires specification review and separate authorization, not a silent contract change.
+Use Orchestrator (Argon) for the next implementation and audit phase because database execution, pinned tunnels, consistent snapshots and concurrent approval consumption span frozen upstream contracts. Discovery of a missing mandatory upstream capability requires specification review and separate authorization, not a silent contract change.

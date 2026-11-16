@@ -121,7 +121,7 @@ Scope:
 
 ## `v1.5.0` — Bespoke Store Schema Quiz & Opt-In "Talk to Groxy" Database & Store Consultant
 
-**Status:** Approved target; specification in review — Backwards-Compatible Minor Feature ([SPEC-150](../specifications/GROXY-AI-SPEC-150.md)). Target approval does not authorize implementation.
+**Status:** Approved; implementation in progress — Backwards-Compatible Minor Feature ([SPEC-150](../specifications/GROXY-AI-SPEC-150.md)).
 
 Scope:
 - **Store Architecture Quiz (`POST /api/groxy/db/architect-quiz`):** Generates lean, zero-bloat `.grab` database migrations (`ADR-024f` + `ADR-025c`) tailored to the operator's exact business model and dispatches approved plans to **Groxy Desk** / **Gashboard** SSH tunnels for human-approved provisioning (`GROXY-SAFE-001`).
