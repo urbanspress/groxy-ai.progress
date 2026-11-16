@@ -1,6 +1,6 @@
 # GROXY-AI-SPEC-110: Groxy AI `v1.1.0` Screenshot-to-Grex Visual Replica (`POST /api/groxy/vision-clone`)
 
-- **Status:** Approved target; specification in review
+- **Status:** Approved & Frozen — Complete
 - **Milestone:** `v1.1.0` — Screenshot-to-Grex Visual Replica (`POST /api/groxy/vision-clone` & `POST /api/groxy/vision-clone/apply`)
 - **SemVer Tier (`ADR-027c`):** `MINOR (v1.1.0 — Backwards-Compatible Feature Release)` — 100% drop-in compatible with all 22 frozen `v1.0.0` routes and schemas (`GROXY-AI-SPEC-005.md`).
 - **Foundational Upstream Baselines (Frozen `v1.x` Contracts):**

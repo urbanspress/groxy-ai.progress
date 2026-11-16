@@ -10,7 +10,7 @@ Runs 3 non-negotiable gates:
             - Core GRAB v1.1.0 `grab mcp` stdio JSON-RPC 2.0 server
             - GrabLab CMS v1.0.1 (isolated temp copy)
             - Grex Theme Builder v1.0.0 (isolated temp copy)
-            - Groxy AI v1.0.0 (src/groxy.grab)
+            - Groxy AI v1.1.0 (src/groxy.grab)
 """
 
 import http.cookiejar
@@ -179,6 +179,7 @@ def gate_1_static_and_format(grab_bin: str):
         REPO_ROOT / "public" / "groxy" / "site-context.js",
         REPO_ROOT / "public" / "groxy" / "mcp-client.js",
         REPO_ROOT / "public" / "groxy" / "dashboard.js",
+        REPO_ROOT / "public" / "groxy" / "vision-clone.js",
     ]:
         src = js_file.read_text(encoding="utf-8")
         code_only = re.sub(r"/\*[\s\S]*?\*/|//.*", "", src)
@@ -216,6 +217,7 @@ def gate_2_node_tests():
         "tests/unit_enrichment.test.js",
         "tests/unit_mcp_client.test.js",
         "tests/unit_ui_dom.test.js",
+        "tests/unit_vision_clone.test.js",
         "tests/unit_v100_production_audit.test.js",
     ])
     print("  [PASS] Gate 2 complete (all unit & DOM tests passed).")
@@ -295,6 +297,8 @@ def gate_3a_grab_mcp_stdio(grab_bin: str):
         "/api/groxy/style-packs",
         "/api/groxy/generate-layout",
         "/api/groxy/generate-layout/apply",
+        "/api/groxy/vision-clone",
+        "/api/groxy/vision-clone/apply",
         "/api/groxy/site-context/sync",
         "/api/groxy/site-context.md",
         "/api/groxy/links/analyze",
@@ -316,7 +320,7 @@ def gate_3a_grab_mcp_stdio(grab_bin: str):
 
 
 def gate_3b_live_cross_layer(grab_bin: str):
-    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v1.0.0...")
+    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v1.1.0...")
     cms_src = Path(os.environ.get("GRABLAB_CMS_DIR", r"C:\Development\grablab-cms"))
     builder_src = Path(os.environ.get("GREX_BUILDER_DIR", r"C:\Development\grex-builder"))
     if not (cms_src / "src" / "app.grab").exists():
@@ -477,7 +481,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         st, _, html = http_request(f"{groxy_url}/groxy")
         assert st == 200
         assert re.search(r"<div\b", html, re.IGNORECASE) is None, "/groxy HTML must have zero <div> elements"
-        assert '<meta name="groxy-version" content="1.0.0">' in html, "Missing groxy-version 1.0.0 meta tag"
+        assert '<meta name="groxy-version" content="1.1.0">' in html, "Missing groxy-version 1.1.0 meta tag"
         m = re.search(r'<meta\s+name="groxy-csrf"\s+content="([^"]+)"', html)
         assert m, "Missing groxy-csrf meta tag in /groxy HTML"
         groxy_csrf = m.group(1)
@@ -485,6 +489,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         for asset_path in [
             "/static/groxy/groxy.css",
             "/static/groxy/dashboard.js",
+            "/static/groxy/vision-clone.js",
             "/static/groxy/booster.js",
             "/static/groxy/generator.js",
             "/static/groxy/grex.js",
@@ -497,7 +502,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         pb = json.loads(pb_body)
         assert len(pb.get("rules", [])) == 22
         assert pb.get("playbook_version") == "1.0.0"
-        assert pb.get("service_version") == "1.0.0"
+        assert pb.get("service_version") == "1.1.0"
 
         # Verify CSRF enforcement on all POST routes
         for post_path in [
@@ -508,6 +513,8 @@ def gate_3b_live_cross_layer(grab_bin: str):
             "/api/groxy/boost/approve",
             "/api/groxy/generate-layout",
             "/api/groxy/generate-layout/apply",
+            "/api/groxy/vision-clone",
+            "/api/groxy/vision-clone/apply",
         ]:
             st_no_csrf, _, _ = http_request(f"{groxy_url}{post_path}", method="POST", json_body={"entry": {}})
             assert st_no_csrf == 403, f"Expected 403 without CSRF on {post_path}, got {st_no_csrf}"
@@ -548,12 +555,74 @@ def gate_3b_live_cross_layer(grab_bin: str):
         assert st_insp == 200, f"/api/groxy/mcp/inspect failed ({st_insp}): {insp_body}"
         insp = json.loads(insp_body)
         assert insp["ok"] is True
-        assert insp["version"] == "1.0.0"
+        assert insp["version"] == "1.1.0"
         assert insp["grablab_cms"]["connected"] is True
         assert insp["grablab_cms"]["elements_count"] == 20
         assert "create_entry_draft" in insp["grablab_cms"]["tools"]
         assert insp["grex_builder"]["connected"] is True
         assert insp["grex_builder"]["tokens_loaded"] > 0
+
+        # Screenshot-to-Grex v1.1.0: verify bounds, contrast repair, target binding, and replay protection.
+        png = bytes([
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+            0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52,
+            0, 0, 5, 160, 0, 0, 3, 132,
+        ])
+        vision_base = {
+            "screenshot_hex": png.hex(),
+            "mime_type": "image/png",
+            "slot": "main",
+            "blueprint_hint": "full_landing_page",
+            "style_pack_hint": "obsidian-tech",
+            "focus_keyword": "visual theme studio",
+            "topic_title": "Visual Theme Studio for High Velocity Teams",
+            "vision_provider": "deterministic",
+            "extracted_palette": {
+                "light": {"bg": "#ffffff", "surface": "#f8fafc", "text": "#94a3b8", "muted": "#64748b", "primary": "#2563eb", "on_primary": "#ffffff"},
+                "dark": {"bg": "#09090b", "surface": "#18181b", "text": "#27272a", "muted": "#3f3f46", "primary": "#60a5fa", "on_primary": "#09090b"},
+            },
+        }
+        st_vbad, _, vbad_body = http_request(
+            f"{groxy_url}/api/groxy/vision-clone", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={**vision_base, "screenshot_hex": "3c7376673e3c2f7376673e", "mime_type": "image/png"},
+        )
+        assert st_vbad == 422 and json.loads(vbad_body)["error_code"] == "GROXY-VISION-E001"
+        st_vfloat, _, vfloat_body = http_request(
+            f"{groxy_url}/api/groxy/vision-clone", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={**vision_base, "pricing_tiers": [{"name": "Studio", "price": 49.99}]},
+        )
+        assert st_vfloat == 422 and json.loads(vfloat_body).get("error_code") == "GROXY-VISION-E003", f"Expected ADR-025c float rejection 422/GROXY-VISION-E003, got {st_vfloat}: {vfloat_body}"
+        st_vstage, _, vstage_body = http_request(
+            f"{groxy_url}/api/groxy/vision-clone", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body=vision_base,
+        )
+        assert st_vstage == 200, f"vision-clone staging failed ({st_vstage}): {vstage_body}"
+        staged = json.loads(vstage_body)
+        assert staged["schema_version"] == "1.1.0" and staged["approval_required"] is True
+        assert staged["validation"]["div_count"] == 0 and staged["validation"]["inner_html_write_count"] == 0
+        assert staged["audit_report"]["overall_score"] >= 90 and staged["audit_report"]["publish_safe"] is True
+        assert staged["visual_analysis"]["contrast_repairs"], "Expected low-contrast palette auto-repair"
+        apply_base = {"clone_id": staged["clone_id"], "approval_token": staged["approval_token"], "layout_sha256": staged["target_binding"]["layout_sha256"]}
+        st_vtamper, _, _ = http_request(
+            f"{groxy_url}/api/groxy/vision-clone/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body={**apply_base, "slot": "footer"},
+        )
+        assert st_vtamper == 403, f"Expected target-binding mismatch 403, got {st_vtamper}"
+        st_vapply, _, vapply_body = http_request(
+            f"{groxy_url}/api/groxy/vision-clone/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body={**apply_base, "slot": "main", "builder_url": builder_url},
+        )
+        assert st_vapply == 200, f"vision-clone apply failed ({st_vapply}): {vapply_body}"
+        applied = json.loads(vapply_body)
+        assert applied["target_binding_verified"] is True and applied["actor"] == "groxy-ai"
+        assert applied["builder_dispatch"]["dispatched"] is True and applied["undo_available"] is True
+        st_vreplay, _, _ = http_request(
+            f"{groxy_url}/api/groxy/vision-clone/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body={**apply_base, "slot": "main", "builder_url": builder_url},
+        )
+        assert st_vreplay == 409, f"Expected single-use approval replay 409, got {st_vreplay}"
 
         # Verify GrabLab CMS create_entry_draft safety + typed custom fields
         st_draft, _, draft_body = http_request(

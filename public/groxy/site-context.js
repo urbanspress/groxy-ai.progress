@@ -1,5 +1,5 @@
 /**
- * Groxy AI v1.0.0 — Site-Wide Intelligence Engine
+ * Groxy AI v1.1.0 — Site-Wide Intelligence Engine
  *
  * Pure zero-dependency Grex JS v1.0.0 ES module providing:
  * 1. Live `SITE-CONTEXT.md` background snapshot & ADR-025c price preservation
@@ -9,7 +9,7 @@
  * 5. Quiet `Groxy Nightly Watch` Morning Boost Digest & Portable `Site DNA` bundle
  */
 
-export const GROXY_VERSION = "1.0.0";
+export const GROXY_VERSION = "1.1.0";
 
 import { GrexSecurityError, isSafeUrl } from "./grex.js";
 import { parseDesignSystemMarkdown } from "./playbook.js";

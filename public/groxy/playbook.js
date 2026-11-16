@@ -1,10 +1,10 @@
 /**
- * Groxy AI v1.0.0 — Curated SEO Playbook & GRAB-DESIGN-SYSTEM.md Parser.
+ * Groxy AI v1.1.0 — Curated SEO Playbook & GRAB-DESIGN-SYSTEM.md Parser.
  * Zero external dependencies; encodes deterministic rules distilled from
  * Google Search Central, Semrush, Ahrefs, Grex WCAG AA, and GRAB ADR-025c.
  */
 
-export const GROXY_VERSION = "1.0.0";
+export const GROXY_VERSION = "1.1.0";
 
 export const EXPECTED_RULE_IDS = Object.freeze([
   "GROXY-SEO-001",

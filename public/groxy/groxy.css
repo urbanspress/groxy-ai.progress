@@ -465,3 +465,41 @@ main#groxy-inspector-root {
   gap: 0.6rem;
   font-weight: 600;
 }
+.groxy-vision-studio {
+  display: grid;
+  gap: var(--grex-space-md, 1rem);
+  margin-block: var(--grex-space-xl, 2rem);
+  padding: var(--grex-space-lg, 1.5rem);
+  color: var(--grex-color-text, #0f172a);
+  background: var(--grex-color-surface, #ffffff);
+  border: 1px solid var(--grex-color-border, #cbd5e1);
+  border-radius: var(--grex-radius-md, 0.75rem);
+}
+.groxy-vision-studio fieldset {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--grex-space-md, 1rem);
+  border: 1px solid var(--grex-color-border, #cbd5e1);
+  border-radius: var(--grex-radius-sm, 0.5rem);
+}
+.groxy-vision-studio label { display: grid; gap: var(--grex-space-xs, 0.5rem); }
+.groxy-vision-studio input,
+.groxy-vision-studio select,
+.groxy-vision-studio button {
+  min-height: 2.75rem;
+  padding: 0.6rem 0.8rem;
+  color: inherit;
+  background: var(--grex-color-bg, #ffffff);
+  border: 1px solid var(--grex-color-border, #64748b);
+  border-radius: var(--grex-radius-sm, 0.5rem);
+  font: inherit;
+}
+.groxy-vision-studio button { cursor: pointer; }
+.groxy-vision-studio button:disabled { cursor: not-allowed; opacity: 0.6; }
+.groxy-vision-studio :focus-visible { outline: 3px solid var(--grex-color-primary, #047857); outline-offset: 2px; }
+.groxy-vision-studio article[aria-label="Grex replica preview"] {
+  display: grid;
+  gap: var(--grex-space-md, 1rem);
+  padding: var(--grex-space-lg, 1.5rem);
+  border: 1px dashed var(--grex-color-border, #64748b);
+}

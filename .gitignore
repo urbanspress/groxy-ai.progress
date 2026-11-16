@@ -1,4 +1,5 @@
 dist/
+tmp/
 storage/*.db*
 storage/SITE-CONTEXT.md
 storage/*.json

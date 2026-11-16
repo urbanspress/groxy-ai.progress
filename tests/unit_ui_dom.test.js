@@ -80,6 +80,10 @@ test("mountGroxyDashboard renders cleanly with zero <div>, zero innerHTML, WCAG 
   assert.equal(domAudit.scriptElements, 0);
   assert.deepEqual(domAudit.unsafeUrls, []);
   assert.deepEqual(domAudit.inlineHandlers, []);
+  const visionStudio = root.querySelector("#vision-clone-studio");
+  assert.ok(visionStudio, "Screenshot-to-Grex studio panel is mounted");
+  assert.equal(visionStudio.querySelector("input").getAttribute("aria-label"), "Reference screenshot PNG, JPEG, or WebP");
+  assert.ok(visionStudio.querySelector('button'));
 
   const safety = handle.auditDomSafety();
   assert.equal(safety.divCount, 0);

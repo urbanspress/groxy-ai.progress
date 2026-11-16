@@ -1,11 +1,11 @@
 /**
- * Groxy AI v1.0.0 — Zero-<div> Visual Generator Studio, Site-Wide Intelligence,
+ * Groxy AI v1.1.0 — Zero-<div> Visual Generator Studio, Site-Wide Intelligence,
  * Schema.org JSON-LD, Media alt-Text Enrichment, Morning Boost Digest & Diff UI.
  * Built strictly with Grex JS v1.0.0 signals and semantic HTML5 elements.
  * Zero innerHTML writes, zero eval(), zero wrapper <div> elements.
  */
 
-export const GROXY_VERSION = "1.0.0";
+export const GROXY_VERSION = "1.1.0";
 
 import {
   auditAccessibility,
@@ -34,6 +34,7 @@ import {
   generateSchemaOrgJsonLd,
   renderSiteContextMarkdown,
 } from "./site-context.js";
+import { extractVisualProfile, verifyScreenshot } from "./vision-clone.js";
 
 export const SAMPLE_AUDIT_PRESETS = Object.freeze({
   clean: {
@@ -361,6 +362,161 @@ function readMetaCsrf(doc) {
  *   fetchImpl?: Function
  * }} options
  */
+const VISION_TAGS = new Set(["section", "main", "header", "footer", "article", "aside", "nav", "h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "small", "strong", "em", "blockquote", "time", "code", "a", "button", "img", "ul", "ol", "li", "form", "label", "dialog"]);
+
+function renderVisionNode(node, doc, depth = 0) {
+  if (!node || typeof node !== "object" || depth > 24) return null;
+  const tag = String(node.tag || (node.type === "Heading" ? "h2" : "section")).toLowerCase();
+  if (!VISION_TAGS.has(tag) || tag === "div" || tag === "script") return null;
+  const el = doc.createElement(tag);
+  const props = node.props || {};
+  const copy = props.text ?? props.label ?? props.title ?? "";
+  if (copy) el.textContent = String(copy);
+  const classes = String(node.className || node.class || "").split(/\s+/).filter((name) => /^grex-c-[a-z0-9-]+$/i.test(name));
+  if (classes.length) el.className = classes.join(" ");
+  for (const child of Array.isArray(node.children) ? node.children : []) {
+    const rendered = renderVisionNode(child, doc, depth + 1);
+    if (rendered) el.appendChild(rendered);
+  }
+  return el;
+}
+
+function mountVisionCloneStudio({ root, doc, csrfToken, fetchFn }) {
+  const section = doc.createElement("section");
+  section.id = "vision-clone-studio";
+  section.className = "groxy-vision-studio";
+  const heading = doc.createElement("h2");
+  heading.textContent = "Screenshot-to-Grex Visual Replica";
+  section.appendChild(heading);
+  const intro = doc.createElement("p");
+  intro.textContent = "Analyze a PNG, JPEG, or WebP screenshot and stage a semantic Grex layout for review.";
+  section.appendChild(intro);
+
+  const form = doc.createElement("form");
+  form.addEventListener("submit", (event) => event.preventDefault());
+  const fieldset = doc.createElement("fieldset");
+  const legend = doc.createElement("legend");
+  legend.textContent = "Reference and target";
+  fieldset.appendChild(legend);
+  const addField = (labelText, control) => {
+    const label = doc.createElement("label");
+    label.appendChild(doc.createTextNode(labelText));
+    label.appendChild(control);
+    fieldset.appendChild(label);
+  };
+  const file = doc.createElement("input");
+  file.type = "file";
+  file.accept = "image/png,image/jpeg,image/webp";
+  file.setAttribute("aria-label", "Reference screenshot PNG, JPEG, or WebP");
+  addField("Reference screenshot", file);
+  const slot = doc.createElement("select");
+  slot.setAttribute("aria-label", "Target slot");
+  for (const value of ["main", "hero", "footer"]) {
+    const option = doc.createElement("option"); option.value = value; option.textContent = value; slot.appendChild(option);
+  }
+  addField("Target slot", slot);
+  const blueprint = doc.createElement("select");
+  blueprint.setAttribute("aria-label", "Blueprint hint");
+  for (const value of ["full_landing_page", "hero_section", "pricing_grid", "faq_accordion", "foreach_showcase"]) {
+    const option = doc.createElement("option"); option.value = value; option.textContent = value.replaceAll("_", " "); blueprint.appendChild(option);
+  }
+  addField("Blueprint", blueprint);
+  const style = doc.createElement("select");
+  style.setAttribute("aria-label", "Style pack hint");
+  for (const value of ["emerald-editorial", "obsidian-tech", "warm-commerce", "swiss-minimal", "local-service-trust", "creative-studio-bold", "creator-academy", "wellness-organic"]) {
+    const option = doc.createElement("option"); option.value = value; option.textContent = value; style.appendChild(option);
+  }
+  addField("Style pack", style);
+  const provider = doc.createElement("select");
+  provider.setAttribute("aria-label", "Vision extraction mode");
+  for (const [value, label] of [["deterministic", "Deterministic (default)"], ["ollama", "Local Ollama"], ["byok", "Allowlisted BYOK endpoint"]]) {
+    const option = doc.createElement("option"); option.value = value; option.textContent = label; provider.appendChild(option);
+  }
+  addField("Vision mode", provider);
+  const model = doc.createElement("select");
+  model.setAttribute("aria-label", "Vision model");
+  for (const value of ["llama3.2-vision", "qwen2.5-vl"]) {
+    const option = doc.createElement("option"); option.value = value; option.textContent = value; model.appendChild(option);
+  }
+  addField("Vision model", model);
+  const endpoint = doc.createElement("input"); endpoint.type = "url"; endpoint.setAttribute("aria-label", "Allowlisted BYOK HTTPS endpoint");
+  addField("BYOK endpoint (optional)", endpoint);
+  const keyword = doc.createElement("input"); keyword.type = "text"; keyword.value = "visual theme studio"; keyword.setAttribute("aria-label", "Focus keyword");
+  addField("Focus keyword", keyword);
+  const title = doc.createElement("input"); title.type = "text"; title.value = "Visual Theme Studio for High Velocity Teams"; title.setAttribute("aria-label", "Topic title");
+  addField("Topic title", title);
+  form.appendChild(fieldset);
+  section.appendChild(form);
+
+  const analyze = doc.createElement("button"); analyze.type = "button"; analyze.textContent = "Analyze Screenshot & Stage Grex Replica";
+  const approve = doc.createElement("button"); approve.type = "button"; approve.textContent = "Approve & Send Replica to Grex Theme Builder"; approve.disabled = true;
+  const discard = doc.createElement("button"); discard.type = "button"; discard.textContent = "Discard Staged Replica";
+  section.appendChild(analyze); section.appendChild(approve); section.appendChild(discard);
+  const status = doc.createElement("output"); status.setAttribute("aria-live", "polite"); status.textContent = "Choose a screenshot to begin."; section.appendChild(status);
+  const summary = doc.createElement("dl"); section.appendChild(summary);
+  const canvas = doc.createElement("article"); canvas.setAttribute("aria-label", "Grex replica preview"); section.appendChild(canvas);
+  root.appendChild(section);
+
+  let staged = null;
+  const show = (message) => { status.textContent = message; };
+  const addDetail = (term, value) => {
+    const dt = doc.createElement("dt"); dt.textContent = term;
+    const dd = doc.createElement("dd"); dd.textContent = String(value);
+    summary.appendChild(dt); summary.appendChild(dd);
+  };
+  const bytesToHex = (buffer) => Array.from(new Uint8Array(buffer), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  const bytesToBase64 = (buffer) => {
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+    for (let offset = 0; offset < bytes.length; offset += 8192) binary += String.fromCharCode(...bytes.subarray(offset, Math.min(offset + 8192, bytes.length)));
+    return btoa(binary);
+  };
+  analyze.addEventListener("click", async () => {
+    approve.disabled = true; staged = null;
+    if (!fetchFn || !file.files?.[0]) { show("Select a screenshot before analysis."); return; }
+    try {
+      const selected = file.files[0];
+      if (selected.size > 5 * 1024 * 1024) { show("Screenshot exceeds the 5 MiB limit."); return; }
+      const buffer = await selected.arrayBuffer();
+      const screenshot_hex = bytesToHex(buffer);
+      const verified = verifyScreenshot({ screenshot_hex, mime_type: selected.type });
+      const profile = await extractVisualProfile(buffer, verified.mime_type);
+      const response = await fetchFn("/api/groxy/vision-clone", { method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken }, body: JSON.stringify({ screenshot_hex, screenshot_base64: bytesToBase64(buffer), mime_type: verified.mime_type, slot: slot.value, blueprint_hint: blueprint.value, style_pack_hint: style.value, focus_keyword: keyword.value, topic_title: title.value, vision_provider: provider.value, vision_model: model.value, vision_endpoint: endpoint.value, layout_hints: profile, extracted_palette: profile.extracted_palette }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || result.reason || `HTTP ${response.status}`);
+      staged = result;
+      while (summary.firstChild) summary.removeChild(summary.firstChild);
+      while (canvas.firstChild) canvas.removeChild(canvas.firstChild);
+      addDetail("Verified image", `${result.screenshot_verification.detected_format.toUpperCase()} ${result.screenshot_verification.width || ""}×${result.screenshot_verification.height || ""}`);
+      addDetail("Structure", result.visual_analysis.structural_hierarchy.map((item) => `${item.landmark} ${item.role} (${item.columns} columns)`).join(" → ") || "Deterministic section structure");
+      addDetail("Spacing rhythm", "8pt tokens: --grex-space-xl / --grex-space-lg / --grex-space-md");
+      addDetail("Contrast repairs", result.visual_analysis.contrast_repairs.length);
+      addDetail("4-pillar score", `${result.audit_report.overall_score} (${result.audit_report.overall_grade})`);
+      const preview = renderVisionNode(result.candidate_layout, doc);
+      if (preview) canvas.appendChild(preview);
+      approve.disabled = false;
+      show("Replica staged for review. No Builder or CMS changes have been made.");
+    } catch (error) { show(`Could not stage replica: ${error.message}`); }
+  });
+  approve.addEventListener("click", async () => {
+    if (!staged || !fetchFn) return;
+    approve.disabled = true;
+    try {
+      const response = await fetchFn("/api/groxy/vision-clone/apply", { method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken }, body: JSON.stringify({ clone_id: staged.clone_id, approval_token: staged.approval_token, slot: staged.target_binding.slot, layout_sha256: staged.target_binding.layout_sha256 }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+      show("Approved. Grex Theme Builder received the replica with undo support."); staged = null;
+    } catch (error) { show(`Apply failed: ${error.message}`); approve.disabled = false; }
+  });
+  discard.addEventListener("click", () => {
+    staged = null; approve.disabled = true;
+    while (summary.firstChild) summary.removeChild(summary.firstChild);
+    while (canvas.firstChild) canvas.removeChild(canvas.firstChild);
+    show("Staged replica discarded locally.");
+  });
+  return { getStaged: () => staged, discard: () => discard.click() };
+}
+
 export function mountGroxyDashboard(options = {}) {
   const doc = options.document || globalThis.document;
   const root = options.root || (doc && doc.getElementById("groxy-inspector-root"));
@@ -476,7 +632,7 @@ export function mountGroxyDashboard(options = {}) {
     class: "groxy-card",
     "aria-label": "Deterministic SEO and DOM Auditor",
   });
-  formCard.appendChild(createEl(doc, "h1", {}, "Groxy AI v1.0.0 — Visual Generator Studio, Site Intelligence, Pre-Publish Gate & Audit Inspector"));
+  formCard.appendChild(createEl(doc, "h1", {}, "Groxy AI v1.1.0 — Visual Generator Studio, Site Intelligence, Pre-Publish Gate & Audit Inspector"));
   formCard.appendChild(
     createEl(
       doc,
@@ -2126,6 +2282,8 @@ export function mountGroxyDashboard(options = {}) {
     watchBody.appendChild(oppList);
   });
 
+  const visionStudio = mountVisionCloneStudio({ root, doc, csrfToken, fetchFn });
+
   return {
     auditDomSafety() {
       return {
@@ -2166,6 +2324,12 @@ export function mountGroxyDashboard(options = {}) {
     },
     getWatchDigestState() {
       return watchDigestSig.peek();
+    },
+    getVisionCloneState() {
+      return visionStudio.getStaged();
+    },
+    discardVisionClone() {
+      visionStudio.discard();
     },
     runAudit: executeAudit,
     triggerPrePublishReview,

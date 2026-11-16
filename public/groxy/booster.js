@@ -1,12 +1,12 @@
 /**
- * Groxy AI v1.0.0 — Pre-Publish Grade Review Gate & "Let Groxy Boost This"
+ * Groxy AI v1.1.0 — Pre-Publish Grade Review Gate & "Let Groxy Boost This"
  * Deterministic Remediation + Side-by-Side Diff Engine.
  *
  * Zero external dependencies, zero wrapper <div>s, exact ADR-025c numeric preservation,
  * and strict GROXY-SAFE-001 human-in-the-loop approval enforcement.
  */
 
-export const GROXY_VERSION = "1.0.0";
+export const GROXY_VERSION = "1.1.0";
 
 import {
   auditEntryAndLayout,

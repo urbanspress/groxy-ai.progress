@@ -5,6 +5,7 @@ import {
   assertAllowedNetworkUrl,
   buildGrabMcpRpcRequest,
   createGroxyMcpClient,
+  createVisionClient,
   GRABLAB_MCP_TOOL_NAMES,
   GroxyMcpError,
 } from "../public/groxy/mcp-client.js";
@@ -27,6 +28,26 @@ test("assertAllowedNetworkUrl enforces GRAB-E402 default-deny and SSRF metadata 
     () => assertAllowedNetworkUrl("ftp://127.0.0.1/file", ["127.0.0.1"]),
     (err) => err instanceof GroxyMcpError && err.code === "GRAB-E310"
   );
+});
+
+test("createVisionClient uses loopback Ollama, falls back offline, and constrains BYOK through GRAB-E402", async () => {
+  let calledUrl = "";
+  const ollama = createVisionClient({
+    fetchImpl: async (url) => {
+      calledUrl = url;
+      return new Response(JSON.stringify({ message: { content: JSON.stringify({ sections: ["hero", "pricing"], column_counts: { hero: 2, pricing: 3 }, raw_html: "<script>bad</script>" }) } }), { status: 200 });
+    },
+  });
+  const result = await ollama.analyze({ provider: "ollama", screenshot_base64: "aW1hZ2U=" });
+  assert.equal(calledUrl, "http://127.0.0.1:11434/api/chat");
+  assert.equal(result.provider_used, "ollama");
+  assert.deepEqual(result.descriptor.sections, ["hero", "pricing"]);
+  assert.equal("raw_html" in result.descriptor, false);
+
+  const offline = createVisionClient({ fetchImpl: async () => { throw new Error("offline"); } });
+  assert.deepEqual(await offline.analyze({ provider: "ollama", screenshot_base64: "aW1hZ2U=" }), { provider_used: "deterministic", fallback_used: true, descriptor: null });
+  await assert.rejects(offline.analyze({ provider: "ollama", screenshot_base64: "aW1hZ2U=", requireLive: true }), (error) => error.code === "GROXY-VISION-E004" && error.status === 503);
+  await assert.rejects(ollama.analyze({ provider: "byok", endpoint: "http://127.0.0.1:11434/steal", allowNet: ["127.0.0.1:11434"], screenshot_base64: "aW1hZ2U=", apiKey: "secret" }), (error) => error.code === "GRAB-E402");
 });
 
 test("buildGrabMcpRpcRequest enforces read-only default and GRAB-E401 sensitive file blocks", () => {

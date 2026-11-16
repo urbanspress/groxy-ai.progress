@@ -1,8 +1,8 @@
 # HANDOFF.md — Groxy AI
 
-- **Current Owner:** Google Antigravity / OpenAI Codex (`v1.0.0` Production Release Complete; **Milestone `v1.1.0 — Screenshot-to-Grex Visual Replica`** marked `Approved target; specification in review` in [`specifications/GROXY-AI-SPEC-110.md`](specifications/GROXY-AI-SPEC-110.md))
-- **Current Milestone State:** **Groxy AI `v1.0.0` Complete** (frozen on `stable`); **Milestone `v1.1.0` (`specifications/GROXY-AI-SPEC-110.md`)** drafted and ready for owner approval & implementation on **`Google Hydrogen (High)`** or **`OpenAI Codex`**
-- **Next Milestone:** **Groxy AI `v1.1.0` — Screenshot-to-Grex Visual Replica (`POST /api/groxy/vision-clone` & `POST /api/groxy/vision-clone/apply`)** (`Status: Approved target; specification in review` — [`specifications/GROXY-AI-SPEC-110.md`](specifications/GROXY-AI-SPEC-110.md))
+- **Current Owner:** Google Antigravity (`v1.1.0` release complete; `v1.2.0` is next)
+- **Current Milestone State:** `v1.0.0` remains complete and frozen. `v1.1.0` Screenshot-to-Grex Visual Replica is Approved & Frozen — Complete. GRAB check and byte-for-byte format parity pass, all 45 Node tests pass, live integration Gates 1, 2, 3A, and 3B pass, all eight sibling repositories are clean, and synchronized release artifacts and GitHub releases are published.
+- **Next Milestone:** Begin `v1.2.0` — 1-Time Brand DNA Wizard & 40-Post Batch Campaign Engine, following its specification approval gate.
 
 ---
 
@@ -11,6 +11,12 @@
 - **Grex JS:** `v1.0.0` (`urbanspress/grex-js`)
 - **GrabLab CMS:** `v1.0.1` (`urbanspress/grablab-cms`)
 - **Grex Theme Builder:** `v1.0.0` (`urbanspress/grex-builder`)
+
+## `v1.1.0` Completion Checkpoint
+- **Approved specification:** [`specifications/GROXY-AI-SPEC-110.md`](specifications/GROXY-AI-SPEC-110.md) - owner approved as written on 2026-11-15.
+- **Implemented:** Added magic-byte PNG/JPEG/WebP validation, the 5 MiB cap, bounded base64 decoding and hex input, `GRAB-E401` reference path checks, exact numeric wire checks, deterministic palette repair, local Ollama fallback, allowlisted BYOK checks, Grex compilation, target-bound `vtok_*` staging/apply routes, and the Screenshot-to-Grex dashboard panel.
+- **Verified:** `grab check --platform-config grab.platform.json src/groxy.grab` and canonical `grab format` byte-for-byte comparison pass; `node --test tests/*.test.js` passes 45/45; `python tests/integration_e2e.py` passes Gates 1, 2, 3A, and live 3B against GRAB, GrabLab CMS, Grex Theme Builder, and Groxy AI v1.1.0. All eight sibling repositories report clean status.
+- **Released:** Generated `docs/releases/pdf/Groxy-AI-v1.1.0-Guide.pdf`, `dist/groxy-ai-v1.1.0-bundle.zip`, and `dist/SHA256SUMS.txt`; synchronized ecosystem snapshot and Codex handoff; committed and tagged `v1.1.0`; pushed and published matching GitHub releases on `origin` and `stable`.
 
 ---
 
@@ -76,7 +82,7 @@ Completed multi-repository security, DOM, accessibility, precision, container, a
 
 ## Planned Backwards-Compatible Minor Track (`v1.1.0` – `v1.8.0`)
 
-- **Milestone `v1.1.0` — Screenshot-to-Grex Visual Replica (`POST /api/groxy/vision-clone`):** `Status: Approved target; specification in review` ([`specifications/GROXY-AI-SPEC-110.md`](specifications/GROXY-AI-SPEC-110.md); zero `v1.0.0` implementation code modified during spec phase):
+- **Milestone `v1.1.0` — Screenshot-to-Grex Visual Replica (`POST /api/groxy/vision-clone`):** `Status: Approved & Frozen — Complete` ([`specifications/GROXY-AI-SPEC-110.md`](specifications/GROXY-AI-SPEC-110.md)):
   - Magic-byte-verified `PNG`/`JPEG`/`WebP` reference screenshot upload with bounded max payload limits (`5 MiB` cap, `GRAB-E401` confinement).
   - Structural hierarchy, spacing rhythm, typography scale, and palette extraction via user-configured vision model (local Ollama `llama3.2-vision`/`qwen2.5-vl` on `127.0.0.1:11434` or optional BYOK API key governed by `GRAB-E402`).
   - Compiles strictly into `Grex JS v1.0.0`'s 20 semantic components (`divCount === 0`, `innerHTMLWriteCount === 0`, WCAG AA `>= 4.5:1` Light/Dark contrast auto-repaired, `ADR-025c` exact base-10 wire strings, `GRAB-DESIGN-SYSTEM.md` `--grex-*` tokens).
@@ -107,7 +113,7 @@ Completed multi-repository security, DOM, accessibility, precision, container, a
 
 ---
 
-## Next Step Guidance (`Groxy AI v1.1.0` Implementation)
+## Next Step Guidance (`Groxy AI v1.2.0`)
 1. **All 6 Core Ecosystem Layers (`v1.0.0+`) Are Frozen & Complete:** `GRAB v1.1.0`, `grex-js v1.0.0`, `grablab-cms v1.0.1`, `grex-builder v1.0.0`, `groxy-ai v1.0.0`, Step 5 (`grabman`, `grabtaculous`, `gashboard v1.0.0`), and Step 6 (`groxy-desk v1.0.0`) are shipped and verified `100%`.
-2. **Next Active Task (`Groxy AI v1.1.0`):** Upon project-owner approval of [`specifications/GROXY-AI-SPEC-110.md`](specifications/GROXY-AI-SPEC-110.md), implement `public/groxy/vision-clone.js`, `POST /api/groxy/vision-clone`, `POST /api/groxy/vision-clone/apply`, the zero-`<div>` Screenshot-to-Grex Studio panel in `views/dashboard.grab.html`, `tests/unit_vision_clone.test.js`, and live E2E verification in `tests/integration_e2e.py`.
-3. **Recommended Model for `v1.1.0` Implementation:** Switch to **`Google Hydrogen (High)`** (or hand off to **`OpenAI Codex`**) to implement `GROXY-AI-SPEC-110.md`.
+2. **Next Active Task (`Groxy AI v1.2.0`):** Draft and obtain owner approval for the specification covering the 1-Time Brand DNA Wizard and 40-Post Batch Campaign Engine before implementation.
+3. **Recommended Model for `v1.2.0` Specification:** Use **`Google Hydrogen (Medium)`** for the pre-implementation specification and governance review.

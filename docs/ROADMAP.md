@@ -69,13 +69,14 @@ Scope:
 
 ## `v1.1.0` — Screenshot-to-Grex Visual Replica (`POST /api/groxy/vision-clone`)
 
-**Status:** Approved target; specification in review ([`specifications/GROXY-AI-SPEC-110.md`](../specifications/GROXY-AI-SPEC-110.md))
+**Status:** Approved & Frozen — Complete ([`specifications/GROXY-AI-SPEC-110.md`](../specifications/GROXY-AI-SPEC-110.md))
 
 Scope:
 - Accepts user-uploaded reference screenshots (`PNG` / `JPEG` / `WebP` verified strictly via magic bytes + bounded max file size caps under `GRAB-E401` confinement).
 - Extracts structural hierarchy, spacing rhythm, typography scale, and color tokens via a configured vision model (local **Ollama** `llama3.2-vision` / `qwen2.5-vl` on `127.0.0.1:11434` with zero mandatory cloud API fees, or optional user-supplied BYOK API key governed by `GRAB-E402`).
 - Compiles a clean, zero-wrapper-`<div>` **`Grex JS v1.0.0`** layout (`divCount === 0`, `innerHTMLWriteCount === 0`, WCAG AA `>= 4.5:1` Light/Dark contrast auto-repaired, `ADR-025c` exact base-10 wire strings preserved, `GRAB-DESIGN-SYSTEM.md` `--grex-*` tokens & `.grex-c-*` classes applied).
 - Human-in-the-loop preview canvas + 4-pillar `A`/`A+` scorecard gated behind `X-CSRF-Token` + single-use target-bound `approval_token` (`GROXY-SAFE-001`) before dispatching to Grex Theme Builder via `POST /api/mcp/layout` (`actor: "groxy-ai"` with 1-click `Ctrl+Z` Undo parity).
+- **Verification & Release:** `grab check` and byte-for-byte `grab format` pass; Node tests `45/45`; integration Gates 1, 2, 3A, and live cross-layer 3B pass 100%. The walkthrough PDF, bundle, and checksums are generated and synchronized to both release repositories.
 
 ---
 

@@ -1,10 +1,10 @@
 /**
- * Groxy AI v1.0.0 — Deterministic 4-Pillar Auditor (0-100 & A+-F).
+ * Groxy AI v1.1.0 — Deterministic 4-Pillar Auditor (0-100 & A+-F).
  * Evaluates GrabLab entries, Grex layout trees, HTML fragments, and GRAB-DESIGN-SYSTEM.md
  * deterministically across all 22 rules in `playbook/seo-playbook.v1.json`.
  */
 
-export const GROXY_VERSION = "1.0.0";
+export const GROXY_VERSION = "1.1.0";
 
 import { auditAccessibility, computeContrastRatio } from "./grex.js";
 import {

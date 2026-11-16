@@ -2,7 +2,8 @@
 
 **Step 4 of the Post-1.0 GRAB Ecosystem:** Autonomous Design, Content & SEO Intelligence Agent built natively on **GRAB `v1.1.0`**, **Grex JS `v1.0.0`**, **GrabLab CMS `v1.0.1`**, and **Grex Theme Builder `v1.0.0`**.
 
-- **Current Release:** `v1.0.0` (**Approved & Frozen — Complete** — Production Autonomous Design, Content & SEO Intelligence Agent, Hardened `--read-only` Container Packaging & Full 5-Layer Ecosystem Verification)
+- **Current Release:** `v1.0.0` (**Approved & Frozen - Complete**)
+- **Active Milestone:** `v1.1.0` (**Approved; implementation in progress**) - Screenshot-to-Grex Visual Replica (`POST /api/groxy/vision-clone` and `/apply`)
 - **Frozen `v1.x` Contract:** All `22` routes in `src/groxy.grab`, 22-rule Playbook (`playbook/seo-playbook.v1.json`), `8 × 5` (`40`) WCAG AA Style Pack × Blueprint combinations, `GROXY-SAFE-001`, and `ADR-025c` wire precision are frozen under SemVer `v1.x` (`ADR-027c`).
 - **Development Repo (`origin`):** `https://github.com/urbanspress/groxy-ai.progress`
 - **Production Release Repo (`stable`):** `https://github.com/urbanspress/groxy-ai.stable`
@@ -25,6 +26,11 @@
    - Zero Node build steps, zero wrapper `<div>` elements, zero `innerHTML`, and 100% WCAG AA pass on `Grex JS v1.0.0`.
    - Composes full landing pages, hero sections, `GrabDecimal`-exact pricing grids (`ADR-025c`), FAQ `Accordion` widgets, and dynamic `ForEach` showcases from 8 Industry & Goal-Aware Style Packs across 5 Blueprints (`40` verified WCAG AA Light/Dark combinations) using live `--grex-*` tokens and `.grex-c-*` classes, gated behind Grade `A`/`A+` pre-dispatch verification and single-use human approval (`POST /api/mcp/layout` with `actor: "groxy-ai"` and 1-click Undo parity).
    - Indexes live GrabLab CMS entries, prices, menus, and `slug_history` `301` redirects into read-only `storage/SITE-CONTEXT.md`, analyzes site-wide internal linking authority with strict `301` loop exclusion, generates XSS-safe (`</script>`-escaped) `schema.org` JSON-LD, enriches Media Library `alt` text while preserving `decorative: true` items behind single-use `approval_token` confirmation, and produces quiet Nightly Watch **Morning Boost Reports** plus portable **Site DNA** exports for **Gashboard + `grabman`**.
+
+5. **Screenshot-to-Grex Visual Replica (`v1.1.0` in progress):**
+   - Verifies bounded PNG/JPEG/WebP screenshots by magic bytes, extracts palette/structure hints locally, and compiles a zero-`<div>` Grex preview through the existing 20-element validator and 22-rule Grade A gate.
+   - Offers deterministic extraction by default, optional local Ollama with deterministic fallback, and BYOK only through an explicitly allowlisted HTTPS origin guarded by `GRAB-E402`.
+   - Keeps Builder changes behind CSRF plus a single-use token bound to `clone_id`, `slot`, and the SHA-256 layout digest; optional GrabLab persistence is draft-only.
 
 ---
 
@@ -79,5 +85,7 @@ docker compose -f deploy/docker-compose.yml --profile ecosystem-stack up -d
 - [v0.3.0 Walkthrough Guide (`docs/releases/pdf/Groxy-AI-v0.3.0-Guide.pdf`)](docs/releases/pdf/Groxy-AI-v0.3.0-Guide.pdf)
 - [v0.4.0 Walkthrough Guide (`docs/releases/pdf/Groxy-AI-v0.4.0-Guide.pdf`)](docs/releases/pdf/Groxy-AI-v0.4.0-Guide.pdf)
 - [v1.0.0 Walkthrough Guide (`docs/releases/pdf/Groxy-AI-v1.0.0-Guide.pdf`)](docs/releases/pdf/Groxy-AI-v1.0.0-Guide.pdf)
+- [v1.1.0 Specification (`specifications/GROXY-AI-SPEC-110.md`)](specifications/GROXY-AI-SPEC-110.md)
+- [v1.1.0 Screenshot-to-Grex Guide (`docs/releases/pdf/Groxy-AI-v1.1.0-Guide.pdf`)](docs/releases/pdf/Groxy-AI-v1.1.0-Guide.pdf)
 - [Changelog (`CHANGELOG.md`)](CHANGELOG.md)
 - [Handoff Log (`HANDOFF.md`)](HANDOFF.md)

@@ -3,6 +3,15 @@
 All notable changes to **Groxy AI** (`urbanspress/groxy-ai`) are documented in this file.
 Versioning follows `MAJOR.MINOR.PATCH` SemVer rules per [`AGENTS.md`](AGENTS.md).
 
+## [v1.1.0] - 2026-11-15
+
+### Added
+- **Screenshot-to-Grex Visual Replica:** Added `POST /api/groxy/vision-clone` and `/apply`, screenshot magic-byte validation, decoded 5 MiB bounds, base64/hex decoding, path confinement, exact numeric checks, and deterministic/optional local Ollama/allowlisted BYOK routing.
+- **Safe semantic preview studio:** Added a zero-wrapper-`<div>` `/groxy` panel with screenshot upload, extraction summary, a DOM-built preview, explicit apply/discard actions, and a target-bound single-use `vtok_*` approval flow.
+- **Contrast and precision gates:** Repairs low-contrast palette metadata for Light and Dark themes, preserves active Grex design tokens, validates generated nodes with `validateElementNode()` and `auditAccessibility()`, and rejects JavaScript numeric prices/counts.
+- **Verification coverage:** Added screenshot security, size, MIME, path, contrast, precision, transport fallback, and target digest tests; expanded live E2E coverage for stage/apply/replay behavior.
+- **Release status:** Approved & Frozen — Complete. `grab check`, byte-for-byte `grab format`, `45/45` Node tests, and integration Gates 1, 2, 3A, and live 3B pass; the guide, bundle, checksums, ecosystem snapshot, and synchronized releases are complete.
+
 ## [v1.0.0] — 2026-11-15
 
 ### Added & Frozen

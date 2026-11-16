@@ -838,6 +838,30 @@ def render_v100_html() -> str:
 """
 
 
+def render_v110_html() -> str:
+    html = render_v100_html()
+    html = html.replace("Groxy AI v1.0.0 - Production Release Guide", "Groxy AI v1.1.0 - Screenshot-to-Grex Visual Replica Guide")
+    html = html.replace(
+        "Autonomous Design, Content &amp; SEO Intelligence Agent &bull; Hardened <code>--read-only</code> Container Bundle &amp; Frozen <code>v1.x</code> Contracts",
+        "Screenshot-to-Grex Visual Replica &bull; Approved Feature Milestone Walkthrough",
+    )
+    html = html.replace(
+        "Post-1.0 Ecosystem Step 4 Complete",
+        "v1.1.0 implementation checkpoint; live integration verification pending",
+    )
+    html = html.replace(
+        "<section class=\"callout\">\n    <p><strong>What Groxy AI v1.0.0 Delivers in Plain English:</strong> Groxy AI is now production-ready as Step 4 of the GRAB Ecosystem. It gives writers, designers, and site owners a calm, zero-API-fee SEO, accessibility, and visual page assistant that audits every page deterministically across 22 curated rules, boosts weak drafts with side-by-side Before/After previews, generates WCAG AA layouts from 8 Style Packs &times; 5 Blueprints using live <code>GRAB-DESIGN-SYSTEM.md</code> tokens, maps site-wide internal links and <code>schema.org</code> JSON-LD, enriches Media Library <code>alt</code> text, and runs safely inside a locked-down <code>--read-only</code> Docker container without ever auto-publishing live pages.</p>\n  </section>",
+        "<section class=\"callout\">\n    <p><strong>What Groxy AI v1.1.0 Adds:</strong> An operator can upload a PNG, JPEG, or WebP reference, inspect the extracted visual hierarchy and palette, review a semantic Grex layout, and explicitly approve its dispatch to Grex Theme Builder. Screenshots are bounded to 5 MiB and verified by magic bytes. The layout is staged behind CSRF protection and a single-use approval token bound to its target and SHA-256 digest. No live page is published automatically.</p>\n  </section>\n\n  <section>\n    <h2>1. Screenshot-to-Grex Workflow</h2>\n    <ol>\n      <li><strong>Upload and verify:</strong> Choose PNG, JPEG, or WebP. The browser and API validate the binary header, MIME match, embedded active-content markers, and the 5 MiB decoded limit. Optional reference files stay under <code>storage/reference_uploads/</code> or fail with <code>GRAB-E401</code>.</li>\n      <li><strong>Analyze and stage:</strong> Deterministic mode is the default. Local Ollama uses only <code>127.0.0.1:11434</code> and falls back to deterministic extraction when unavailable. BYOK requires a configured exact HTTPS allowlist and a capability-gated key; unapproved network targets fail with <code>GRAB-E402</code>.</li>\n      <li><strong>Review the Grex candidate:</strong> The preview uses the 20-element Grex catalog, active <code>--grex-*</code> tokens, registered <code>.grex-c-*</code> classes, contrast repair, exact ADR-025c strings, and the existing 22-rule Grade A gate.</li>\n      <li><strong>Approve or discard:</strong> Apply requires an explicit click and a one-use token bound to <code>{ clone_id, slot, layout_sha256 }</code>. The Builder records an undoable <code>applyAiLayout</code> action. Optional GrabLab persistence calls <code>create_entry_draft</code> with <code>status: \"draft\"</code>.</li>\n    </ol>\n  </section>\n\n  <section>\n    <h2>2. New API Routes</h2>\n    <table><thead><tr><th>Route</th><th>Purpose</th><th>Failure behavior</th></tr></thead><tbody>\n      <tr><td><code>POST /api/groxy/vision-clone</code></td><td>Verify screenshot, extract visual hints, compile and stage a zero-div Grex candidate.</td><td><code>422</code> invalid image/numeric values; <code>413</code> over 5 MiB; <code>403</code> CSRF or path/network safety violation.</td></tr>\n      <tr><td><code>POST /api/groxy/vision-clone/apply</code></td><td>Check the target-bound token and dispatch the approved tree to Theme Builder.</td><td><code>403</code> token/target mismatch; <code>409</code> replay; <code>503</code> Builder not configured.</td></tr>\n    </tbody></table>\n    <p><strong>Release verification note:</strong> This walkthrough describes the approved implementation. Live cross-layer Gate 3B must pass before the release is marked complete or promoted to stable.</p>\n  </section>"
+    )
+    html = html.replace("<h2>2. Hardened", "<h2>3. Hardened")
+    html = html.replace("<h2>3. 5-Layer", "<h2>4. 5-Layer")
+    html = html.replace(
+        "Groxy AI v1.0.0 &bull; Urban's Press / GRAB Ecosystem &bull; SemVer Tier: v1.0.0 Initial Stable Production Release &bull; Step 4 Complete (Next: Step 5 Gashboard + Grabtaculous + grabman)",
+        "Groxy AI v1.1.0 &bull; Urban's Press / GRAB Ecosystem &bull; SemVer Tier: backwards-compatible minor feature &bull; Release status: integration verification pending",
+    )
+    return html
+
+
 def main():
     version = sys.argv[1].lstrip("v") if len(sys.argv) > 1 else "1.0.0"
     renderers = {
@@ -846,6 +870,7 @@ def main():
         "0.3.0": render_v030_html,
         "0.4.0": render_v040_html,
         "1.0.0": render_v100_html,
+        "1.1.0": render_v110_html,
     }
     if version not in renderers:
         raise ValueError(f"Unsupported guide version '{version}'. Available: {', '.join(sorted(renderers))}")
@@ -856,6 +881,12 @@ def main():
     html_path = HTML_DIR / f"Groxy-AI-v{version}-Guide.html"
     pdf_path = PDF_DIR / f"Groxy-AI-v{version}-Guide.pdf"
     html_path.write_text(renderers[version](), encoding="utf-8")
+
+    if version == "1.1.0":
+        from generate_v110_pdf import build_pdf
+
+        build_pdf()
+        return
 
     browser = find_headless_browser()
     file_url = html_path.resolve().as_uri()
