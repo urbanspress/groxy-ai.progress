@@ -1,8 +1,8 @@
 # HANDOFF.md — Groxy AI
 
-- **Current Owner:** Google Antigravity (`v1.1.0` release complete; `v1.2.0` is next)
-- **Current Milestone State:** `v1.0.0` remains complete and frozen. `v1.1.0` Screenshot-to-Grex Visual Replica is Approved & Frozen — Complete. GRAB check and byte-for-byte format parity pass, all 45 Node tests pass, live integration Gates 1, 2, 3A, and 3B pass, all eight sibling repositories are clean, and synchronized release artifacts and GitHub releases are published.
-- **Next Milestone:** Begin `v1.2.0` — 1-Time Brand DNA Wizard & 40-Post Batch Campaign Engine, following its specification approval gate.
+- **Current Owner:** Google Antigravity (Codex specification draft complete; awaiting project-owner review of `v1.2.0`)
+- **Current Milestone State:** `v1.0.0` remains complete and frozen. `v1.1.0` Screenshot-to-Grex Visual Replica remains Approved & Frozen — Complete. `v1.2.0` is an approved target with [`GROXY-AI-SPEC-120.md`](specifications/GROXY-AI-SPEC-120.md) in review; implementation has not started and requires explicit project-owner approval.
+- **Next Milestone:** `v1.2.0` — 1-Time Brand DNA & Voice Setup Wizard + 40-Post/Product Batch Campaign Engine (`Status: Approved target; specification in review`).
 
 ---
 
@@ -11,6 +11,12 @@
 - **Grex JS:** `v1.0.0` (`urbanspress/grex-js`)
 - **GrabLab CMS:** `v1.0.1` (`urbanspress/grablab-cms`)
 - **Grex Theme Builder:** `v1.0.0` (`urbanspress/grex-builder`)
+
+## `v1.2.0` Specification Review Checkpoint
+- **Specification:** [`specifications/GROXY-AI-SPEC-120.md`](specifications/GROXY-AI-SPEC-120.md) — drafted and awaiting explicit owner approval; no implementation code may be written before approval.
+- **Scope:** 8–10 question Brand DNA wizard (`POST /api/groxy/brand-dna/wizard`, `GET /api/groxy/brand-dna`), confined `storage/BRAND-DNA.md` and `storage/brand-dna.v1.json`, portable Site DNA `brand_dna`, plus deterministic/local Ollama/allowlisted BYOK batches of 1–40 posts or products (`POST /api/groxy/batch-create`, `/apply`).
+- **Safety contract:** Every staged item must pass the 22-rule four-pillar audit at `>=90` Grade A/A+, preserve exact `ADR-025c` decimal strings, and contain no wrapper `<div>` or `innerHTML` writes. Batch apply requires CSRF and a single-use token bound to `{ batch_id, item_count, batch_sha256 }`; all CMS dispatches use `create_entry_draft` with `status_enforced: "draft"`.
+- **Frozen scope:** Keep `v1.0.0` and `v1.1.0` implementation and completion records untouched.
 
 ## `v1.1.0` Completion Checkpoint
 - **Approved specification:** [`specifications/GROXY-AI-SPEC-110.md`](specifications/GROXY-AI-SPEC-110.md) - owner approved as written on 2026-11-15.
@@ -114,6 +120,6 @@ Completed multi-repository security, DOM, accessibility, precision, container, a
 ---
 
 ## Next Step Guidance (`Groxy AI v1.2.0`)
-1. **All 6 Core Ecosystem Layers (`v1.0.0+`) Are Frozen & Complete:** `GRAB v1.1.0`, `grex-js v1.0.0`, `grablab-cms v1.0.1`, `grex-builder v1.0.0`, `groxy-ai v1.0.0`, Step 5 (`grabman`, `grabtaculous`, `gashboard v1.0.0`), and Step 6 (`groxy-desk v1.0.0`) are shipped and verified `100%`.
-2. **Next Active Task (`Groxy AI v1.2.0`):** Draft and obtain owner approval for the specification covering the 1-Time Brand DNA Wizard and 40-Post Batch Campaign Engine before implementation.
-3. **Recommended Model for `v1.2.0` Specification:** Use **`Google Hydrogen (Medium)`** for the pre-implementation specification and governance review.
+1. **Frozen Baselines:** Keep Groxy AI `v1.0.0` and `v1.1.0` and all upstream contracts frozen and unchanged.
+2. **Current Task:** Review and explicitly approve [`GROXY-AI-SPEC-120.md`](specifications/GROXY-AI-SPEC-120.md). Implementation remains gated until that approval.
+3. **Recommended Model for Specification Review:** Use **`Google Hydrogen (Medium)`** for the pre-implementation specification review. After approval, use **`Google Hydrogen (Extra)`** for the autonomous batch generation engine because it combines model reasoning, security boundaries, and multi-item generation.

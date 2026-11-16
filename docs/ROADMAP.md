@@ -82,12 +82,13 @@ Scope:
 
 ## `v1.2.0` — 1-Time Brand DNA & Voice Setup Wizard (`BRAND-DNA.md`) & Batch Content/Product Campaign Engine (`POST /api/groxy/batch-create`)
 
-**Status:** Planned — Backwards-Compatible Minor Feature
+**Status:** Approved target; specification in review — Backwards-Compatible Minor Feature ([`specifications/GROXY-AI-SPEC-120.md`](../specifications/GROXY-AI-SPEC-120.md))
 
 Scope:
-- **1-Time Brand DNA & Voice Setup Wizard (`BRAND-DNA.md`):** 8–10 question onboarding wizard capturing brand tone, target audience, value propositions, editorial guardrails, pricing rules, and `--grex-*` visual identity, saving `storage/BRAND-DNA.md` alongside portable `Site DNA`.
-- **Batch Content/Product Campaign Engine (`POST /api/groxy/batch-create`):** Powers 1-sentence batch creation of up to 40+ SEO/WCAG-audited blog posts or products with exact `ADR-025c` `GrabDecimal` prices, zero-`<div>` clean DOM, and `schema.org` JSON-LD readiness.
-- **Human-in-the-Loop Safety (`GROXY-SAFE-001`):** Strictly gated behind `create_entry_draft` (`status: "draft"`) and single-use `approval_token` + `X-CSRF-Token` confirmation before persisting drafts into GrabLab CMS.
+- **1-Time Brand DNA & Voice Setup Wizard (`POST /api/groxy/brand-dna/wizard`, `GET /api/groxy/brand-dna`):** Accessible 8–10 question zero-`<div>` Grex JS wizard capturing business identity/niche, audience and pain points, geography/local SEO, voice sliders/pills, forbidden buzzwords, CTAs, offer/pricing rules, guarantees, and linked Design Style Pack / `GRAB-DESIGN-SYSTEM.md` tokens. Persist `storage/BRAND-DNA.md` plus `storage/brand-dna.v1.json` under `GRAB-E401`; add optional `brand_dna` to `groxy-site-dna-v0.4.0` and `v1.0.0` exports.
+- **Batch Content/Product Campaign Engine (`POST /api/groxy/batch-create`, `POST /api/groxy/batch-create/apply`):** Generates `1..40` posts or products from a one-sentence brief, reading Brand DNA and `SITE-CONTEXT.md` to avoid duplicate titles/slugs. Support deterministic zero-fee playbook generation, optional local Ollama (`127.0.0.1:11434`), or `GRAB-E402`-allowlisted BYOK enrichment.
+- **Audit & Human Approval (`GROXY-SAFE-001`):** Pre-audit every candidate through the 22-rule, four-pillar auditor (score `>=90`, Grade A/A+), require `divCount === 0`, `innerHTMLWriteCount === 0`, exact `ADR-025c` `GrabDecimal` strings (reject JS floats with `422`), and XSS-safe Article/Product JSON-LD. Stage an immutable preview with single-use `btok_<hex>` cryptographically bound to `{ batch_id, item_count, batch_sha256 }`; apply requires `X-CSRF-Token`, returns `403` for invalid/mismatch and `409` for replay, and dispatches only via GrabLab CMS `create_entry_draft` (`status_enforced: "draft"`).
+- **Acceptance Gates:** Zero-`<div>` / zero-`innerHTML`, Light/Dark WCAG AA contrast (`>=4.5:1` normal text), `GRAB-E401` confinement, exact numeric wire-string tests, token binding/replay tests, and live Gate 3B CMS draft-enforcement verification. No implementation begins before explicit owner approval of the specification.
 
 ---
 
