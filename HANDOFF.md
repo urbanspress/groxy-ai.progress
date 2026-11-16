@@ -1,10 +1,19 @@
 # HANDOFF.md — Groxy AI
 
-- **Current Owner:** Google Antigravity (v1.2.0 release complete; ready for v1.3.0 planning)
+- **Current Owner:** Google Antigravity (v1.3.0 specification ready for owner review)
 - **Current Milestone State:** `v1.0.0`, `v1.1.0`, and `v1.2.0` are `Approved & Frozen — Complete`. The owner approved [`GROXY-AI-SPEC-120.md`](specifications/GROXY-AI-SPEC-120.md) as written on 2026-11-15. All v1.2.0 implementation and verification gates pass. Annotated tag `v1.2.0` points to completion commit `90ff9d3`; matching releases are published on both repositories with the guide, bundle, checksum manifest, SemVer summary, and compatibility matrix.
-- **Next Milestone:** Begin v1.3.0 planning for the Post-Purchase Email Flow Designer and Copywriter.
+- **Current Milestone:** `v1.3.0` — `Approved target; specification in review` ([SPEC-130](specifications/GROXY-AI-SPEC-130.md)). Explicit owner approval of the specification is pending; no implementation is authorized.
+- **Next Milestone Action:** Review SPEC-130 before implementation; preserve the frozen v1.0.0, v1.1.0, and v1.2.0 releases.
 
 ---
+
+## `v1.3.0` Specification Review Checkpoint — 2026-11-16
+- **Draft:** `specifications/GROXY-AI-SPEC-130.md` defines four brand-grounded post-purchase messages, deterministic/Ollama/allowlisted BYOK generation, exact decimal strings, accessible semantic previews, unsubscribe/address footers, and draft-only CMS persistence.
+- **Approval safety:** `POST /api/groxy/email-flows/design` stages the preview; `/api/groxy/email-flows/apply` requires CSRF and single-use `etok_<hex>` bound to `{ flow_id, step_count, flow_sha256 }` (`403` invalid/mismatch, `409` replay). Approval saves drafts only and cannot send or activate customer emails.
+- **Scope of this checkpoint:** Only SPEC-130, `docs/ROADMAP.md`, and this handoff are committed to `origin/main`; `stable` remains on the v1.2.0 release line. Preserve the pre-existing untracked `playbook/genres/` folder. No application code, frozen specifications, tags, or releases are changed.
+- **Verification boundary:** Documentation diff, links, frozen-section preservation, and commit scope checks apply now. Implementation tests and live Gate 3B remain required future acceptance gates, not claimed passes for v1.3.0.
+- **Synchronization:** Run `sync-notebook-sources.ps1` and `generate-codex-handoff.ps1` after the documentation push; execution results are reported in the session.
+- **Pending:** Owner approval of SPEC-130, then implementation and all acceptance gates. Use Google Hydrogen (Medium) for specification revisions; switch to Orchestrator (Argon) before cross-layer implementation/audit to validate CMS draft storage and approval/dispatch boundaries.
 
 ## Frozen Upstream Contracts (Unmodified)
 - **GRAB:** `v1.1.0` (`urbanspress/grab`)
@@ -99,7 +108,7 @@ Completed multi-repository security, DOM, accessibility, precision, container, a
   - Human-in-the-loop preview canvas + 4-pillar `A`/`A+` scorecard gated behind `X-CSRF-Token` + single-use target-bound `approval_token` (`GROXY-SAFE-001`) before dispatching to `POST /api/mcp/layout` (`actor: "groxy-ai"`, 1-click `Ctrl+Z` undo parity).
 - **Milestone `v1.2.0` — 1-Time Brand DNA & Voice Setup Wizard (`BRAND-DNA.md`) & Batch Content/Product Campaign Engine (`POST /api/groxy/batch-create`):** `Status: Approved; implementation verified, release promotion pending — Backwards-Compatible Minor Feature` (zero frozen peer implementation code modified):
   - 8–10 question onboarding wizard saving `storage/BRAND-DNA.md` + `Site DNA`, powering 1-sentence batch creation of up to 40+ SEO/WCAG-audited blog posts or products with exact `ADR-025c` `GrabDecimal` prices, gated behind `create_entry_draft` (`status: "draft"`) and single-use `approval_token` (`GROXY-SAFE-001`).
-- **Milestone `v1.3.0` — Autonomous Post-Purchase Email Flow Designer & Copywriter:** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified):
+- **Milestone `v1.3.0` — Autonomous Post-Purchase Email Flow Designer & Copywriter:** `Status: Approved target; specification in review` ([SPEC-130](specifications/GROXY-AI-SPEC-130.md)); no implementation started:
   - Reads `BRAND-DNA.md`, `SITE-CONTEXT.md`, and `--grex-*` tokens to design multi-step post-purchase receipts, setup guides, review requests, and exact-price product cross-sell flows gated behind `GROXY-SAFE-001` approval.
 - **Milestone `v1.4.0` — 5 Autonomous Storefront & Commerce AI Engines:** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified):
   - **AI Abandoned-Cart & Smart Checkout Recovery (`POST /api/groxy/recovery`):** Triggered by `commerce:abandoned_checkout` with exact `ADR-025c` `GrabDecimal` math and `BRAND-DNA.md` tone.
@@ -121,9 +130,11 @@ Completed multi-repository security, DOM, accessibility, precision, container, a
   - **Baked-In Static Reference Vault (`playbook/knowledge/*.v1.json`):** Zero-network reference datasets (Schema.org v30.1 vocabularies, WCAG AA contrast rules, country/postal formats, and offline AnswerThePublic-style question/keyword intent frameworks).
   - **Opt-In Allowlisted Real-Time Web Search (`POST /api/groxy/research/search`, `groxy_web_research_enabled`):** Enforces `GRAB-E402` outbound domain allowlisting (blocking private/loopback/metadata IPs `127.0.0.1`/`169.254.169.254`) to query user-configured self-hosted **SearXNG**, DuckDuckGo Instant Answers, Wikipedia/Wikidata, or user BYOK search APIs—returning real-time answers with source URL citations.
 
+  - **OAuth2 Read-Only Google Search Console (`gsc.readonly`, `AES-256-GCM` encrypted tokens) + Curated Bestseller Radar Playbooks (`playbook/market/bestseller-radar.v1.json`):** Opt-in, authorized read-only query-demand intelligence and curated genre/product trends from permitted sources, with source provenance and no access-control bypass. Exact OAuth provider-scope mapping and token lifecycle are deferred to the v1.8.0 specification.
+
 ---
 
-## Next Step Guidance (`Groxy AI v1.2.0`)
-1. **Frozen Baselines:** Keep Groxy AI `v1.0.0` and `v1.1.0` and all upstream contracts frozen and unchanged.
-2. **Current Task:** Restore a valid GitHub CLI credential, generate the final Complete walkthrough and package/checksums, then promote the verified commit/tag and matching release assets to both remotes. Keep the roadmap/spec completion state aligned with the stable-release gate.
-3. **Recommended Model for Release Audit:** Use **`Orchestrator (Argon)`** for the final cross-layer security and release audit because v1.2.0 adds outbound provider handling, cryptographically bound batch approval, and draft-only CMS dispatch across frozen ecosystem contracts.
+## Next Step Guidance (`Groxy AI v1.3.0`)
+1. **Frozen Baselines:** Keep Groxy AI `v1.0.0`, `v1.1.0`, and `v1.2.0` and all upstream contracts frozen and unchanged.
+2. **Current Task:** Await explicit owner approval of SPEC-130. Do not implement v1.3.0 or promote to stable during specification review.
+3. **Recommended Model:** Google Hydrogen (Medium) for specification revisions; Orchestrator (Argon) before cross-layer implementation/audit because the flow approval and CMS draft boundaries must remain compatible with frozen contracts.

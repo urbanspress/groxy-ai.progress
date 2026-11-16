@@ -94,12 +94,13 @@ Scope:
 
 ## `v1.3.0` — Autonomous Post-Purchase Email Flow Designer & Copywriter
 
-**Status:** Planned — Backwards-Compatible Minor Feature
+**Status:** Approved target; specification in review — Backwards-Compatible Minor Feature ([`specifications/GROXY-AI-SPEC-130.md`](../specifications/GROXY-AI-SPEC-130.md)). Target approval does not authorize implementation; explicit specification approval is pending.
 
 Scope:
-- Reads `storage/BRAND-DNA.md`, `storage/SITE-CONTEXT.md`, and live `--grex-*` design tokens (`GET /api/design-system.md`) to design multi-step post-purchase transactional and retention flows.
-- Generates branded receipt copy, onboarding/setup guides, review request sequences, and exact-price (`ADR-025c` `GrabDecimal`) product cross-sell flows paired with GrabLab CMS `email_outbox` triggers and Grex Builder `mode: "email"` templates.
-- All generated sequences, subject lines, and dispatch bindings remain strictly gated behind `GROXY-SAFE-001` single-use `approval_token` review prior to activation.
+- **Brand-grounded four-step designer (`POST /api/groxy/email-flows/design`):** Reads `storage/BRAND-DNA.md`, `storage/SITE-CONTEXT.md`, and live `GET /api/design-system.md` `--grex-*` tokens for Order Receipt & Welcome, Quick-Start / Setup Guide, Check-In & Review Request, and Targeted Cross-Sell / Reorder. Deterministic zero-fee templates, optional local Ollama with offline fallback, and `GRAB-E402`-allowlisted BYOK enrichment.
+- **Exact values and safe templates:** Preserve `ADR-025c` `GrabDecimal` prices, discounts, and order totals as strings (`422` for JS floats); zero wrapper `<div>`s / `innerHTML` writes, Light/Dark WCAG AA `>= 4.5:1`, automatic unsubscribe placeholders and physical-address footers.
+- **Preview and draft-only apply (`POST /api/groxy/email-flows/apply`):** Require `X-CSRF-Token` plus single-use `etok_<hex>` bound to `{ flow_id, step_count, flow_sha256 }`; `403` invalid/mismatch and `409` replay. Save the flow and templates through `create_entry_draft`, never send, activate triggers, or overwrite human copy. Future `email_outbox` / Builder `mode: "email"` integration requires separately available and approved upstream contracts.
+- **Acceptance:** Pure Grex JS Studio, numeric/footer/DOM/accessibility/token tests and live cross-layer Gate 3B. Keep `v1.0.0`, `v1.1.0`, and `v1.2.0` frozen; no implementation before explicit approval of SPEC-130.
 
 ---
 
@@ -154,4 +155,4 @@ Scope:
 Scope:
 - **Baked-In Static Reference Vault (`playbook/knowledge/*.v1.json`):** Zero-network reference datasets (Schema.org v30.1 vocabularies, WCAG AA contrast rules, country/postal formats, and offline AnswerThePublic-style question/keyword intent frameworks).
 - **Opt-In Allowlisted Real-Time Web Search (`POST /api/groxy/research/search`, `groxy_web_research_enabled`):** Enforces `GRAB-E402` outbound domain allowlisting (blocking private/loopback/metadata IPs `127.0.0.1`/`169.254.169.254`) to query user-configured self-hosted **SearXNG**, DuckDuckGo Instant Answers, Wikipedia/Wikidata, or user BYOK search APIs—returning real-time answers with source URL citations.
-
+- **OAuth2 Read-Only Google Search Console (`gsc.readonly`, `AES-256-GCM` encrypted tokens) + Curated Bestseller Radar Playbooks (`playbook/market/bestseller-radar.v1.json`):** Opt-in, authorized read-only query-demand intelligence and curated genre/product trends from permitted sources, with source provenance and no access-control bypass. Exact OAuth provider-scope mapping and token lifecycle are deferred to the v1.8.0 specification.
