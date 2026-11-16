@@ -1,7 +1,7 @@
 # HANDOFF.md — Groxy AI
 
 - **Current Owner:** Google Antigravity (Codex v1.3.0 completion handoff)
-- **Current Milestone State:** `v1.0.0`, `v1.1.0`, `v1.2.0`, and `v1.3.0` are `Approved & Frozen — Complete`. SPEC-130 was owner-approved on 2026-11-16. All v1.3.0 verification gates pass; release commit/tag and synchronized publication are recorded below when available.
+- **Current Milestone State:** `v1.0.0`, `v1.1.0`, `v1.2.0`, and `v1.3.0` are `Approved & Frozen — Complete`. SPEC-130 was owner-approved on 2026-11-16. All v1.3.0 verification gates pass; completion commit `fbb4753` and annotated tag `v1.3.0` are pushed to both remotes. Matching GitHub Releases remain pending because the configured `gh` authentication token is invalid.
 - **Current Milestone:** None. `v1.3.0` completion is ready for release synchronization.
 - **Next Milestone Action:** Begin v1.4.0 specification planning under the spec-first approval gate. Preserve the untracked `playbook/genres/` folder.
 
@@ -11,7 +11,7 @@
 - **Verified:** `grab check` passed; `grab format` stdout matched `src/groxy.grab` byte-for-byte; `node --test tests/*.test.js` passed 61/61; `python tests/integration_e2e.py` passed Gates 1, 2, 3A, and live 3B. Live checks verified server digest parity against independently canonicalized UTF-8 JSON, Ollama offline fallback, BYOK metadata-IP rejection, and concurrent duplicate apply returning exactly one `201` and one `409`, with one CMS draft.
 - **Artifacts:** Final Complete-status walkthrough PDF, release bundle, and SHA256SUMS are generated from the passing source. The bundle excludes untracked `playbook/genres/`.
 - **Preservation:** `playbook/genres/` remains untracked and untouched. Frozen sibling repositories were not modified.
-- **Release:** Pending commit, annotated tag, pushes, and matching GitHub Releases on `origin` and `stable`.
+- **Release:** Commit `fbb4753` and annotated tag `v1.3.0` are pushed to `origin/main` and `stable/main`. Public GitHub Releases on both repositories remain pending; `gh auth status` reports that the configured `urbanspress` token is invalid. Reauthenticate `gh`, then publish using `docs/releases/pdf/Groxy-AI-v1.3.0-RELEASE-NOTES.md` and attach the guide PDF, release bundle, and `dist/SHA256SUMS.txt`.
 
 ---
 
