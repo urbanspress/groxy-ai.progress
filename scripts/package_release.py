@@ -5,6 +5,7 @@ Package Groxy AI release bundle and compute SHA256SUMS.txt for GitHub Release di
 
 import hashlib
 import shutil
+import subprocess
 import sys
 import zipfile
 from pathlib import Path
@@ -25,10 +26,21 @@ def collect_release_files():
     include_dirs = ["src", "views", "public", "assets", "playbook", "deploy"]
     include_files = ["grab.platform.json", "README.md", "CHANGELOG.md", "GROXY-EXPERT.md", "LICENSE"]
     files = []
+    tracked = set(
+        subprocess.check_output(
+            ["git", "ls-files", "--cached"], cwd=REPO_ROOT, text=True
+        ).splitlines()
+    )
+    new_v120_modules = {
+        "assets/batch-campaign.js",
+        "assets/brand-dna.js",
+        "public/groxy/batch-campaign.js",
+        "public/groxy/brand-dna.js",
+    }
 
     for fname in include_files:
         p = REPO_ROOT / fname
-        if p.exists() and p.is_file():
+        if p.exists() and p.is_file() and fname in tracked:
             files.append(p)
 
     for dname in include_dirs:
@@ -36,7 +48,12 @@ def collect_release_files():
         if not dpath.exists():
             continue
         for item in sorted(dpath.rglob("*")):
-            if item.is_file() and "__pycache__" not in item.parts:
+            rel = item.relative_to(REPO_ROOT).as_posix()
+            if (
+                item.is_file()
+                and "__pycache__" not in item.parts
+                and (rel in tracked or rel in new_v120_modules)
+            ):
                 files.append(item)
 
     return files

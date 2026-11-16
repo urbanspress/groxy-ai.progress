@@ -49,6 +49,13 @@ make is_record_value using val
   end
 end
 
+make is_text_value using val
+  if val is nothing
+    give back no
+  end
+  give back text.starts_with using (json.stringify using val), "\""
+end
+
 make map_get_str using m, key, fallback
   if not (has_map_key using m, key)
     give back fallback
@@ -118,6 +125,14 @@ make list_contains using items, target
     end
   end
   give back no
+end
+
+make is_json_object_value using val
+  if val is nothing
+    give back no
+  end
+  set wire to json.stringify using val
+  give back (text.starts_with using wire, "{") and (text.ends_with using wire, "}")
 end
 
 make is_allowed_grex_element using el_name
@@ -4243,7 +4258,12 @@ make build_portable_site_dna_grab using c, req_pack_id, req_builder_url
   set ds_out to record {raw_markdown: ds_raw, tokens_loaded: parsed_ds.tokens_loaded, reusable_classes_loaded: parsed_ds.reusable_classes_loaded, tokens: parsed_ds.token_map, reusable_classes: parsed_ds.registered_classes}
   set sc_out to record {counts: snap.counts, products: snap.products, redirects: snap.redirects, markdown: md_ctx}
 
-  give back record {ok: yes, schema_version: "0.4.0", bundle_name: "groxy-site-dna-v0.4.0", exported_at: now_r.iso, read_only_snapshot: yes, compatible_consumers: ["gashboard", "grabman", "grex-builder", "grablab-cms"], site_name: snap.site_name, site_url: snap.site_url, active_style_pack: active_sp, design_system: ds_out, site_context: sc_out, nightly_watch_digest: digest, decimal_integrity_verified: snap.decimal_integrity_verified}
+  set brand_profile to brand_dna_read using c
+  set brand_dna_out to nothing
+  if brand_profile.configured
+    set brand_dna_out to brand_profile.profile
+  end
+  give back record {ok: yes, schema_version: "0.4.0", bundle_name: "groxy-site-dna-v0.4.0", exported_at: now_r.iso, read_only_snapshot: yes, compatible_consumers: ["gashboard", "grabman", "grex-builder", "grablab-cms"], site_name: snap.site_name, site_url: snap.site_url, active_style_pack: active_sp, design_system: ds_out, site_context: sc_out, nightly_watch_digest: digest, decimal_integrity_verified: snap.decimal_integrity_verified, brand_dna: brand_dna_out}
 end
 
 make render_site_dna_md_grab using dna
@@ -4266,7 +4286,7 @@ make render_site_dna_md_grab using dna
 end
 
 route "GET" "/_health"
-  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "1.1.0"}
+  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "1.2.0"}
 end
 
 route "GET" "/_ready"
@@ -4276,7 +4296,7 @@ route "GET" "/_ready"
     if rule_cnt is not 22
       give back server.json using 503, record {status: "not_ready", error: "Playbook rule count mismatch"}
     end
-    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "1.1.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt}
+    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "1.2.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt}
   catch err
     give back server.json using 503, record {status: "not_ready", error: err.message}
   end
@@ -4296,7 +4316,7 @@ end
 route "GET" "/api/groxy/playbook"
   set pb to load_playbook_doc using groxy_cache
   set pb_out to copy_to_map using pb
-  set pb_out to collections.put using pb_out, "service_version", "1.1.0"
+  set pb_out to collections.put using pb_out, "service_version", "1.2.0"
   give back server.json using 200, pb_out
 end
 
@@ -4393,7 +4413,7 @@ route "POST" "/api/groxy/mcp/inspect" using req
       end
     end
 
-    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "1.1.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
+    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "1.2.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
   catch err
     give back server.json using 400, record {ok: no, error: err.message}
   end
@@ -5594,4 +5614,508 @@ route "GET" "/api/groxy/site-dna/export" using req
     give back server.response using record {status: 200, headers: {"Content-Type": "text/markdown; charset=utf-8", "Cache-Control": "no-store"}, body: dna_md}
   end
   give back server.json using 200, dna
+end
+
+# ---------------------------------------------------------------------------
+# Groxy AI v1.2.0 — Brand DNA persistence and draft-only batch campaigns
+# ---------------------------------------------------------------------------
+
+make brand_dna_read using c
+  if not (files.exists using "storage/brand-dna.v1.json")
+    give back record {ok: yes, configured: no, schema_version: "brand-dna.v1"}
+  end
+  set raw_profile to files.read_text using "storage/brand-dna.v1.json"
+  set profile to json.parse using raw_profile
+  if (map_get_str using profile, "schema", "") is not "brand-dna.v1"
+    give back record {ok: no, error: "Stored Brand DNA profile is invalid."}
+  end
+  give back record {ok: yes, configured: yes, schema_version: "brand-dna.v1", revision: profile.revision, profile: profile}
+end
+
+make campaign_html_escape using value
+  set safe to text.replace using (text.from using value), "&", "&amp;"
+  set safe to text.replace using safe, "<", "&lt;"
+  set safe to text.replace using safe, ">", "&gt;"
+  set safe to text.replace using safe, "\"", "&quot;"
+  set safe to text.replace using safe, "'", "&#39;"
+  give back safe
+end
+
+route "GET" "/api/groxy/brand-dna" using req
+  try
+    set profile_result to brand_dna_read using groxy_cache
+    if not profile_result.ok
+      give back server.json using 503, record {ok: no, code: "BRAND_DNA_STORAGE_INVALID", error: profile_result.error}
+    end
+    give back server.json using 200, profile_result
+  catch err
+    give back server.json using 503, record {ok: no, code: "BRAND_DNA_STORAGE_ERROR", error: "Brand DNA storage is unavailable."}
+  end
+end
+
+route "POST" "/api/groxy/brand-dna/wizard" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set payload to server.parse_json using req
+    for each text_key in ["business_name", "business_type", "niche", "target_audience"]
+      if not (has_map_key using payload, text_key) or not (is_text_value using (payload at text_key))
+        give back server.json using 422, record {ok: no, code: "BRAND_DNA_REQUIRED", field: text_key, error: "Required identity values must be text."}
+      end
+    end
+    set name_s to text.trim using (map_get_str using payload, "business_name", "")
+    set business_type_s to text.trim using (map_get_str using payload, "business_type", "")
+    set niche_s to text.trim using (map_get_str using payload, "niche", "")
+    set audience_s to text.trim using (map_get_str using payload, "target_audience", "")
+    if name_s is "" or business_type_s is "" or niche_s is "" or audience_s is ""
+      give back server.json using 422, record {ok: no, code: "BRAND_DNA_REQUIRED", error: "Business identity and target audience fields are required."}
+    end
+    for each list_key in ["pain_points", "location_terms", "forbidden_terms", "preferred_ctas", "avoided_ctas", "offer_types", "design_tokens"]
+      if has_map_key using payload, list_key
+        if not (is_list_value using (payload at list_key))
+          give back server.json using 422, record {ok: no, code: "BRAND_DNA_LIST_INVALID", field: list_key, error: "Brand DNA list fields must be arrays of text values."}
+        end
+        for each list_item in (payload at list_key)
+          if not (is_text_value using list_item) or (text.length using (text.from using list_item)) is greater than 1000
+            give back server.json using 422, record {ok: no, code: "BRAND_DNA_LIST_INVALID", field: list_key, error: "Brand DNA list values must be bounded text."}
+          end
+        end
+      end
+    end
+    if not (has_map_key using payload, "pain_points") or (collections.length using (payload at "pain_points")) is 0
+      give back server.json using 422, record {ok: no, code: "BRAND_DNA_REQUIRED", field: "pain_points", error: "Add at least one audience need or pain point."}
+    end
+    if not (has_map_key using payload, "voice_weights") or not (is_json_object_value using (payload at "voice_weights"))
+      give back server.json using 422, record {ok: no, code: "BRAND_DNA_VOICE_INVALID", error: "All four brand voice weights are required."}
+    end
+    set current to brand_dna_read using groxy_cache
+    set current_revision to 0
+    if current.configured
+      set current_revision to current.revision
+      if not (has_map_key using payload, "expected_revision") or (text.from using (payload at "expected_revision")) is not (text.from using current_revision)
+        give back server.json using 409, record {ok: no, code: "BRAND_DNA_REVISION_CONFLICT", error: "Brand DNA changed since it was loaded. Reload and review before saving."}
+      end
+    otherwise
+      if (has_map_key using payload, "expected_revision") and (payload at "expected_revision") is not nothing
+        give back server.json using 409, record {ok: no, code: "BRAND_DNA_REVISION_CONFLICT", error: "No saved profile exists at the expected revision."}
+      end
+    end
+    if (has_map_key using payload, "prices") and (is_json_object_value using (payload at "prices"))
+      for each price_key in (collections.keys using (payload at "prices"))
+        set price_val to (payload at "prices") at price_key
+        if not (is_strict_decimal_wire_str using price_val) or (text.starts_with using (text.from using price_val), "+") or (text.contains using (text.from using price_val), "e") or (text.contains using (text.from using price_val), "E")
+          give back server.json using 422, record {ok: no, code: "ADR025C_PRICE_STRING_REQUIRED", field: price_key, error: "Prices must be canonical base-10 decimal strings."}
+        end
+      end
+    end
+    set next_revision to current_revision plus 1
+    set voice_weights to payload at "voice_weights"
+    for each voice_key in ["authoritative", "warm_friendly", "bold_direct", "technical_expert"]
+      if not (has_map_key using voice_weights, voice_key)
+        give back server.json using 422, record {ok: no, code: "BRAND_DNA_VOICE_INVALID", field: voice_key, error: "All four brand voice weights are required."}
+      end
+      set weight_wire to json.stringify using (voice_weights at voice_key)
+      set weight_value to text.to_integer using (text.from using (voice_weights at voice_key))
+      if (text.starts_with using weight_wire, "\"") or (text.contains using weight_wire, ".") or weight_value is less than 0 or weight_value is greater than 100
+        give back server.json using 422, record {ok: no, code: "BRAND_DNA_VOICE_INVALID", field: voice_key, error: "Voice weights must be integers from 0 through 100."}
+      end
+    end
+    set prices to {}
+    if (has_map_key using payload, "prices") and (is_json_object_value using (payload at "prices"))
+      set prices to payload at "prices"
+    end
+    set guarantee_data to record {status: "unknown", details: ""}
+    if has_map_key using payload, "guarantees"
+      set guarantee_status to text.lower using (map_get_str using (payload at "guarantees"), "status", "unknown")
+      if guarantee_status is not "unknown" and guarantee_status is not "known" and guarantee_status is not "none"
+        give back server.json using 422, record {ok: no, code: "BRAND_DNA_GUARANTEE_INVALID", field: "guarantees.status", error: "Guarantee status must be known, unknown, or none."}
+      end
+      set guarantee_details to map_get_str using (payload at "guarantees"), "details", ""
+      if (text.length using guarantee_details) is greater than 1000
+        give back server.json using 422, record {ok: no, code: "BRAND_DNA_GUARANTEE_INVALID", field: "guarantees.details", error: "Guarantee details are too long."}
+      end
+      set guarantee_data to record {status: guarantee_status, details: guarantee_details}
+    end
+    set location_terms to []
+    set forbidden_terms to []
+    set preferred_ctas to []
+    set avoided_ctas to []
+    set offer_types to []
+    set design_tokens to []
+    for each optional_list_key in ["location_terms", "forbidden_terms", "preferred_ctas", "avoided_ctas", "offer_types", "design_tokens"]
+      if has_map_key using payload, optional_list_key
+        if optional_list_key is "location_terms"
+          set location_terms to payload at optional_list_key
+        otherwise if optional_list_key is "forbidden_terms"
+          set forbidden_terms to payload at optional_list_key
+        otherwise if optional_list_key is "preferred_ctas"
+          set preferred_ctas to payload at optional_list_key
+        otherwise if optional_list_key is "avoided_ctas"
+          set avoided_ctas to payload at optional_list_key
+        otherwise if optional_list_key is "offer_types"
+          set offer_types to payload at optional_list_key
+        otherwise
+          set design_tokens to payload at optional_list_key
+        end
+      end
+    end
+    set service_area to map_get_str using payload, "service_area", ""
+    set currency to text.upper using (map_get_str using payload, "currency", "USD")
+    set style_pack to map_get_str using payload, "style_pack", ""
+    set editorial_notes to map_get_str using payload, "editorial_notes", ""
+    for each design_token in design_tokens
+      if not (is_text_value using design_token) or not (text.starts_with using (text.from using design_token), "--grex-")
+        give back server.json using 422, record {ok: no, code: "BRAND_DNA_DESIGN_TOKEN_INVALID", error: "Design tokens must reference --grex-* tokens."}
+      end
+    end
+    set profile to record {schema: "brand-dna.v1", revision: next_revision, updated_at: (call dates.now_utc).iso, business_name: name_s, business_type: business_type_s, niche: niche_s, target_audience: audience_s, pain_points: (payload at "pain_points"), service_area: service_area, location_terms: location_terms, voice_weights: voice_weights, forbidden_terms: forbidden_terms, preferred_ctas: preferred_ctas, avoided_ctas: avoided_ctas, offer_types: offer_types, prices: prices, currency: currency, guarantees: guarantee_data, style_pack: style_pack, design_tokens: design_tokens, editorial_notes: editorial_notes}
+    set raw_profile to json.stringify using profile
+    if (text.length using raw_profile) is greater than 32000
+      give back server.json using 413, record {ok: no, code: "BRAND_DNA_TOO_LARGE", error: "Brand DNA profile exceeds the 32 KiB limit."}
+    end
+    set markdown to "# Brand DNA\n\nRevision: " joined with (text.from using next_revision) joined with "\n\n## Business\n" joined with name_s joined with " — " joined with business_type_s joined with "; " joined with niche_s joined with "\n\n## Audience\n" joined with audience_s joined with "\n\n## Profile Data\n\n```json\n" joined with raw_profile joined with "\n```\n"
+    set old_json to ""
+    set old_md to ""
+    if files.exists using "storage/brand-dna.v1.json"
+      set old_json to files.read_text using "storage/brand-dna.v1.json"
+    end
+    if files.exists using "storage/BRAND-DNA.md"
+      set old_md to files.read_text using "storage/BRAND-DNA.md"
+    end
+    try
+      call files.write_text using "storage/brand-dna.v1.json", raw_profile
+      call files.write_text using "storage/BRAND-DNA.md", markdown
+    catch write_err
+      if old_json is not ""
+        call files.write_text using "storage/brand-dna.v1.json", old_json
+      end
+      if old_md is not ""
+        call files.write_text using "storage/BRAND-DNA.md", old_md
+      end
+      give back server.json using 503, record {ok: no, code: "BRAND_DNA_WRITE_FAILED", error: "Brand DNA could not be saved. The previous profile was restored."}
+    end
+    give back server.json using 200, record {ok: yes, configured: yes, schema_version: "brand-dna.v1", revision: next_revision, profile: profile, saved_files: record {json_sha256: (crypto.sha256_hex using raw_profile), markdown_sha256: (crypto.sha256_hex using markdown)}}
+  catch err
+    give back server.json using 422, record {ok: no, code: "BRAND_DNA_INVALID", error: "Brand DNA contains invalid or unsupported values."}
+  end
+end
+
+route "POST" "/api/groxy/batch-create" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set payload to server.parse_json using req
+    set brief to text.trim using (map_get_str using payload, "brief", "")
+    set typ to text.lower using (map_get_str using payload, "content_type", "post")
+    set count_raw to map_get_str using payload, "item_count", "0"
+    set item_count to text.to_integer using count_raw
+    if item_count is less than 1 or item_count is greater than 40
+      give back server.json using 422, record {ok: no, code: "BATCH_COUNT_BOUNDS", error: "item_count must be an integer from 1 through 40."}
+    end
+    if typ is not "post" and typ is not "product"
+      give back server.json using 422, record {ok: no, code: "BATCH_CONTENT_TYPE_INVALID", error: "content_type must be post or product."}
+    end
+    if brief is "" or (text.length using brief) is greater than 280
+      give back server.json using 422, record {ok: no, code: "BATCH_BRIEF_INVALID", error: "Provide one concise sentence, up to 280 characters."}
+    end
+    set profile_result to brand_dna_read using groxy_cache
+    if not profile_result.configured
+      give back server.json using 409, record {ok: no, code: "BRAND_DNA_REQUIRED", error: "Complete the Brand DNA wizard before creating a campaign."}
+    end
+    set profile to profile_result.profile
+    set target_url to text.trim using (map_get_str using payload, "cms_url", (resolve_env_opt using "GROXY_CMS_URL"))
+    if target_url is ""
+      give back server.json using 422, record {ok: no, code: "CMS_TARGET_REQUIRED", error: "Set the GrabLab CMS target before staging a campaign."}
+    end
+    set provider_requested to text.lower using (text.trim using (map_get_str using payload, "provider", "deterministic"))
+    if provider_requested is not "deterministic" and provider_requested is not "ollama" and provider_requested is not "byok"
+      give back server.json using 422, record {ok: no, code: "BATCH_PROVIDER_INVALID", error: "provider must be deterministic, ollama, or byok."}
+    end
+    set provider_used to "deterministic"
+    set fallback_used to no
+    set model_tip to ""
+    if provider_requested is "ollama" or provider_requested is "byok"
+      set provider_url to "http://127.0.0.1:11434/api/generate"
+      set provider_headers to collections.put using {}, "Content-Type", "application/json"
+      set provider_model to "llama3.2"
+      if provider_requested is "byok"
+        set provider_url to text.trim using (map_get_str using payload, "provider_endpoint", "")
+        set allowed_origin to resolve_env_opt using "GROXY_BATCH_ALLOW_ORIGIN"
+        set provider_key to resolve_env_opt using "GROXY_BATCH_API_KEY"
+        if provider_url is "" or allowed_origin is "" or provider_url is not allowed_origin or not (text.starts_with using provider_url, "https://") or (text.contains using (text.lower using provider_url), "localhost") or (text.contains using provider_url, "127.0.0.1") or (text.contains using provider_url, "169.254.") or (text.contains using provider_url, "10.") or (text.contains using provider_url, "192.168.") or provider_key is ""
+          give back server.json using 403, record {ok: no, code: "GRAB-E402", error: "Batch BYOK origin is not an explicitly allowlisted public HTTPS endpoint or its key capability is unavailable."}
+        end
+        set provider_headers to collections.put using provider_headers, "Authorization", ("Bearer " joined with provider_key)
+        set provider_model to "gpt-4o-mini"
+      end
+      set safe_profile to record {business_name: profile.business_name, niche: profile.niche, audience: profile.target_audience, service_area: profile.service_area, pain_points: profile.pain_points, forbidden_terms: profile.forbidden_terms, preferred_ctas: profile.preferred_ctas, guarantee_status: profile.guarantees.status}
+      set model_prompt to "Return JSON only with one field reader_tip, a plain-language helpful paragraph under 300 characters. No HTML, URLs, prices, guarantees, unverifiable claims, or terms in forbidden_terms. Ground the wording only in these supplied facts: " joined with (json.stringify using (record {brief: brief, brand: safe_profile}))
+      try
+        if provider_requested is "ollama"
+          set provider_body to json.stringify using (record {model: provider_model, stream: no, format: "json", prompt: model_prompt})
+        otherwise
+          set provider_body to json.stringify using (record {model: provider_model, stream: no, response_format: (record {type: "json_object"}), messages: [record {role: "user", content: model_prompt}]})
+        end
+        set provider_resp to http.post using provider_url, provider_body, record {headers: provider_headers}
+        if provider_resp.ok
+          set provider_doc to json.parse using provider_resp.body
+          set provider_text to map_get_str using provider_doc, "response", ""
+          if provider_requested is "byok" and (has_map_key using provider_doc, "choices")
+            set first_choice to (provider_doc at "choices") at 0
+            if has_map_key using first_choice, "message"
+              set provider_text to map_get_str using (first_choice at "message"), "content", ""
+            end
+          end
+          if provider_text is not "" and (text.length using provider_text) is at most 4096
+            set tip_doc to json.parse using provider_text
+            set model_tip to text.trim using (map_get_str using tip_doc, "reader_tip", "")
+            if (text.length using model_tip) is greater than 300
+              set model_tip to ""
+            end
+          end
+          if model_tip is not ""
+            set provider_used to provider_requested
+          otherwise
+            set fallback_used to yes
+          end
+        otherwise
+          set fallback_used to yes
+        end
+      catch provider_err
+        set fallback_used to yes
+      end
+      if provider_requested is "byok" and fallback_used
+        give back server.json using 503, record {ok: no, code: "BATCH_BYOK_UNAVAILABLE", error: "The configured BYOK provider could not return a bounded valid response; no batch was staged."}
+      end
+    end
+    set request_price to map_get_str using payload, "price", (map_get_str using profile.prices, "default", "")
+    if (has_map_key using payload, "price") and not (is_strict_decimal_wire_str using (payload at "price"))
+      give back server.json using 422, record {ok: no, code: "ADR025C_PRICE_STRING_REQUIRED", error: "Product prices must be exact base-10 strings."}
+    end
+    if typ is "product" and request_price is ""
+      give back server.json using 422, record {ok: no, code: "PRODUCT_PRICE_REQUIRED", error: "Add an exact price string in Brand DNA or this request."}
+    end
+    if typ is "product" and (not (is_exact_decimal_wire using request_price) or (text.starts_with using request_price, "+") or (text.contains using request_price, "e") or (text.contains using request_price, "E"))
+      give back server.json using 422, record {ok: no, code: "ADR025C_PRICE_STRING_REQUIRED", error: "Product prices must be exact base-10 strings."}
+    end
+    set entries to []
+    set used_titles to []
+    set used_slugs to []
+    set existing_ctx to cache_get_opt using groxy_cache, "site:context_snap"
+    if existing_ctx is nothing and (files.exists using "storage/SITE-CONTEXT.md")
+      set site_md to files.read_text using "storage/SITE-CONTEXT.md"
+      set existing_ctx to record {markdown: site_md}
+    end
+    set title_base to title_case_str using brief
+    set n to 1
+    while n is at most item_count
+      set title to title_base
+      if n is greater than 1
+        set title to title_base joined with " — Part " joined with (text.from using n)
+      end
+      set slug to slugify_clean using title
+      set slug to slug joined with "-" joined with (text.from using n)
+      if existing_ctx is not nothing and (has_map_key using existing_ctx, "entries")
+        for each prior in (existing_ctx at "entries")
+          if is_record_value using prior
+            set prior_title to text.lower using (text.trim using (map_get_str using prior, "title", ""))
+            set prior_slug to slugify_clean using (map_get_str using prior, "slug", (map_get_str using prior, "title", ""))
+            if prior_title is (text.lower using (text.trim using title)) or prior_slug is slug
+              set title to title joined with " — Campaign " joined with (text.from using n)
+              set slug to slugify_clean using title
+            end
+          end
+        end
+      end
+      set duplicate_seen to no
+      for each seen_title in used_titles
+        if seen_title is (text.lower using title)
+          set duplicate_seen to yes
+        end
+      end
+      for each seen_slug in used_slugs
+        if seen_slug is slug
+          set duplicate_seen to yes
+        end
+      end
+      if duplicate_seen
+        set title to title joined with " " joined with (text.from using n)
+        set slug to slugify_clean using title
+      end
+      set used_titles to collections.append using used_titles, (text.lower using title)
+      set used_slugs to collections.append using used_slugs, slug
+      set audience to profile.target_audience
+      set area to map_get_str using profile, "service_area", "the local area"
+      set pain_point to "the questions their customers bring"
+      if (collections.length using profile.pain_points) is greater than 0
+        set pain_point to text.from using (profile.pain_points at 0)
+      end
+      set preferred_cta to "Explore the available options"
+      if (collections.length using profile.preferred_ctas) is greater than 0
+        set preferred_cta to text.from using (profile.preferred_ctas at 0)
+      end
+      set body to brief joined with " " joined with profile.business_name joined with " helps " joined with audience joined with " with " joined with profile.niche joined with ". "
+      set body to body joined with " The guidance addresses " joined with pain_point joined with " and keeps each recommendation grounded in supplied service details."
+      set body to body joined with "Start with the real question behind the search. A clear plan explains who a service is for, what problem it addresses, and what a useful next step looks like. Readers should be able to compare their options without pressure or promises that cannot be supported."
+      if model_tip is not ""
+        set body to body joined with " " joined with model_tip
+      end
+      set body to body joined with "\n\nLocal context matters because schedules, access, and customer needs differ from one community to another. In " joined with area joined with ", use accurate service details and explain how a first conversation works. Keep location information specific, current, and easy to verify."
+      set body to body joined with "\n\nA practical process is easier to evaluate when its stages are visible. Describe the initial discussion, the information a customer may want to prepare, and how the team follows up. Avoid promising a result. Use only fulfillment details recorded in the approved Brand DNA."
+      set body to body joined with "\n\nGood guidance makes room for different circumstances. Explain common questions in plain language, identify details that can change the recommendation, and invite readers to ask about their own situation. A helpful article should inform a decision while leaving the final choice with the customer."
+      set body to body joined with "\n\nBefore taking action, readers can review the service information, compare relevant options, and note any questions about timing or cost. Clear expectations help both sides use their time well. Keep pricing exact where it is known, and say when a quote depends on additional details."
+      set body to body joined with "\n\nThe best next step is simple and optional: " joined with preferred_cta joined with ". For more details, visit the " joined with profile.business_name joined with " contact page. This guidance supports an informed conversation and does not replace advice tailored to individual needs."
+      set body_html to "<h1>" joined with (campaign_html_escape using title) joined with "</h1><h2>Start with the right question</h2><p>" joined with (campaign_html_escape using brief) joined with " " joined with (campaign_html_escape using profile.business_name) joined with " helps " joined with (campaign_html_escape using audience) joined with " with " joined with (campaign_html_escape using profile.niche) joined with ". A clear plan explains who a service is for, what problem it addresses, and what a useful next step looks like. Readers should be able to compare options without pressure or unsupported promises.</p><h2>Use local details readers can verify</h2><p>Local context matters because schedules, access, and customer needs differ from one community to another. In " joined with (campaign_html_escape using area) joined with ", use accurate service details and explain how a first conversation works. Keep location information specific, current, and easy to verify.</p><h2>Make the process easy to understand</h2><p>Describe the initial discussion, what information a customer may want to prepare, and how the team follows up. Avoid implying a guaranteed result. Use only offers or guarantees recorded in the approved Brand DNA. Explain common questions in plain language and identify details that can change a recommendation.</p><h2>Compare options without pressure</h2><p>A helpful article informs a decision while leaving the final choice with the customer. Readers can review service information, compare relevant options, and note questions about timing or cost. Clear expectations help both sides use their time well. Keep pricing exact where it is known, and say when a quote depends on additional details.</p><h2>Choose an optional next step</h2><p>The next step is simple and optional: explore related information or contact the team to discuss fit. For more details, visit the <a href=\"/contact\">contact page</a>. This guidance supports an informed conversation and does not replace advice tailored to individual needs.</p>"
+      set body_html to text.replace using body_html, "Avoid implying a guaranteed result. Use only offers or guarantees recorded in the approved Brand DNA.", "Avoid promising a result. Use only specific fulfillment details recorded in the approved Brand DNA."
+      set body_html to text.replace using body_html, "explore related information or contact the team to discuss fit", (campaign_html_escape using preferred_cta)
+      if model_tip is not ""
+        set body_html to text.replace using body_html, "</p><h2>Use local details readers can verify</h2>", ((" " joined with (campaign_html_escape using model_tip)) joined with "</p><h2>Use local details readers can verify</h2>")
+      end
+      if (map_get_str using profile, "service_area", "") is not ""
+        set body to body joined with " Serving " joined with profile.service_area joined with "."
+      end
+      set ctype_slug to typ
+      set custom_fields to {}
+      set ld_payload to collections.put using {}, "@context", "https://schema.org"
+      set ld_payload to collections.put using ld_payload, "@type", "Article"
+      set ld_payload to collections.put using ld_payload, "headline", title
+      set ld_payload to collections.put using ld_payload, "description", brief
+      if typ is "product"
+        set ctype_slug to "product"
+        set custom_fields to record {price: request_price, currency: (map_get_str using profile, "currency", "USD"), sku: (text.upper using slug)}
+        set offer to collections.put using {}, "@type", "Offer"
+        set offer to collections.put using offer, "price", request_price
+        set offer to collections.put using offer, "priceCurrency", (map_get_str using profile, "currency", "USD")
+        set offer to collections.put using offer, "availability", "https://schema.org/InStock"
+        set ld_payload to collections.put using {}, "@context", "https://schema.org"
+        set ld_payload to collections.put using ld_payload, "@type", "Product"
+        set ld_payload to collections.put using ld_payload, "name", title
+        set ld_payload to collections.put using ld_payload, "description", brief
+        set ld_payload to collections.put using ld_payload, "sku", (text.upper using slug)
+        set ld_payload to collections.put using ld_payload, "offers", offer
+      end
+      set description to brief joined with " Learn how " joined with profile.business_name joined with " supports " joined with audience joined with " in " joined with area joined with "."
+      set meta_title to title joined with " | Local Guide"
+      for each forbidden_term in profile.forbidden_terms
+        set forbidden_lower to text.lower using (text.trim using (text.from using forbidden_term))
+        if forbidden_lower is not "" and (text.contains using (text.lower using (title joined with " " joined with body joined with " " joined with body_html joined with " " joined with description)), forbidden_lower)
+          give back server.json using 422, record {ok: no, code: "BATCH_FORBIDDEN_TERM", error: "Generated content conflicts with a forbidden Brand DNA term; no batch was staged.", field: "forbidden_terms"}
+        end
+      end
+      set link_node to record {element: "Link", tag: "a", props: (record {href: "/contact", text: "Contact the team"}), children: []}
+      set campaign_layout to record {element: "Section", tag: "section", props: {}, children: [link_node]}
+      set entry to record {title: title, slug: slug, content_type: ctype_slug, excerpt: description, body: body, body_html: body_html, grex_layout: campaign_layout, meta_title: meta_title, meta_description: description, author_name: profile.business_name, published_at: "2026-11-16T00:00:00Z", custom_fields: custom_fields, status: "draft"}
+      set audit_payload to record {entry: entry, html_fragment: body_html, focus_keyword: brief, site_context: existing_ctx}
+      set audit to evaluate_audit_report using audit_payload, (load_playbook_doc using groxy_cache)
+      if audit.overall_score is less than 90 or (audit.overall_grade is not "A" and audit.overall_grade is not "A+") or not audit.publish_safe
+        give back server.json using 422, record {ok: no, code: "BATCH_AUDIT_FAILED", error: "One or more generated items did not pass the required 22-rule audit; no batch was staged.", failed_item: title, audit: audit}
+      end
+      set schema_raw to json.stringify using ld_payload
+      set schema_raw to text.replace using schema_raw, "<", "\\u003c"
+      set schema_raw to text.replace using schema_raw, ">", "\\u003e"
+      set schema_raw to text.replace using schema_raw, "&", "\\u0026"
+      set item to record {title: title, slug: slug, status: "draft", audit: audit, candidate_entry: entry, schema_json_ld: schema_raw}
+      set entries to collections.append using entries, item
+      set n to n plus 1
+    end
+    set batch_id to "batch_" joined with (crypto.random_hex using 16)
+    set item_serial to json.stringify using entries
+    set revision_str to text.from using profile.revision
+    set digest_input to batch_id joined with "|" joined with typ joined with "|" joined with (text.from using item_count) joined with "|" joined with revision_str joined with "|" joined with target_url joined with "|" joined with item_serial
+    set batch_sha to crypto.sha256_hex using digest_input
+    set approval_token to "btok_" joined with (crypto.random_hex using 24)
+    set approval_binding to approval_token joined with "|" joined with batch_id joined with "|" joined with (text.from using item_count) joined with "|" joined with batch_sha
+    set staged to record {batch_id: batch_id, item_count: item_count, content_type: typ, cms_url: target_url, batch_sha256: batch_sha, token_verifier: (crypto.hash_password using approval_binding), profile_revision: profile.revision, items: entries, used: no, expires_at: (call dates.now_utc).iso}
+    set staged_path to "storage/" joined with batch_id joined with ".json"
+    call files.write_text using staged_path, (json.stringify using staged)
+    call cache.set using groxy_cache, ("batch:" joined with batch_id), staged, 3600000
+    give back server.json using 200, record {schema_version: "1.2.0", batch_id: batch_id, item_count: item_count, content_type: typ, provider_used: provider_used, fallback_used: fallback_used, brand_dna_revision: profile.revision, batch_sha256: batch_sha, approval_required: yes, approval_token: approval_token, items: entries}
+  catch err
+    give back server.json using 422, record {ok: no, code: "BATCH_INVALID", error: "Campaign request could not be safely staged."}
+  end
+end
+
+route "POST" "/api/groxy/batch-create/apply" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set payload to server.parse_json using req
+    set batch_id to text.trim using (map_get_str using payload, "batch_id", "")
+    set approval_token to text.trim using (map_get_str using payload, "approval_token", "")
+    if not (text.starts_with using batch_id, "batch_") or (text.length using batch_id) is not 38 or not (text.starts_with using approval_token, "btok_") or (text.length using approval_token) is not 53
+      give back server.json using 403, record {ok: no, code: "BATCH_APPROVAL_INVALID", error: "A valid batch_id and approval_token are required."}
+    end
+    set batch_key to "batch:" joined with batch_id
+    set staged to cache_get_opt using groxy_cache, batch_key
+    if staged is nothing
+      set staged_path to "storage/" joined with batch_id joined with ".json"
+      if not (files.exists using staged_path)
+        give back server.json using 403, record {ok: no, code: "BATCH_APPROVAL_INVALID", error: "Batch approval is invalid or expired."}
+      end
+      set staged to json.parse using (files.read_text using staged_path)
+      if staged.batch_id is not batch_id
+        give back server.json using 403, record {ok: no, code: "BATCH_APPROVAL_INVALID", error: "Batch approval is invalid or expired."}
+      end
+    end
+    if staged.used
+      give back server.json using 409, record {ok: no, code: "BATCH_APPROVAL_REPLAY", error: "This batch approval token has already been consumed."}
+    end
+    set stored_items to staged.items
+    set stored_count to collections.length using stored_items
+    if stored_count is not staged.item_count
+      give back server.json using 403, record {ok: no, code: "BATCH_TARGET_MISMATCH", error: "Staged item count failed integrity validation."}
+    end
+    set item_serial to json.stringify using stored_items
+    set revision_str to text.from using staged.profile_revision
+    set count_str to text.from using staged.item_count
+    set digest_input to staged.batch_id joined with "|" joined with staged.content_type joined with "|" joined with count_str joined with "|" joined with revision_str joined with "|" joined with staged.cms_url joined with "|" joined with item_serial
+    set recalculated_sha to crypto.sha256_hex using digest_input
+    if recalculated_sha is not staged.batch_sha256
+      give back server.json using 403, record {ok: no, code: "BATCH_TARGET_MISMATCH", error: "Staged campaign contents failed integrity validation."}
+    end
+    set approval_binding to approval_token joined with "|" joined with batch_id joined with "|" joined with count_str joined with "|" joined with recalculated_sha
+    if not (crypto.verify_password using approval_binding, staged.token_verifier)
+      give back server.json using 403, record {ok: no, code: "BATCH_APPROVAL_INVALID", error: "Batch approval token does not match this batch."}
+    end
+    set current_profile to brand_dna_read using groxy_cache
+    if not current_profile.configured or current_profile.revision is not staged.profile_revision
+      give back server.json using 403, record {ok: no, code: "BATCH_TARGET_MISMATCH", error: "Brand DNA changed after preview; stage a new preview."}
+    end
+    set cms_url to text.trim using (map_get_str using payload, "cms_url", staged.cms_url)
+    if cms_url is not staged.cms_url
+      give back server.json using 403, record {ok: no, code: "BATCH_TARGET_MISMATCH", error: "Campaign destination changed after preview."}
+    end
+    set consumed to copy_to_map using staged
+    set consumed to collections.put using consumed, "used", yes
+    set staged_path to "storage/" joined with batch_id joined with ".json"
+    call files.write_text using staged_path, (json.stringify using consumed)
+    call cache.set using groxy_cache, batch_key, consumed, 3600000
+    set cms_token to text.trim using (map_get_str using payload, "cms_token", (resolve_env_opt using "GROXY_CMS_MCP_TOKEN"))
+    if cms_url is ""
+      give back server.json using 503, record {ok: no, code: "CMS_NOT_CONFIGURED", error: "Configure GrabLab CMS before approving draft creation. The approval token is consumed."}
+    end
+    set results to []
+    set created_count to 0
+    set failed_count to 0
+    set rpc_id to 121
+    for each item in staged.items
+      set candidate to item.candidate_entry
+      set args to record {content_type_slug: candidate.content_type, title: candidate.title, slug: candidate.slug, excerpt: candidate.excerpt, body: candidate.body, custom_fields: candidate.custom_fields}
+      set dispatch to call_cms_mcp_tool using cms_url, cms_token, "create_entry_draft", args, rpc_id
+      set rpc_id to rpc_id plus 1
+      if dispatch.ok
+        set created_count to created_count plus 1
+        set results to collections.append using results, record {title: candidate.title, slug: candidate.slug, created: yes, status: "draft", result: dispatch.data}
+      otherwise
+        set failed_count to failed_count plus 1
+        set results to collections.append using results, record {title: candidate.title, slug: candidate.slug, created: no, status: "failed", error: "GrabLab CMS draft creation failed."}
+      end
+    end
+    give back server.json using 200, record {schema_version: "1.2.0", approved: yes, status_enforced: "draft", created_count: created_count, failed_count: failed_count, target_binding_verified: yes, batch_id: batch_id, results: results}
+  catch err
+    give back server.json using 422, record {ok: no, code: "BATCH_APPLY_FAILED", error: "Batch draft application failed safely."}
+  end
 end

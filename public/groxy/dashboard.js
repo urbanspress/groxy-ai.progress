@@ -5,7 +5,7 @@
  * Zero innerHTML writes, zero eval(), zero wrapper <div> elements.
  */
 
-export const GROXY_VERSION = "1.1.0";
+export const GROXY_VERSION = "1.2.0";
 
 import {
   auditAccessibility,
@@ -35,6 +35,8 @@ import {
   renderSiteContextMarkdown,
 } from "./site-context.js";
 import { extractVisualProfile, verifyScreenshot } from "./vision-clone.js";
+import { mountBrandDnaWizard } from "./brand-dna.js";
+import { mountBatchCampaignStudio } from "./batch-campaign.js";
 
 export const SAMPLE_AUDIT_PRESETS = Object.freeze({
   clean: {
@@ -632,7 +634,7 @@ export function mountGroxyDashboard(options = {}) {
     class: "groxy-card",
     "aria-label": "Deterministic SEO and DOM Auditor",
   });
-  formCard.appendChild(createEl(doc, "h1", {}, "Groxy AI v1.1.0 — Visual Generator Studio, Site Intelligence, Pre-Publish Gate & Audit Inspector"));
+  formCard.appendChild(createEl(doc, "h1", {}, "Groxy AI v1.2.0 — Visual Generator Studio, Site Intelligence, Pre-Publish Gate & Audit Inspector"));
   formCard.appendChild(
     createEl(
       doc,
@@ -2283,6 +2285,8 @@ export function mountGroxyDashboard(options = {}) {
   });
 
   const visionStudio = mountVisionCloneStudio({ root, doc, csrfToken, fetchFn });
+  const brandDnaStudio = mountBrandDnaWizard({ root, document: doc, csrfToken, fetchFn });
+  const batchCampaignStudio = mountBatchCampaignStudio({ root, document: doc, csrfToken, fetchFn });
 
   return {
     auditDomSafety() {
@@ -2331,6 +2335,8 @@ export function mountGroxyDashboard(options = {}) {
     discardVisionClone() {
       visionStudio.discard();
     },
+    getBrandDnaState() { return brandDnaStudio.getProfile(); },
+    getBatchCampaignState() { return batchCampaignStudio.getStaged(); },
     runAudit: executeAudit,
     triggerPrePublishReview,
     triggerBoost,
@@ -2359,6 +2365,8 @@ export function mountGroxyDashboard(options = {}) {
       disposeSchemaEffect();
       disposeMediaEffect();
       disposeWatchEffect();
+      brandDnaStudio.dispose();
+      batchCampaignStudio.dispose();
     },
   };
 }

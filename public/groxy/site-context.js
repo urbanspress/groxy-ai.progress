@@ -9,7 +9,7 @@
  * 5. Quiet `Groxy Nightly Watch` Morning Boost Digest & Portable `Site DNA` bundle
  */
 
-export const GROXY_VERSION = "1.1.0";
+export const GROXY_VERSION = "1.2.0";
 
 import { GrexSecurityError, isSafeUrl } from "./grex.js";
 import { parseDesignSystemMarkdown } from "./playbook.js";
@@ -1537,7 +1537,24 @@ export function buildPortableSiteDna(input = {}) {
     },
     nightly_watch_digest: digest,
     decimal_integrity_verified: snapshot.decimal_integrity_verified,
+    ...(input.brand_dna ? { brand_dna: validatePortableBrandDna(input.brand_dna) } : {}),
   };
+}
+
+function validatePortableBrandDna(profile) {
+  if (!profile || typeof profile !== "object" || profile.schema !== "brand-dna.v1") {
+    throw new TypeError("Portable Site DNA brand_dna must use the brand-dna.v1 schema.");
+  }
+  const json = JSON.stringify(profile);
+  if (json.length > 32_000 || /(?:^|["\s])(?:password|secret|token|credential|filesystem_path)(?:"|\s*:)/i.test(json)) {
+    throw new TypeError("Portable Site DNA brand_dna is oversized or contains a prohibited secret/path field.");
+  }
+  for (const [key, value] of Object.entries(profile.prices || {})) {
+    if (typeof value !== "string" || !/^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(value)) {
+      throw new TypeError(`Portable Site DNA price ${key} must be an exact base-10 string.`);
+    }
+  }
+  return JSON.parse(json);
 }
 
 export function renderPortableSiteDnaMarkdown(dna) {

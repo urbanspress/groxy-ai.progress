@@ -1,8 +1,8 @@
 # HANDOFF.md — Groxy AI
 
-- **Current Owner:** Google Antigravity (Codex specification draft complete; awaiting project-owner review of `v1.2.0`)
-- **Current Milestone State:** `v1.0.0` remains complete and frozen. `v1.1.0` Screenshot-to-Grex Visual Replica remains Approved & Frozen — Complete. `v1.2.0` is an approved target with [`GROXY-AI-SPEC-120.md`](specifications/GROXY-AI-SPEC-120.md) in review; implementation has not started and requires explicit project-owner approval.
-- **Next Milestone:** `v1.2.0` — 1-Time Brand DNA & Voice Setup Wizard + 40-Post/Product Batch Campaign Engine (`Status: Approved target; specification in review`).
+- **Current Owner:** OpenAI Codex (implementation and verification complete; release promotion pending authenticated GitHub access)
+- **Current Milestone State:** `v1.0.0` and `v1.1.0` remain complete and frozen. The owner approved [`GROXY-AI-SPEC-120.md`](specifications/GROXY-AI-SPEC-120.md) as written on 2026-11-15. `v1.2.0` implementation and all local verification gates are complete; synchronized origin/stable pushes and GitHub Releases remain pending because the configured `gh` credential is invalid.
+- **Next Milestone:** Finish authenticated `v1.2.0` origin + stable promotion and publish both matching releases with all three assets.
 
 ---
 
@@ -12,10 +12,13 @@
 - **GrabLab CMS:** `v1.0.1` (`urbanspress/grablab-cms`)
 - **Grex Theme Builder:** `v1.0.0` (`urbanspress/grex-builder`)
 
-## `v1.2.0` Specification Review Checkpoint
-- **Specification:** [`specifications/GROXY-AI-SPEC-120.md`](specifications/GROXY-AI-SPEC-120.md) — drafted and awaiting explicit owner approval; no implementation code may be written before approval.
+## `v1.2.0` Implementation & Verification Checkpoint
+- **Specification:** [`specifications/GROXY-AI-SPEC-120.md`](specifications/GROXY-AI-SPEC-120.md) — explicitly approved by the project owner as written on 2026-11-15.
 - **Scope:** 8–10 question Brand DNA wizard (`POST /api/groxy/brand-dna/wizard`, `GET /api/groxy/brand-dna`), confined `storage/BRAND-DNA.md` and `storage/brand-dna.v1.json`, portable Site DNA `brand_dna`, plus deterministic/local Ollama/allowlisted BYOK batches of 1–40 posts or products (`POST /api/groxy/batch-create`, `/apply`).
 - **Safety contract:** Every staged item must pass the 22-rule four-pillar audit at `>=90` Grade A/A+, preserve exact `ADR-025c` decimal strings, and contain no wrapper `<div>` or `innerHTML` writes. Batch apply requires CSRF and a single-use token bound to `{ batch_id, item_count, batch_sha256 }`; all CMS dispatches use `create_entry_draft` with `status_enforced: "draft"`.
+- **Implemented:** Added the ten-step semantic wizard and campaign studio, revisioned storage and Site DNA round-trip, exact-price product schema, deterministic/Ollama/BYOK generation paths, duplicate avoidance, audited staging, and target-bound single-use CMS draft approval. Version metadata and new tests are synchronized at `1.2.0`.
+- **Verified:** `grab check --platform-config grab.platform.json src/groxy.grab` passes; canonical `grab format` output matches the source byte-for-byte; `node --test tests/*.test.js` passes 54/54; `python tests/integration_e2e.py` passes Gates 1, 2, 3A, and live 3B including Brand DNA persistence, Site DNA export, 403 invalid-token and 409 replay rejection, and GrabLab CMS draft-only creation. All eight sibling repositories are clean.
+- **Release promotion blocker:** `gh auth status` reports the configured `urbanspress` token is invalid. No commits, tags, pushes, or GitHub Releases have been created. Re-authenticate GitHub CLI before origin/stable publication. The pre-existing untracked `playbook/genres/` folder is preserved and excluded from release staging.
 - **Frozen scope:** Keep `v1.0.0` and `v1.1.0` implementation and completion records untouched.
 
 ## `v1.1.0` Completion Checkpoint
@@ -93,7 +96,7 @@ Completed multi-repository security, DOM, accessibility, precision, container, a
   - Structural hierarchy, spacing rhythm, typography scale, and palette extraction via user-configured vision model (local Ollama `llama3.2-vision`/`qwen2.5-vl` on `127.0.0.1:11434` or optional BYOK API key governed by `GRAB-E402`).
   - Compiles strictly into `Grex JS v1.0.0`'s 20 semantic components (`divCount === 0`, `innerHTMLWriteCount === 0`, WCAG AA `>= 4.5:1` Light/Dark contrast auto-repaired, `ADR-025c` exact base-10 wire strings, `GRAB-DESIGN-SYSTEM.md` `--grex-*` tokens).
   - Human-in-the-loop preview canvas + 4-pillar `A`/`A+` scorecard gated behind `X-CSRF-Token` + single-use target-bound `approval_token` (`GROXY-SAFE-001`) before dispatching to `POST /api/mcp/layout` (`actor: "groxy-ai"`, 1-click `Ctrl+Z` undo parity).
-- **Milestone `v1.2.0` — 1-Time Brand DNA & Voice Setup Wizard (`BRAND-DNA.md`) & Batch Content/Product Campaign Engine (`POST /api/groxy/batch-create`):** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified):
+- **Milestone `v1.2.0` — 1-Time Brand DNA & Voice Setup Wizard (`BRAND-DNA.md`) & Batch Content/Product Campaign Engine (`POST /api/groxy/batch-create`):** `Status: Approved; implementation verified, release promotion pending — Backwards-Compatible Minor Feature` (zero frozen peer implementation code modified):
   - 8–10 question onboarding wizard saving `storage/BRAND-DNA.md` + `Site DNA`, powering 1-sentence batch creation of up to 40+ SEO/WCAG-audited blog posts or products with exact `ADR-025c` `GrabDecimal` prices, gated behind `create_entry_draft` (`status: "draft"`) and single-use `approval_token` (`GROXY-SAFE-001`).
 - **Milestone `v1.3.0` — Autonomous Post-Purchase Email Flow Designer & Copywriter:** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified):
   - Reads `BRAND-DNA.md`, `SITE-CONTEXT.md`, and `--grex-*` tokens to design multi-step post-purchase receipts, setup guides, review requests, and exact-price product cross-sell flows gated behind `GROXY-SAFE-001` approval.
@@ -121,5 +124,5 @@ Completed multi-repository security, DOM, accessibility, precision, container, a
 
 ## Next Step Guidance (`Groxy AI v1.2.0`)
 1. **Frozen Baselines:** Keep Groxy AI `v1.0.0` and `v1.1.0` and all upstream contracts frozen and unchanged.
-2. **Current Task:** Review and explicitly approve [`GROXY-AI-SPEC-120.md`](specifications/GROXY-AI-SPEC-120.md). Implementation remains gated until that approval.
-3. **Recommended Model for Specification Review:** Use **`Google Hydrogen (Medium)`** for the pre-implementation specification review. After approval, use **`Google Hydrogen (Extra)`** for the autonomous batch generation engine because it combines model reasoning, security boundaries, and multi-item generation.
+2. **Current Task:** Restore a valid GitHub CLI credential, generate the final Complete walkthrough and package/checksums, then promote the verified commit/tag and matching release assets to both remotes. Keep the roadmap/spec completion state aligned with the stable-release gate.
+3. **Recommended Model for Release Audit:** Use **`Orchestrator (Argon)`** for the final cross-layer security and release audit because v1.2.0 adds outbound provider handling, cryptographically bound batch approval, and draft-only CMS dispatch across frozen ecosystem contracts.

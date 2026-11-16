@@ -3,6 +3,12 @@
 All notable changes to **Groxy AI** (`urbanspress/groxy-ai`) are documented in this file.
 Versioning follows `MAJOR.MINOR.PATCH` SemVer rules per [`AGENTS.md`](AGENTS.md).
 
+## [v1.2.0] - 2026-11-15
+
+### Added
+- **Brand DNA & Voice Wizard:** Adds revisioned Brand DNA profile validation, human-readable Markdown, exact decimal safeguards, and portable Site DNA inclusion.
+- **Batch Campaign Studio:** Adds deterministic content and product campaign planning, per-item score previews, XSS-safe JSON-LD, and explicit draft-only batch approval.
+
 ## [v1.1.0] - 2026-11-15
 
 ### Added

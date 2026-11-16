@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Groxy AI v1.0.0 — Full Cross-Layer End-to-End Verification Suite.
+Groxy AI v1.2.0 — Full Cross-Layer End-to-End Verification Suite.
 
 Runs 3 non-negotiable gates:
   Gate 1: Static analysis (grab check), non-destructive canonical formatting (grab format byte-for-byte),
@@ -10,7 +10,7 @@ Runs 3 non-negotiable gates:
             - Core GRAB v1.1.0 `grab mcp` stdio JSON-RPC 2.0 server
             - GrabLab CMS v1.0.1 (isolated temp copy)
             - Grex Theme Builder v1.0.0 (isolated temp copy)
-            - Groxy AI v1.1.0 (src/groxy.grab)
+            - Groxy AI v1.2.0 (src/groxy.grab)
 """
 
 import http.cookiejar
@@ -218,6 +218,7 @@ def gate_2_node_tests():
         "tests/unit_mcp_client.test.js",
         "tests/unit_ui_dom.test.js",
         "tests/unit_vision_clone.test.js",
+        "tests/unit_brand_dna_batch.test.js",
         "tests/unit_v100_production_audit.test.js",
     ])
     print("  [PASS] Gate 2 complete (all unit & DOM tests passed).")
@@ -320,7 +321,7 @@ def gate_3a_grab_mcp_stdio(grab_bin: str):
 
 
 def gate_3b_live_cross_layer(grab_bin: str):
-    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v1.1.0...")
+    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v1.2.0...")
     cms_src = Path(os.environ.get("GRABLAB_CMS_DIR", r"C:\Development\grablab-cms"))
     builder_src = Path(os.environ.get("GREX_BUILDER_DIR", r"C:\Development\grex-builder"))
     if not (cms_src / "src" / "app.grab").exists():
@@ -341,8 +342,10 @@ def gate_3b_live_cross_layer(grab_bin: str):
     try:
         cms_tmp = tmp_root / "grablab-cms"
         builder_tmp = tmp_root / "grex-builder"
+        groxy_tmp = tmp_root / "groxy-ai"
         copy_clean_dir(cms_src, cms_tmp)
         copy_clean_dir(builder_src, builder_tmp)
+        copy_clean_dir(REPO_ROOT, groxy_tmp)
 
         # 1. Migrate & seed ephemeral GrabLab CMS v1.0.1
         cms_env = os.environ.copy()
@@ -435,7 +438,8 @@ def gate_3b_live_cross_layer(grab_bin: str):
         procs.append(builder_proc)
         wait_for_health(builder_url, builder_proc, "Grex Theme Builder v1.0.0", log_path=builder_log)
 
-        # 3. Start Groxy AI v1.0.0 from REPO_ROOT
+        # 3. Start Groxy AI v1.2.0 from an isolated copy so its storage writes
+        #    never modify the developer's working tree.
         groxy_log = tmp_root / "groxy.log"
         groxy_fh = open(groxy_log, "wb+")
         log_files.append(groxy_fh)
@@ -460,12 +464,12 @@ def gate_3b_live_cross_layer(grab_bin: str):
                 f"127.0.0.1:{cms_port},127.0.0.1:{builder_port}",
                 "src/groxy.grab",
             ],
-            cwd=str(REPO_ROOT),
+            cwd=str(groxy_tmp),
             stdout=groxy_fh,
             stderr=subprocess.STDOUT,
         )
         procs.append(groxy_proc)
-        health_json = wait_for_health(groxy_url, groxy_proc, "Groxy AI v1.0.0", log_path=groxy_log)
+        health_json = wait_for_health(groxy_url, groxy_proc, "Groxy AI v1.2.0", log_path=groxy_log)
         assert health_json.get("status") == "ok", (
             f"Unexpected /_health payload from Groxy AI: {health_json}"
         )
@@ -481,7 +485,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         st, _, html = http_request(f"{groxy_url}/groxy")
         assert st == 200
         assert re.search(r"<div\b", html, re.IGNORECASE) is None, "/groxy HTML must have zero <div> elements"
-        assert '<meta name="groxy-version" content="1.1.0">' in html, "Missing groxy-version 1.1.0 meta tag"
+        assert '<meta name="groxy-version" content="1.2.0">' in html, "Missing groxy-version 1.2.0 meta tag"
         m = re.search(r'<meta\s+name="groxy-csrf"\s+content="([^"]+)"', html)
         assert m, "Missing groxy-csrf meta tag in /groxy HTML"
         groxy_csrf = m.group(1)
@@ -490,6 +494,8 @@ def gate_3b_live_cross_layer(grab_bin: str):
             "/static/groxy/groxy.css",
             "/static/groxy/dashboard.js",
             "/static/groxy/vision-clone.js",
+            "/static/groxy/brand-dna.js",
+            "/static/groxy/batch-campaign.js",
             "/static/groxy/booster.js",
             "/static/groxy/generator.js",
             "/static/groxy/grex.js",
@@ -502,7 +508,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         pb = json.loads(pb_body)
         assert len(pb.get("rules", [])) == 22
         assert pb.get("playbook_version") == "1.0.0"
-        assert pb.get("service_version") == "1.1.0"
+        assert pb.get("service_version") == "1.2.0"
 
         # Verify CSRF enforcement on all POST routes
         for post_path in [
@@ -515,6 +521,9 @@ def gate_3b_live_cross_layer(grab_bin: str):
             "/api/groxy/generate-layout/apply",
             "/api/groxy/vision-clone",
             "/api/groxy/vision-clone/apply",
+            "/api/groxy/brand-dna/wizard",
+            "/api/groxy/batch-create",
+            "/api/groxy/batch-create/apply",
         ]:
             st_no_csrf, _, _ = http_request(f"{groxy_url}{post_path}", method="POST", json_body={"entry": {}})
             assert st_no_csrf == 403, f"Expected 403 without CSRF on {post_path}, got {st_no_csrf}"
@@ -555,7 +564,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         assert st_insp == 200, f"/api/groxy/mcp/inspect failed ({st_insp}): {insp_body}"
         insp = json.loads(insp_body)
         assert insp["ok"] is True
-        assert insp["version"] == "1.1.0"
+        assert insp["version"] == "1.2.0"
         assert insp["grablab_cms"]["connected"] is True
         assert insp["grablab_cms"]["elements_count"] == 20
         assert "create_entry_draft" in insp["grablab_cms"]["tools"]
@@ -1482,7 +1491,97 @@ def gate_3b_live_cross_layer(grab_bin: str):
         assert st_dnamd == 200 and "text/markdown" in hdrs_dnamd.get("content-type", "").lower()
         assert "# Groxy Site DNA Export (0.4.0)" in dnamd_body
 
-        print("  [PASS] Gate 3B complete (live 4-layer GRAB + GrabLab CMS + Grex Builder + Groxy AI v1.0.0 verified 100%).")
+        # v1.2.0 Brand DNA -> Site DNA -> batch stage/apply -> CMS draft only.
+        profile_payload = {
+            "business_name": "Albany Accessibility Studio", "business_type": "Web design studio",
+            "niche": "Accessible local websites", "target_audience": "small business owners",
+            "pain_points": ["customers cannot find clear local information"], "service_area": "Albany, NY",
+            "location_terms": ["Capital Region"],
+            "voice_weights": {"authoritative": 25, "warm_friendly": 35, "bold_direct": 15, "technical_expert": 25},
+            "forbidden_terms": ["guaranteed rankings"], "preferred_ctas": ["Book a consultation"],
+            "avoided_ctas": ["Buy now"], "offer_types": ["consultation"],
+            "prices": {"default": "129.50"}, "currency": "USD",
+            "guarantees": {"status": "unknown", "details": ""}, "style_pack": "local-service-trust",
+            "design_tokens": ["--grex-space-md"], "editorial_notes": "Never invent customer outcomes.",
+        }
+        st_brand, _, brand_raw = http_request(
+            f"{groxy_url}/api/groxy/brand-dna/wizard", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body=profile_payload,
+        )
+        assert st_brand == 200, f"Brand DNA save failed ({st_brand}): {brand_raw}"
+        brand_doc = json.loads(brand_raw)
+        assert brand_doc["configured"] is True and brand_doc["revision"] >= 1
+        st_brand_get, _, brand_get_raw = http_request(f"{groxy_url}/api/groxy/brand-dna")
+        assert st_brand_get == 200 and json.loads(brand_get_raw)["profile"]["business_name"] == profile_payload["business_name"]
+        st_brand_stale, _, _ = http_request(
+            f"{groxy_url}/api/groxy/brand-dna/wizard", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body={**profile_payload, "expected_revision": 0},
+        )
+        assert st_brand_stale == 409, f"Expected stale Brand DNA revision conflict, got {st_brand_stale}"
+        st_dna_brand, _, dna_brand_raw = http_request(f"{groxy_url}/api/groxy/site-dna/export")
+        assert st_dna_brand == 200 and json.loads(dna_brand_raw).get("brand_dna", {}).get("revision") == brand_doc["revision"], f"Site DNA Brand DNA round-trip failed ({st_dna_brand}): {dna_brand_raw}"
+
+        st_bad_count, _, _ = http_request(
+            f"{groxy_url}/api/groxy/batch-create", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"brief": "Accessible local website planning.", "item_count": 0, "content_type": "post", "cms_url": cms_url},
+        )
+        assert st_bad_count == 422, f"Expected 422 for batch count 0, got {st_bad_count}"
+        st_bad_price, _, _ = http_request(
+            f"{groxy_url}/api/groxy/batch-create", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"brief": "Accessible local website planning.", "item_count": 1, "content_type": "product", "price": 12.5, "cms_url": cms_url},
+        )
+        assert st_bad_price == 422, f"Expected 422 for numeric product price, got {st_bad_price}"
+        st_product, _, product_raw = http_request(
+            f"{groxy_url}/api/groxy/batch-create", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"brief": "Accessible local website planning.", "item_count": 1, "content_type": "product", "cms_url": cms_url},
+        )
+        assert st_product == 200, f"Product campaign staging failed ({st_product}): {product_raw}"
+        product_doc = json.loads(product_raw)
+        product_schema = json.loads(product_doc["items"][0]["schema_json_ld"])
+        assert product_schema["@type"] == "Product" and product_schema["offers"]["price"] == "129.50"
+
+        st_ollama, _, ollama_raw = http_request(
+            f"{groxy_url}/api/groxy/batch-create", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"brief": "Accessible local website planning.", "item_count": 1, "content_type": "post", "provider": "ollama", "cms_url": cms_url},
+        )
+        assert st_ollama == 200, f"Ollama campaign did not fall back cleanly ({st_ollama}): {ollama_raw}"
+        ollama_doc = json.loads(ollama_raw)
+        assert ollama_doc["provider_used"] in ["deterministic", "ollama"]
+        assert ollama_doc["fallback_used"] is (ollama_doc["provider_used"] == "deterministic")
+
+        st_batch, _, batch_raw = http_request(
+            f"{groxy_url}/api/groxy/batch-create", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"brief": "Accessible local website planning.", "item_count": 1, "content_type": "post", "cms_url": cms_url},
+        )
+        assert st_batch == 200, f"Batch staging failed ({st_batch}): {batch_raw}"
+        batch_doc = json.loads(batch_raw)
+        assert batch_doc["item_count"] == 1 and batch_doc["approval_token"].startswith("btok_")
+        assert batch_doc["items"][0]["audit"]["overall_score"] >= 90
+        apply_payload = {"batch_id": batch_doc["batch_id"], "approval_token": batch_doc["approval_token"], "cms_url": cms_url, "cms_token": cms_token}
+        st_invalid_token, _, _ = http_request(
+            f"{groxy_url}/api/groxy/batch-create/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body={**apply_payload, "approval_token": "btok_" + "0" * 48},
+        )
+        assert st_invalid_token == 403, f"Expected 403 invalid batch token, got {st_invalid_token}"
+        st_apply, _, apply_raw = http_request(
+            f"{groxy_url}/api/groxy/batch-create/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body=apply_payload,
+        )
+        assert st_apply == 200, f"Batch apply failed ({st_apply}): {apply_raw}"
+        apply_doc = json.loads(apply_raw)
+        assert apply_doc["created_count"] == 1 and apply_doc["failed_count"] == 0 and apply_doc["status_enforced"] == "draft"
+        st_replay, _, _ = http_request(
+            f"{groxy_url}/api/groxy/batch-create/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body=apply_payload,
+        )
+        assert st_replay == 409, f"Expected 409 batch token replay, got {st_replay}"
+
+        print("  [PASS] Gate 3B complete (live 4-layer GRAB + GrabLab CMS + Grex Builder + Groxy AI v1.2.0 verified 100%).")
     finally:
         for p in reversed(procs):
             terminate_process(p)
@@ -1501,7 +1600,7 @@ def main():
     gate_2_node_tests()
     gate_3a_grab_mcp_stdio(grab_bin)
     gate_3b_live_cross_layer(grab_bin)
-    print("\nALL GROXY AI v1.0.0 VERIFICATION GATES PASSED 100%.")
+    print("\nALL GROXY AI v1.2.0 VERIFICATION GATES PASSED 100%.")
 
 
 if __name__ == "__main__":

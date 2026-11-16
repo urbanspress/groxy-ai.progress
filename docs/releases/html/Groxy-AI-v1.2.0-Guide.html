@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Groxy AI v1.2.0 — Brand DNA &amp; Batch Campaign Guide</title>
+  <style>
+    @page { size: letter; margin: 0.7in; }
+    body { font-family: "Segoe UI", system-ui, sans-serif; color: #0f172a; line-height: 1.55; font-size: 10.5pt; }
+    h1 { color: #0f172a; font-size: 22pt; margin-bottom: 0.25rem; }
+    h2 { color: #1e3a8a; font-size: 14pt; margin-top: 1.3rem; border-bottom: 1px solid #cbd5e1; padding-bottom: 0.2rem; }
+    h3 { font-size: 11pt; margin-top: 0.8rem; }
+    .meta { color: #475569; font-size: 9.5pt; }
+    .callout { background: #eff6ff; border-left: 4px solid #1d4ed8; padding: 0.7rem 0.9rem; }
+    code { font-family: Consolas, monospace; background: #f1f5f9; padding: 0.05rem 0.2rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 9pt; margin: 0.8rem 0; }
+    th, td { border: 1px solid #94a3b8; padding: 0.35rem; text-align: left; }
+    th { background: #e2e8f0; }
+    footer { margin-top: 1.5rem; border-top: 1px solid #cbd5e1; padding-top: 0.5rem; color: #475569; font-size: 9pt; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Groxy AI v1.2.0</h1>
+    <p><strong>Brand DNA &amp; Voice Setup Wizard + Batch Content and Product Campaigns</strong></p>
+    <p class="meta">Implementation status: Verified; dual-repository publication pending &bull; SemVer: MINOR, backwards-compatible feature release &bull; Runtime: GRAB 1.1.0, Grex JS 1.0.0, GrabLab CMS 1.0.1, Grex Theme Builder 1.0.0</p>
+  </header>
+  <section class="callout">
+    <p>Groxy AI now learns a business's audience, voice, local focus, offers, pricing rules, guarantees, and design tokens once. Teams can use that profile to prepare up to 40 related blog or product drafts from a short brief. Every item is audited and reviewed before it can be sent to the CMS.</p>
+  </section>
+  <section>
+    <h2>1. Set up Brand DNA once</h2>
+    <p>Open the Groxy dashboard and answer the ten short, step-by-step questions. The wizard captures business identity, audience needs, service area and local search terms, voice weights, forbidden phrases, preferred calls to action, offer types, exact prices, guarantee details, and the selected Design Style Pack and <code>--grex-*</code> tokens.</p>
+    <p>Saving requires an explicit submit. Groxy stores the structured profile at <code>storage/brand-dna.v1.json</code> and a readable copy at <code>storage/BRAND-DNA.md</code>. Revision checks prevent an older browser session from silently replacing newer guidance. Prices remain decimal strings; JavaScript floating-point values are rejected.</p>
+  </section>
+  <section>
+    <h2>2. Prepare a campaign preview</h2>
+    <p>Choose blog posts or products, enter a one-sentence campaign brief, and select between deterministic built-in generation, local Ollama, or a configured allowlisted BYOK provider. Deterministic generation has no API fee. Ollama uses loopback and falls back cleanly when it is unavailable. BYOK targets must satisfy the configured outbound allowlist.</p>
+    <p>Each preview item includes a unique title and slug, semantic content, and escaped <code>Article</code> or <code>Product</code> JSON-LD. Every candidate must pass the 22-rule, four-pillar auditor with a score of at least 90 (Grade A or A+). Product prices keep their exact decimal-string representation.</p>
+  </section>
+  <section>
+    <h2>3. Review and approve drafts</h2>
+    <p>Groxy stages an immutable preview and issues a one-time <code>btok_*</code> approval token bound to the batch ID, item count, and SHA-256 batch digest. Applying the preview requires the CSRF token and matching approval token. Invalid or mismatched tokens return 403; a replay returns 409.</p>
+    <p>On approval, Groxy sends each item to GrabLab CMS through <code>create_entry_draft</code> with <code>status_enforced: "draft"</code>. The feature never publishes live content automatically.</p>
+  </section>
+  <section>
+    <h2>4. New API routes</h2>
+    <table><thead><tr><th>Route</th><th>Purpose</th><th>Safety</th></tr></thead><tbody>
+      <tr><td><code>GET /api/groxy/brand-dna</code></td><td>Read the saved profile and revision.</td><td>Read-only; file access remains confined to <code>storage/</code>.</td></tr>
+      <tr><td><code>POST /api/groxy/brand-dna/wizard</code></td><td>Validate and save the profile.</td><td>CSRF, exact price strings, bounded fields, revision conflict protection.</td></tr>
+      <tr><td><code>POST /api/groxy/batch-create</code></td><td>Audit and stage 1–40 post or product drafts.</td><td>Schema-safe JSON-LD, duplicate checks, deterministic audit, target-bound digest.</td></tr>
+      <tr><td><code>POST /api/groxy/batch-create/apply</code></td><td>Send an approved batch to the CMS.</td><td>CSRF, single-use token, draft-only CMS calls.</td></tr>
+    </tbody></table>
+  </section>
+  <section>
+    <h2>5. Verification and ecosystem compatibility</h2>
+    <p>Implementation verification passed: GRAB check and canonical formatting parity; 54/54 Node unit and DOM tests; live Gate 3B integration for Brand DNA persistence, Site DNA export, audit scoring, invalid-token rejection, CMS draft creation, and replay rejection. All eight frozen sibling repositories remained clean. GitHub release publication is pending restored credentials.</p>
+    <table><thead><tr><th>Ecosystem layer</th><th>Required version</th><th>Touched</th><th>Upgrade needed</th></tr></thead><tbody>
+      <tr><td>GRAB language, VM and Grisp server</td><td>&gt;=1.1.0 &lt;2.0.0</td><td>No</td><td>No</td></tr>
+      <tr><td>Grex JS runtime and element library</td><td>&gt;=1.0.0 &lt;2.0.0</td><td>No</td><td>No</td></tr>
+      <tr><td>GrabLab CMS</td><td>&gt;=1.0.1 &lt;2.0.0</td><td>No</td><td>No</td></tr>
+      <tr><td>Grex Theme Builder</td><td>&gt;=1.0.0 &lt;2.0.0</td><td>No</td><td>No</td></tr>
+      <tr><td>Groxy AI</td><td>&gt;=0.1.0</td><td>Yes, v1.2.0</td><td>No</td></tr>
+    </tbody></table>
+  </section>
+  <footer>Groxy AI v1.2.0 &bull; Urban's Press / GRAB Ecosystem &bull; Implementation verified; publication pending</footer>
+</body>
+</html>

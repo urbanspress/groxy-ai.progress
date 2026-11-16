@@ -82,7 +82,7 @@ Scope:
 
 ## `v1.2.0` — 1-Time Brand DNA & Voice Setup Wizard (`BRAND-DNA.md`) & Batch Content/Product Campaign Engine (`POST /api/groxy/batch-create`)
 
-**Status:** Approved target; specification in review — Backwards-Compatible Minor Feature ([`specifications/GROXY-AI-SPEC-120.md`](../specifications/GROXY-AI-SPEC-120.md))
+**Status:** Approved; implementation in progress — Backwards-Compatible Minor Feature ([`specifications/GROXY-AI-SPEC-120.md`](../specifications/GROXY-AI-SPEC-120.md))
 
 Scope:
 - **1-Time Brand DNA & Voice Setup Wizard (`POST /api/groxy/brand-dna/wizard`, `GET /api/groxy/brand-dna`):** Accessible 8–10 question zero-`<div>` Grex JS wizard capturing business identity/niche, audience and pain points, geography/local SEO, voice sliders/pills, forbidden buzzwords, CTAs, offer/pricing rules, guarantees, and linked Design Style Pack / `GRAB-DESIGN-SYSTEM.md` tokens. Persist `storage/BRAND-DNA.md` plus `storage/brand-dna.v1.json` under `GRAB-E401`; add optional `brand_dna` to `groxy-site-dna-v0.4.0` and `v1.0.0` exports.

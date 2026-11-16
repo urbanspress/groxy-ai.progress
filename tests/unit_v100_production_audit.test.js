@@ -25,7 +25,7 @@ import * as assetVisionClone from "../assets/vision-clone.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..");
 
-test("v1.1.0 runtime version metadata is synchronized across src/, views/, public/groxy/, and assets/", () => {
+test("v1.2.0 runtime version metadata is synchronized across src/, views/, public/groxy/, and assets/", () => {
   const runtimeModules = [
     ["public/groxy/playbook.js", pubPlaybook],
     ["public/groxy/auditor.js", pubAuditor],
@@ -46,20 +46,20 @@ test("v1.1.0 runtime version metadata is synchronized across src/, views/, publi
   ];
 
   for (const [label, mod] of runtimeModules) {
-    assert.equal(mod.GROXY_VERSION, "1.1.0", `${label} must export GROXY_VERSION === "1.1.0"`);
+    assert.equal(mod.GROXY_VERSION, "1.2.0", `${label} must export GROXY_VERSION === "1.2.0"`);
   }
 
   const groxyGrab = fs.readFileSync(path.join(REPO_ROOT, "src", "groxy.grab"), "utf8");
-  assert.ok(groxyGrab.includes('record {status: "ok", service: "groxy-ai", version: "1.1.0"}'));
-  assert.ok(groxyGrab.includes('record {status: "ready", service: "groxy-ai", version: "1.1.0"'));
+  assert.ok(groxyGrab.includes('record {status: "ok", service: "groxy-ai", version: "1.2.0"}'));
+  assert.ok(groxyGrab.includes('record {status: "ready", service: "groxy-ai", version: "1.2.0"'));
   assert.ok(groxyGrab.includes('set pb_out to copy_to_map using pb'));
-  assert.ok(groxyGrab.includes('set pb_out to collections.put using pb_out, "service_version", "1.1.0"'));
-  assert.ok(groxyGrab.includes('record {ok: yes, service: "groxy-ai", version: "1.1.0"'));
+  assert.ok(groxyGrab.includes('set pb_out to collections.put using pb_out, "service_version", "1.2.0"'));
+  assert.ok(groxyGrab.includes('record {ok: yes, service: "groxy-ai", version: "1.2.0"'));
 
   const viewHtml = fs.readFileSync(path.join(REPO_ROOT, "views", "dashboard.grab.html"), "utf8");
-  assert.ok(viewHtml.includes('<meta name="groxy-version" content="1.1.0">'));
-  assert.ok(viewHtml.includes('<span class="groxy-badge">v1.1.0</span>'));
-  assert.ok(viewHtml.includes("Groxy AI v1.1.0"));
+  assert.ok(viewHtml.includes('<meta name="groxy-version" content="1.2.0">'));
+  assert.ok(viewHtml.includes('<span class="groxy-badge">v1.2.0</span>'));
+  assert.ok(viewHtml.includes("Groxy AI v1.2.0"));
   assert.equal(/<div\b/i.test(viewHtml), false, "dashboard.grab.html must contain zero <div> tags");
 });
 

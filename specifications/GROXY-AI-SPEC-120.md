@@ -1,6 +1,6 @@
 # GROXY-AI-SPEC-120: Groxy AI `v1.2.0` — 1-Time Brand DNA & Voice Setup Wizard + 40-Post/Product Batch Campaign Engine
 
-- **Status:** Approved target; specification in review
+- **Status:** Approved; implementation in progress
 - **Milestone:** `v1.2.0` — Brand DNA Wizard (`POST /api/groxy/brand-dna/wizard`, `GET /api/groxy/brand-dna`) and Batch Campaign Engine (`POST /api/groxy/batch-create`, `POST /api/groxy/batch-create/apply`)
 - **SemVer Tier (`ADR-027c`):** `MINOR (v1.2.0 — Backwards-Compatible Feature Release)`; additive routes and portable Site DNA fields, preserving the frozen v1.0.0 and v1.1.0 contracts.
 - **Foundational Upstream Baselines (Frozen):** GRAB `v1.1.0`; Grex JS `v1.0.0`; GrabLab CMS `v1.0.1`; Grex Theme Builder `v1.0.0`.
