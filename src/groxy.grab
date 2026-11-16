@@ -77,6 +77,52 @@ make copy_to_map using rec
   give back out
 end
 
+# Canonical JSON for approval digests: recursively sort object keys while
+# retaining list order and the JSON codec's exact scalar wire representation.
+make canonical_json using value
+  if (is_list_value using value)
+    set out to "["
+    set idx to 0
+    for each item in value
+      if idx is greater than 0
+        set out to out joined with ","
+      end
+      set out to out joined with (canonical_json using item)
+      set idx to idx plus 1
+    end
+    give back out joined with "]"
+  end
+  if (is_record_value using value)
+    set keys to collections.keys using value
+    set remaining to {}
+    for each key in keys
+      set remaining to collections.put using remaining, key, yes
+    end
+    set sorted to []
+    while (collections.length using (collections.keys using remaining)) is greater than 0
+      set smallest to nothing
+      for each key in (collections.keys using remaining)
+        if smallest is nothing or key is less than smallest
+          set smallest to key
+        end
+      end
+      set sorted to collections.append using sorted, smallest
+      set remaining to collections.remove using remaining, smallest
+    end
+    set out to "{"
+    set idx to 0
+    for each key in sorted
+      if idx is greater than 0
+        set out to out joined with ","
+      end
+      set out to out joined with (json.stringify using key) joined with ":" joined with (canonical_json using (value at key))
+      set idx to idx plus 1
+    end
+    give back out joined with "}"
+  end
+  give back json.stringify using value
+end
+
 make cache_get_opt using c, k
   set cached to cache.get using c, k
   if cached.found
@@ -6210,8 +6256,81 @@ route "POST" "/api/groxy/email-flows/design" using req
     set ds_markdown to text.from using ds_response.body
     set ds_parsed to parse_design_system_md using ds_markdown
     set fallback_reason to ""
-    if mode is not "deterministic"
-      set fallback_reason to "Optional provider is not configured; deterministic local templates were used."
+    set provider_used to "deterministic"
+    set fallback_used to no
+    set enrichment_intro to ["", "", "", ""]
+    if mode is "ollama" or mode is "byok"
+      set provider_url to "http://127.0.0.1:11434/api/generate"
+      set provider_headers to {"Content-Type": "application/json"}
+      set provider_model to resolve_env_opt using "GROXY_EMAIL_FLOWS_OLLAMA_MODEL"
+      if provider_model is ""
+        set provider_model to "llama3.2"
+      end
+      set provider_key to ""
+      if mode is "byok"
+        set provider_url to resolve_env_opt using "GROXY_EMAIL_FLOWS_BYOK_URL"
+        set allowed_origin to resolve_env_opt using "GROXY_EMAIL_FLOWS_ALLOW_ORIGIN"
+        set provider_key to resolve_env_opt using "GROXY_EMAIL_FLOWS_API_KEY"
+        set lower_url to text.lower using provider_url
+        if provider_url is "" or allowed_origin is "" or not (text.starts_with using provider_url, "https://") or not (text.starts_with using allowed_origin, "https://") or (text.contains using lower_url, "localhost") or (text.contains using lower_url, "127.0.0.1") or (text.contains using lower_url, "169.254.") or (text.contains using lower_url, "10.") or (text.contains using lower_url, "192.168.") or provider_key is ""
+          give back server.json using 403, record {ok: no, code: "GRAB-E402", error: "BYOK endpoint or secret is not configured as a public HTTPS origin permitted by GRAB-E402."}
+        end
+        if not (text.starts_with using provider_url, allowed_origin joined with "/") and provider_url is not allowed_origin
+          give back server.json using 403, record {ok: no, code: "GRAB-E402", error: "BYOK endpoint is outside its configured HTTPS origin."}
+        end
+        set provider_headers to collections.put using provider_headers, "Authorization", ("Bearer " joined with provider_key)
+        set provider_model to resolve_env_opt using "GROXY_EMAIL_FLOWS_BYOK_MODEL"
+        if provider_model is ""
+          set provider_model to "gpt-4o-mini"
+        end
+      end
+      set enrichment_prompt to "Return JSON only with intro_1 through intro_4, each one short brand-voice sentence. Use no numbers, prices, URLs, markup, promises, product or order facts, or merge-field text. Return nothing but those four sentences. Brief: " joined with brief
+      try
+        if mode is "ollama"
+          set provider_body to json.stringify using record {model: provider_model, stream: no, format: "json", prompt: enrichment_prompt}
+        otherwise
+          set provider_body to json.stringify using record {model: provider_model, response_format: record {type: "json_object"}, messages: [record {role: "user", content: enrichment_prompt}]}
+        end
+        set provider_resp to http.post using provider_url, provider_body, record {headers: provider_headers, timeout_ms: 10000, retries: 0}
+        if provider_resp.ok
+          set provider_doc to json.parse using provider_resp.body
+          set provider_text to map_get_str using provider_doc, "response", ""
+          if mode is "byok" and has_map_key using provider_doc, "choices"
+            set first_choice to (provider_doc at "choices") at 0
+            set provider_text to map_get_str using (first_choice at "message"), "content", ""
+          end
+          set enrichment_doc to json.parse using provider_text
+          set intro_1 to map_get_str using enrichment_doc, "intro_1", ""
+          set intro_2 to map_get_str using enrichment_doc, "intro_2", ""
+          set intro_3 to map_get_str using enrichment_doc, "intro_3", ""
+          set intro_4 to map_get_str using enrichment_doc, "intro_4", ""
+          set enrichment_intro to [intro_1, intro_2, intro_3, intro_4]
+          set valid_enrichment to yes
+          for each intro in enrichment_intro
+            if (text.length using intro) is greater than 240 or (text.contains using intro, "{{") or (text.contains using intro, "<") or (text.contains using intro, "http") or (text.contains using intro, "$") or (text.contains using intro, "€") or (text.contains using intro, "£") or (text.contains using intro, "0") or (text.contains using intro, "1") or (text.contains using intro, "2") or (text.contains using intro, "3") or (text.contains using intro, "4") or (text.contains using intro, "5") or (text.contains using intro, "6") or (text.contains using intro, "7") or (text.contains using intro, "8") or (text.contains using intro, "9")
+              set valid_enrichment to no
+            end
+          end
+          if valid_enrichment
+            set provider_used to mode
+          otherwise
+            set fallback_used to yes
+            set fallback_reason to "Provider returned copy that did not pass safe enrichment checks; deterministic templates were used."
+          end
+        otherwise
+          set fallback_used to yes
+          set fallback_reason to "Provider was unavailable; deterministic templates were used."
+        end
+      catch provider_err
+        if mode is "byok" and (text.contains using (text.from using provider_err), "GRAB-E402")
+          give back server.json using 403, record {ok: no, code: "GRAB-E402", error: "GRAB denied the BYOK network request; no flow was staged."}
+        end
+        set fallback_used to yes
+        set fallback_reason to "Provider was offline or returned invalid data; deterministic templates were used."
+      end
+      if fallback_used and fallback_reason is ""
+        set fallback_reason to "Provider enrichment failed validation; deterministic templates were used."
+      end
     end
     set profile to profile_result.profile
     set business to map_get_str using profile, "business_name", "the business"
@@ -6249,6 +6368,22 @@ route "POST" "/api/groxy/email-flows/design" using req
     end
     set copy1 to "Thank you for choosing " joined with business joined with ". Your order details: {{order_items}}. Order total: " joined with order_total_value joined with " " joined with order_currency_value joined with "."
     set copy4 to "If it suits your needs, explore " joined with related_detail joined with ". No offer or availability is implied."
+    if provider_used is not "deterministic"
+      for each index in [0, 1, 2, 3]
+        set intro to enrichment_intro at index
+        if intro is not ""
+          if index is 0
+            set copy1 to intro joined with " " joined with copy1
+          otherwise if index is 1
+            set copy2 to intro joined with " " joined with copy2
+          otherwise if index is 2
+            set copy3 to intro joined with " " joined with copy3
+          otherwise
+            set copy4 to intro joined with " " joined with copy4
+          end
+        end
+      end
+    end
     set plain1 to copy1 joined with "\n\n" joined with footer_text
     set plain2 to copy2 joined with "\n\n" joined with footer_text
     set plain3 to copy3 joined with "\n\n" joined with footer_text
@@ -6270,8 +6405,8 @@ route "POST" "/api/groxy/email-flows/design" using req
     set flow_id to "flow_" joined with (crypto.random_hex using 16)
     set cms_url to resolve_env_opt using "GROXY_CMS_URL"
     set operator_id to resolve_env_opt using "GROXY_OPERATOR_ID"
-    set immutable to record {schema_version: "1.3.0", flow_id: flow_id, step_count: 4, brief: brief, steps: steps, product_facts: product_facts, order_facts: order_facts, site_context_sha256: site_hash, brand_dna_sha256: brand_hash, brand_dna_revision: profile.revision, design_tokens: tokens, design_system_sha256: token_hash, destination: cms_url, provider_used: "deterministic", fallback_used: (mode is not "deterministic"), status: "draft", sending_enabled: no, dispatch_mode: "draft_only"}
-    set canonical to json.stringify using immutable
+    set immutable to record {schema_version: "1.3.0", flow_id: flow_id, step_count: 4, brief: brief, steps: steps, product_facts: product_facts, order_facts: order_facts, site_context_sha256: site_hash, brand_dna_sha256: brand_hash, brand_dna_revision: profile.revision, design_tokens: tokens, design_system_sha256: token_hash, destination: cms_url, provider_used: provider_used, fallback_used: fallback_used, status: "draft", sending_enabled: no, dispatch_mode: "draft_only"}
+    set canonical to canonical_json using immutable
     if (text.length using canonical) is greater than 1048576
       give back server.json using 413, record {ok: no, code: "FLOW_TOO_LARGE", error: "Staged flow exceeds 1 MiB."}
     end
@@ -6283,7 +6418,7 @@ route "POST" "/api/groxy/email-flows/design" using req
     set staged to record {immutable: immutable, flow_sha256: flow_sha, token_verifier: (crypto.hash_password using binding), status: "staged", created_at: now_record.iso, expires_at: expires_record.iso}
     call files.write_text using ("storage/" joined with flow_id joined with ".json"), (json.stringify using staged)
     call cache.set using groxy_cache, ("email-flow:" joined with flow_id), staged, 900000
-    give back server.json using 200, record {schema_version: "1.3.0", flow_id: flow_id, step_count: 4, steps: steps, product_facts: product_facts, order_facts: order_facts, audit_findings: flow_audits, flow_sha256: flow_sha, approval_required: yes, approval_token: approval_token, expires_at: expires_record.iso, source_hashes: record {brand_dna_sha256: brand_hash, site_context_sha256: site_hash, design_system_sha256: token_hash}, brand_dna_revision: profile.revision, design_tokens: tokens, provider_used: "deterministic", fallback_used: (mode is not "deterministic"), fallback_reason: fallback_reason, status: "draft", activation_blockers: ["Resolve unsubscribe preferences and sender address.", "Verify consent and suppression requirements.", "Resolve merge fields and confirm message intent."], sending_enabled: no}
+    give back server.json using 200, record {schema_version: "1.3.0", flow_id: flow_id, step_count: 4, steps: steps, product_facts: product_facts, order_facts: order_facts, audit_findings: flow_audits, flow_sha256: flow_sha, approval_required: yes, approval_token: approval_token, expires_at: expires_record.iso, source_hashes: record {brand_dna_sha256: brand_hash, site_context_sha256: site_hash, design_system_sha256: token_hash}, brand_dna_revision: profile.revision, design_tokens: tokens, provider_used: provider_used, fallback_used: fallback_used, fallback_reason: fallback_reason, status: "draft", activation_blockers: ["Resolve unsubscribe preferences and sender address.", "Verify consent and suppression requirements."], sending_enabled: no}
   catch err
     give back server.json using 503, record {ok: no, code: "FLOW_DESIGN_FAILED", error: "Flow context or live design token validation failed safely."}
   end
@@ -6323,7 +6458,7 @@ route "POST" "/api/groxy/email-flows/apply" using req
     end
     set immutable to staged.immutable
     set supplied_count to payload at "step_count"
-    if supplied_count is not 4 or flow_sha is not staged.flow_sha256 or flow_sha is not (crypto.sha256_hex using (json.stringify using immutable))
+    if supplied_count is not 4 or flow_sha is not staged.flow_sha256 or flow_sha is not (crypto.sha256_hex using (canonical_json using immutable))
       give back server.json using 403, record {ok: no, code: "FLOW_TARGET_MISMATCH", error: "Flow approval target or staged content does not match."}
     end
     set cms_url to resolve_env_opt using "GROXY_CMS_URL"
@@ -6359,6 +6494,10 @@ route "POST" "/api/groxy/email-flows/apply" using req
     end
     if content_type_slug is ""
       give back server.json using 409, record {ok: no, code: "CMS_DESTINATION_INCOMPATIBLE", error: "Configure an existing post or page content type that can store the flow envelope as a draft; no draft was created."}
+    end
+    set consume_lock to cache.limit using groxy_cache, ("email-flow-consume:" joined with flow_id), 1, 900000
+    if not consume_lock.allowed
+      give back server.json using 409, record {ok: no, code: "FLOW_APPROVAL_REPLAY", error: "This approval token is already being consumed or has already been consumed."}
     end
     set apply_phase to "consume"
     set apply_phase to "mark_consumed"

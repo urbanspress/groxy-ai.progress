@@ -1,18 +1,17 @@
 # HANDOFF.md — Groxy AI
 
-- **Current Owner:** OpenAI Codex (v1.3.0 implementation)
-- **Current Milestone State:** `v1.0.0`, `v1.1.0`, and `v1.2.0` are `Approved & Frozen — Complete`. The owner approved [`GROXY-AI-SPEC-120.md`](specifications/GROXY-AI-SPEC-120.md) as written on 2026-11-15. All v1.2.0 implementation and verification gates pass. Annotated tag `v1.2.0` points to completion commit `90ff9d3`; matching releases are published on both repositories with the guide, bundle, checksum manifest, SemVer summary, and compatibility matrix.
-- **Current Milestone:** `v1.3.0` — `Approved; implementation in progress` ([SPEC-130](specifications/GROXY-AI-SPEC-130.md)). The owner approved SPEC-130 as written on 2026-11-16.
-- **Next Milestone Action:** Complete implementation, verification gates, release artifacts, and checkpoint synchronization while preserving frozen upstream repositories and the untracked `playbook/genres/` folder.
+- **Current Owner:** Google Antigravity (Codex v1.3.0 completion handoff)
+- **Current Milestone State:** `v1.0.0`, `v1.1.0`, `v1.2.0`, and `v1.3.0` are `Approved & Frozen — Complete`. SPEC-130 was owner-approved on 2026-11-16. All v1.3.0 verification gates pass; release commit/tag and synchronized publication are recorded below when available.
+- **Current Milestone:** None. `v1.3.0` completion is ready for release synchronization.
+- **Next Milestone Action:** Begin v1.4.0 specification planning under the spec-first approval gate. Preserve the untracked `playbook/genres/` folder.
 
-## `v1.3.0` Implementation Checkpoint — 2026-11-16
-- **Authorized scope:** Owner approved SPEC-130 as written. No frozen sibling repository is in scope.
-- **Implemented:** Added deterministic four-step flow staging, exact decimal-string checks and previews, semantic dashboard UI, CSRF and target-bound `etok_*` approval, CMS compatibility preflight, draft-only `create_entry_draft`, draft enforcement response checks, exact-price readback integration assertions, and replay rejection. Walkthrough PDF, bundle, and SHA256SUMS are generated as review artifacts.
-- **Verified:** GRAB check and canonical source format parity passed. `node --test tests/*.test.js` passed 58/58. `python tests/integration_e2e.py` passed Gates 1, 2, 3A, and expanded live 3B including four-step preview, float rejection, 403 target mismatch, exact `"19.90"` / `"0.10"` CMS draft readback, draft enforcement, and 409 replay rejection.
-- **Remaining release blockers:** The server digest still uses runtime JSON serialization instead of recursive canonical UTF-8 key sorting, provider modes have not been implemented for email-flow enrichment, and consumed-state persistence is not an atomic single-winner transition under concurrent requests. The current tests do not yet cover the full spec acceptance matrix. Therefore SPEC-130 and v1.3.0 remain `Approved; implementation in progress`; no release tag or stable promotion is authorized by this checkpoint.
-- **Artifacts:** `docs/releases/pdf/Groxy-AI-v1.3.0-Guide.pdf`, `dist/groxy-ai-v1.3.0-bundle.zip`, and `dist/SHA256SUMS.txt` are pre-release review artifacts and explicitly disclose pending hardening.
-- **Preservation:** The pre-existing untracked `playbook/genres/` directory is preserved and excluded from the bundle. No frozen sibling repository was modified.
-- **Next:** Implement recursive canonical digest generation, configured Ollama/BYOK behavior, atomic single-use persistence, and the remaining acceptance tests; rerun all gates and sibling cleanliness checks before marking Complete or promoting.
+## `v1.3.0` Implementation & Verification Checkpoint — 2026-11-16
+- **Authorized scope:** SPEC-130 was explicitly approved as written. No frozen sibling repository was modified.
+- **Implemented:** Recursive sorted-key UTF-8 canonical digest serialization; configured local Ollama and HTTPS BYOK copy enrichment with deterministic offline fallback, GRAB-E402 rejection, bounded safe output, and unchanged exact-value/footer content; atomic cache-limit single-winner `etok_*` consumption before CMS dispatch.
+- **Verified:** `grab check` passed; `grab format` stdout matched `src/groxy.grab` byte-for-byte; `node --test tests/*.test.js` passed 61/61; `python tests/integration_e2e.py` passed Gates 1, 2, 3A, and live 3B. Live checks verified server digest parity against independently canonicalized UTF-8 JSON, Ollama offline fallback, BYOK metadata-IP rejection, and concurrent duplicate apply returning exactly one `201` and one `409`, with one CMS draft.
+- **Artifacts:** Final Complete-status walkthrough PDF, release bundle, and SHA256SUMS are generated from the passing source. The bundle excludes untracked `playbook/genres/`.
+- **Preservation:** `playbook/genres/` remains untracked and untouched. Frozen sibling repositories were not modified.
+- **Release:** Pending commit, annotated tag, pushes, and matching GitHub Releases on `origin` and `stable`.
 
 ---
 

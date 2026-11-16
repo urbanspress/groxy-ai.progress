@@ -14,6 +14,8 @@ Runs 3 non-negotiable gates:
 """
 
 import http.cookiejar
+import concurrent.futures
+import hashlib
 import json
 import os
 import re
@@ -472,6 +474,8 @@ def gate_3b_live_cross_layer(grab_bin: str):
                 "grab.platform.json",
                 "--allow-cache",
                 "groxy:read-write",
+                "--allow-cache",
+                "groxy:limit",
                 "--static",
                 "public",
                 "--allow-read",
@@ -481,11 +485,11 @@ def gate_3b_live_cross_layer(grab_bin: str):
                 "--allow-net",
                 f"127.0.0.1:{cms_port},127.0.0.1:{builder_port}",
                 "--allow-env",
-                "GROXY_CMS_URL,GROXY_CMS_MCP_TOKEN,GROXY_BUILDER_URL,GROXY_OPERATOR_ID",
+                "GROXY_CMS_URL,GROXY_CMS_MCP_TOKEN,GROXY_BUILDER_URL,GROXY_OPERATOR_ID,GROXY_EMAIL_FLOWS_BYOK_URL,GROXY_EMAIL_FLOWS_ALLOW_ORIGIN,GROXY_EMAIL_FLOWS_API_KEY",
                 "src/groxy.grab",
             ],
             cwd=str(groxy_tmp),
-            env={**os.environ, "GROXY_CMS_URL": cms_url, "GROXY_CMS_MCP_TOKEN": cms_token, "GROXY_BUILDER_URL": builder_url, "GROXY_OPERATOR_ID": "e2e-admin"},
+            env={**os.environ, "GROXY_CMS_URL": cms_url, "GROXY_CMS_MCP_TOKEN": cms_token, "GROXY_BUILDER_URL": builder_url, "GROXY_OPERATOR_ID": "e2e-admin", "GROXY_EMAIL_FLOWS_BYOK_URL": "https://169.254.169.254/latest/meta-data", "GROXY_EMAIL_FLOWS_ALLOW_ORIGIN": "https://169.254.169.254", "GROXY_EMAIL_FLOWS_API_KEY": "e2e-only-secret"},
             stdout=groxy_fh,
             stderr=subprocess.STDOUT,
         )
@@ -1531,12 +1535,28 @@ def gate_3b_live_cross_layer(grab_bin: str):
             json_body={**flow_payload, "order": {"total": 20.0, "currency": "USD"}},
         )
         assert st_flow_float == 422, f"Expected 422 for float email-flow total, got {st_flow_float}: {flow_float_body}"
+        st_flow_ollama, _, flow_ollama_raw = http_request(
+            f"{groxy_url}/api/groxy/email-flows/design", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body={**flow_payload, "mode": "ollama"},
+        )
+        assert st_flow_ollama == 200, f"Ollama offline fallback staging failed ({st_flow_ollama}): {flow_ollama_raw}"
+        flow_ollama = json.loads(flow_ollama_raw)
+        assert flow_ollama["provider_used"] == "deterministic" and flow_ollama["fallback_used"] is True
+        st_flow_byok, _, flow_byok_raw = http_request(
+            f"{groxy_url}/api/groxy/email-flows/design", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body={**flow_payload, "mode": "byok"},
+        )
+        assert st_flow_byok == 403 and json.loads(flow_byok_raw).get("code") == "GRAB-E402", f"Expected SSRF guarded BYOK rejection, got {st_flow_byok}: {flow_byok_raw}"
         st_flow, _, flow_raw = http_request(
             f"{groxy_url}/api/groxy/email-flows/design", method="POST",
             headers={"X-CSRF-Token": groxy_csrf}, json_body=flow_payload,
         )
         assert st_flow == 200, f"Email flow staging failed ({st_flow}): {flow_raw}"
         flow_doc = json.loads(flow_raw)
+        staged_path = groxy_tmp / "storage" / (flow_doc["flow_id"] + ".json")
+        staged_doc = json.loads(staged_path.read_text(encoding="utf-8"))
+        canonical_wire = json.dumps(staged_doc["immutable"], ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        assert hashlib.sha256(canonical_wire).hexdigest() == flow_doc["flow_sha256"], "Server flow digest differs from recursive sorted-key UTF-8 canonical JSON"
         assert flow_doc["schema_version"] == "1.3.0" and flow_doc["step_count"] == 4
         assert [step["sequence"] for step in flow_doc["steps"]] == [1, 2, 3, 4]
         assert flow_doc["steps"][0]["plain_text"].find("20.00") >= 0
@@ -1549,11 +1569,16 @@ def gate_3b_live_cross_layer(grab_bin: str):
             headers={"X-CSRF-Token": groxy_csrf}, json_body={**flow_apply, "step_count": 3},
         )
         assert st_flow_tamper == 403, f"Expected 403 for target mismatch, got {st_flow_tamper}"
-        st_flow_apply, _, flow_apply_raw = http_request(
-            f"{groxy_url}/api/groxy/email-flows/apply", method="POST",
-            headers={"X-CSRF-Token": groxy_csrf}, json_body=flow_apply,
-        )
-        assert st_flow_apply == 201, f"Email flow CMS draft apply failed ({st_flow_apply}): {flow_apply_raw}"
+        def apply_flow_once():
+            return http_request(
+                f"{groxy_url}/api/groxy/email-flows/apply", method="POST",
+                headers={"X-CSRF-Token": groxy_csrf}, json_body=flow_apply,
+            )
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            flow_apply_results = list(pool.map(lambda _: apply_flow_once(), range(2)))
+        flow_apply_statuses = sorted(result[0] for result in flow_apply_results)
+        assert flow_apply_statuses == [201, 409], f"Concurrent approval must have exactly one winner (201 + 409), got {flow_apply_statuses}: {flow_apply_results}"
+        st_flow_apply, _, flow_apply_raw = next(result for result in flow_apply_results if result[0] == 201)
         flow_saved = json.loads(flow_apply_raw)
         assert flow_saved["status_enforced"] == "draft" and flow_saved["sending_enabled"] is False
         st_flow_read, _, flow_read_raw = http_request(f"{cms_url}/api/entries", opener=cms_opener)
