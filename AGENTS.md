@@ -67,13 +67,14 @@
 
 ## 4. Model Routing, Effort Levels & Tandem Handoff Protocol
 
-### Internal Antigravity Model Guidance
-Before ending a turn or starting a new phase, advise the project owner which Antigravity model and effort level to select for the next step so AI Pro quota is used efficiently:
-- **`Google Hydrogen (Medium)`:** Pre-implementation specifications (`*-SPEC-*.md`), documentation, governance updates, and single-module edits.
-- **`Google Hydrogen (High)`:** Standard feature milestone implementations (`v0.1.0`–`v0.4.0`, `v1.0.0` build & release).
-- **`Orchestrator (Argon)`:** Second-opinion pre-`v1.0.0` security/DOM/contract audits, multi-repo cross-layer integrations (`GRAB` + `GrabLab CMS` + `Grex Theme Builder` + `Groxy AI`), and complex refactors where Argon-level planning + automated delegation saves tokens.
-- **`Google Hydrogen (Extra)`:** Reserved for autonomous AI reasoning/layout generation engines (`Groxy AI`), multi-server orchestration (`Gashboard + Grabtaculous + grabman`), and stubborn cross-layer bugs.
-- **Mandatory Pause & Swap Prompt Rule:** Every active AI agent MUST pause at milestone boundaries or before high-risk cross-layer/pre-`v1.0.0` audits and explicitly tell the user when to switch to `Orchestrator (Argon)`, including a clear 1-sentence reason why `Orchestrator (Argon)` is recommended next.
+### Internal Antigravity & Codex Model + Effort Routing (4-Pool Quota-Aware Matrix)
+Route every phase to the exact **Model + Effort Tier** below so no single weekly quota pool depletes. Every Antigravity and Codex agent MUST follow this matrix and recommend the next tier at the end of every checkpoint:
+- **Stage 1 - Pre-Implementation Specs & Roadmaps (`*-SPEC-*.md`):** **Claude Sonnet (Medium)** or **Hydrogen (Medium)** (backup: **GPT-OSS 120B (Medium)**).
+- **Stage 2 - Pre-Implementation Cross-Layer Security & Contract Audits:** Alternate between **Claude Opus (High)** and **Orchestrator (Argon)** (reserved strictly for cross-layer boundaries, concurrency, and security audits).
+- **Stage 3 - Core Multi-File Feature Implementation & Unit/DOM Tests:** Alternate across releases between **Claude Sonnet (High)**, **GPT-OSS 120B (High)**, and **Hydrogen (High)** so no single weekly quota pool depletes.
+- **Stage 4 - Final Gate 3B E2E Closure, Walkthrough PDF & Dual-Remote Packaging:** **Gemini 3.8 Flash (`Single Package` mode)** or **Hydrogen (High)** (escalate to **Hydrogen (Extra)** or **Claude Opus (High)** only if a stubborn cross-layer bug requires deep root-cause debugging).
+- **Mandatory Closing Handoff Rule:** Every agent response MUST end with a clear **"Recommended Next Model & Effort Tier"** recommendation naming both the exact model and effort level (e.g., `Switch to Claude Opus (High) for the cross-layer audit` or `Switch to Claude Sonnet (High) for the v1.6.0 implementation`) and why.
+- **Mandatory Pause & Swap Prompt Rule:** Every active AI agent MUST pause at milestone boundaries or before high-risk cross-layer/pre-`v1.0.0` audits and explicitly tell the user which Model + Effort Tier to switch to next (per the matrix above), including a clear 1-sentence reason.
 
 ### Tiered Model Routing
 - **Tier 1 — Frontier Models (`Google Hydrogen`, `Gemini 4 Argon`, `GPT-6.1 Sol`, `Claude Opus/Sonnet`):**
