@@ -3,6 +3,16 @@
 All notable changes to **Groxy AI** (`urbanspress/groxy-ai`) are documented in this file.
 Versioning follows `MAJOR.MINOR.PATCH` SemVer rules per [`AGENTS.md`](AGENTS.md).
 
+## [v1.5.0] - 2026-11-16
+
+- Added bespoke Store Architecture Quiz (`POST /api/groxy/db/architect-quiz`) generating tailor-made, zero-bloat `.grab` database migrations (`ADR-024f` + `ADR-025c`) with exact numeric validation, single-use `dtok_<hex>` approval tokens, and impact assessments (*Safe*, *Caution*, *High-Risk Data Loss*).
+- Added opt-in "Talk to Groxy" Database & Store Consultant (`POST /api/groxy/db/consult`) with default-disabled 403 protection, grounded in live `sqlite_master` row counts and tables via statically configured `commerce_inspect:read` alias, `SCHEMA-CONTEXT.md`, and `SITE-CONTEXT.md`.
+- Added durable per-target locking (`db_target_locks`), atomic single-winner approval consumption (`db_consultant_ledger`), and pre-mutation canonical UTF-8 JSON logical snapshots (`storage/snapshots/snap_db_<id>.json` + `snapshot_sha256`) with deterministic fixture restore logic that protects subsequent live orders.
+- Enforced strict separation of HTTP handlers and DDL execution: apply generates canonical CLI maintenance programs (`storage/approved_migrations/mig_<plan_id>.grab` + `.receipt.json`) returning `status: "maintenance_ready"` or dispatches to verified loopback executors (`127.0.0.1:9490`) returning `status: "applied"`.
+- Added post-maintenance readback reconciliation (`POST /api/groxy/db/reconcile`) to verify schema changes and transition maintenance receipts to `status: "applied"` while safely releasing target locks.
+- Added accessible semantic UI panels for the quiz and consultant with zero `<div>` wrappers, zero `innerHTML` writes, and 100% WCAG AA contrast conformance.
+- Passed full Section 9 verification suite: `grab check` with zero errors, canonical `grab format` byte-for-byte parity, 80/80 Node unit tests, and live 4-layer integration testing (`tests/integration_e2e.py`) printing `release-ready: True`.
+
 ## [v1.4.0] - 2026-11-16
 
 - Added deterministic commerce engine builders for recovery, concierge, bundles, review mining, and campaign packages, plus the semantic Commerce Studio preview panel.

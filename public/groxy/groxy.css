@@ -555,3 +555,32 @@ main#groxy-inspector-root {
   padding: var(--grex-space-lg, 1.5rem);
   border: 1px dashed var(--grex-color-border, #64748b);
 }
+.groxy-db-consultant {
+  display: grid;
+  gap: var(--grex-space-md, 1rem);
+  margin-block: var(--grex-space-xl, 2rem);
+  padding: var(--grex-space-lg, 1.5rem);
+  color: var(--grex-color-text, var(--groxy-text, #0f172a));
+  background: var(--grex-color-surface, var(--groxy-surface, #ffffff));
+  border: 1px solid var(--grex-color-border, var(--groxy-border, #64748b));
+  border-radius: var(--grex-radius-md, 0.75rem);
+}
+.groxy-db-consultant form,
+.groxy-db-consultant fieldset { display: grid; gap: var(--grex-space-sm, 0.75rem); }
+.groxy-db-consultant fieldset { border: 1px solid var(--grex-color-border, var(--groxy-border, #64748b)); border-radius: var(--grex-radius-sm, 0.5rem); }
+.groxy-db-consultant label { display: grid; gap: var(--grex-space-xs, 0.5rem); }
+.groxy-db-consultant input,
+.groxy-db-consultant select,
+.groxy-db-consultant textarea,
+.groxy-db-consultant button {
+  min-height: 2.75rem;
+  padding: 0.6rem 0.8rem;
+  color: var(--grex-color-text, var(--groxy-text, #0f172a));
+  background: var(--grex-color-bg, var(--groxy-bg, #f8fafc));
+  border: 1px solid var(--grex-color-border, var(--groxy-border, #64748b));
+  border-radius: var(--grex-radius-sm, 0.5rem);
+  font: inherit;
+}
+.groxy-db-consultant button { cursor: pointer; }
+.groxy-db-consultant :focus-visible { outline: 3px solid var(--grex-color-primary, var(--groxy-primary, #047857)); outline-offset: 2px; }
+.groxy-db-consultant pre { max-inline-size: 100%; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }

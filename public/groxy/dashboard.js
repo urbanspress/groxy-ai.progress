@@ -5,7 +5,7 @@
  * Zero innerHTML writes, zero eval(), zero wrapper <div> elements.
  */
 
-export const GROXY_VERSION = "1.4.0";
+export const GROXY_VERSION = "1.5.0";
 
 import {
   auditAccessibility,
@@ -39,6 +39,7 @@ import { mountBrandDnaWizard } from "./brand-dna.js";
 import { mountBatchCampaignStudio } from "./batch-campaign.js";
 import { mountEmailFlowStudio } from "./email-flows.js";
 import { mountCommerceStudio } from "./commerce-engines.js";
+import { mountDbConsultant } from "./db-consultant.js";
 
 export const SAMPLE_AUDIT_PRESETS = Object.freeze({
   clean: {
@@ -636,7 +637,7 @@ export function mountGroxyDashboard(options = {}) {
     class: "groxy-card",
     "aria-label": "Deterministic SEO and DOM Auditor",
   });
-  formCard.appendChild(createEl(doc, "h1", {}, "Groxy AI v1.4.0 — Visual Generator Studio, Site Intelligence, Pre-Publish Gate & Audit Inspector"));
+  formCard.appendChild(createEl(doc, "h1", {}, "Groxy AI v1.5.0 — Visual Generator Studio, Site Intelligence, Pre-Publish Gate & Audit Inspector"));
   formCard.appendChild(
     createEl(
       doc,
@@ -2291,6 +2292,7 @@ export function mountGroxyDashboard(options = {}) {
   const batchCampaignStudio = mountBatchCampaignStudio({ root, document: doc, csrfToken, fetchFn });
   const emailFlowStudio = mountEmailFlowStudio({ root, document: doc, csrfToken, fetchFn });
   const commerceStudio = mountCommerceStudio({ root, document: doc, csrfToken, fetchFn });
+  const dbConsultantStudio = mountDbConsultant({ root, document: doc, csrfToken, fetchFn });
 
   return {
     auditDomSafety() {
@@ -2343,6 +2345,7 @@ export function mountGroxyDashboard(options = {}) {
     getBatchCampaignState() { return batchCampaignStudio.getStaged(); },
     getEmailFlowState() { return emailFlowStudio.getStaged(); },
     getCommercePlanState() { return commerceStudio.getStaged(); },
+    getDbConsultantStudio() { return dbConsultantStudio.section; },
     runAudit: executeAudit,
     triggerPrePublishReview,
     triggerBoost,

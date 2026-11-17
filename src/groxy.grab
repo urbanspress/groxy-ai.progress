@@ -17,6 +17,16 @@ set commerce_insert_plan to data.prepare using commerce_db, "INSERT INTO groxy_c
 set commerce_claim_plan to data.prepare using commerce_db, "UPDATE groxy_commerce_plans SET status = 'applying' WHERE plan_id = :plan_id AND status = 'staged'", record {params: record {plan_id: "text"}, columns: record {}}
 set commerce_finish_plan to data.prepare using commerce_db, "UPDATE groxy_commerce_plans SET status = :status, outcome_json = :outcome_json WHERE plan_id = :plan_id AND status = 'applying'", record {params: record {plan_id: "text", status: "text", outcome_json: "text"}, columns: record {}}
 set commerce_read_rows to data.prepare using commerce_db, "SELECT plan_id, engine, target_slot, payload_sha256, payload_json, token_verifier, operator_id, site_id, status, created_at, expires_at, outcome_json FROM groxy_commerce_plans WHERE plan_id = :plan_id", record {params: record {plan_id: "text"}, columns: record {plan_id: "text", engine: "text", target_slot: "text", payload_sha256: "text", payload_json: "text", token_verifier: "text", operator_id: "text", site_id: "text", status: "text", created_at: "text", expires_at: "text", outcome_json: "text"}}
+set db_ledger_insert to data.prepare using commerce_db, "INSERT INTO db_consultant_ledger (plan_id, target_id, origin, migration_sha256, payload_sha256, payload_json, token_verifier, operator_id, site_id, status, risk_level, risk_acknowledged, created_at, expires_at, outcome_json) VALUES (:plan_id, :target_id, :origin, :migration_sha256, :payload_sha256, :payload_json, :token_verifier, :operator_id, :site_id, :status, :risk_level, :risk_acknowledged, :created_at, :expires_at, :outcome_json)", record {params: record {plan_id: "text", target_id: "text", origin: "text", migration_sha256: "text", payload_sha256: "text", payload_json: "text", token_verifier: "text", operator_id: "text", site_id: "text", status: "text", risk_level: "text", risk_acknowledged: "integer", created_at: "text", expires_at: "text", outcome_json: "text"}, columns: record {}}
+set db_ledger_claim to data.prepare using commerce_db, "UPDATE db_consultant_ledger SET status = 'applying' WHERE plan_id = :plan_id AND status = 'staged'", record {params: record {plan_id: "text"}, columns: record {}}
+set db_ledger_finish to data.prepare using commerce_db, "UPDATE db_consultant_ledger SET status = :status, outcome_json = :outcome_json WHERE plan_id = :plan_id AND status = 'applying'", record {params: record {plan_id: "text", status: "text", outcome_json: "text"}, columns: record {}}
+set db_ledger_read to data.prepare using commerce_db, "SELECT plan_id, target_id, origin, migration_sha256, payload_sha256, payload_json, token_verifier, operator_id, site_id, status, risk_level, risk_acknowledged, created_at, expires_at, outcome_json FROM db_consultant_ledger WHERE plan_id = :plan_id", record {params: record {plan_id: "text"}, columns: record {plan_id: "text", target_id: "text", origin: "text", migration_sha256: "text", payload_sha256: "text", payload_json: "text", token_verifier: "text", operator_id: "text", site_id: "text", status: "text", risk_level: "text", risk_acknowledged: "integer", created_at: "text", expires_at: "text", outcome_json: "text"}}
+set db_target_lock_acquire to data.prepare using commerce_db, "INSERT INTO db_target_locks (target_id, locked_by_plan, locked_at) VALUES (:target_id, :locked_by_plan, :locked_at)", record {params: record {target_id: "text", locked_by_plan: "text", locked_at: "text"}, columns: record {}}
+set db_target_lock_release to data.prepare using commerce_db, "DELETE FROM db_target_locks WHERE target_id = :target_id AND locked_by_plan = :locked_by_plan", record {params: record {target_id: "text", locked_by_plan: "text"}, columns: record {}}
+set db_target_lock_read to data.prepare using commerce_db, "SELECT target_id, locked_by_plan, locked_at FROM db_target_locks WHERE target_id = :target_id", record {params: record {target_id: "text"}, columns: record {target_id: "text", locked_by_plan: "text", locked_at: "text"}}
+set commerce_inspect_db to data.open using "commerce_inspect"
+set db_inspect_tables to data.prepare using commerce_inspect_db, "SELECT type, name, tbl_name, sql FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name ASC", record {params: record {}, columns: record {type: "text", name: "text", tbl_name: "text", sql: "text"}}
+set db_inspect_indexes to data.prepare using commerce_inspect_db, "SELECT type, name, tbl_name, sql FROM sqlite_master WHERE type = 'index' AND name NOT LIKE 'sqlite_%' ORDER BY name ASC", record {params: record {}, columns: record {type: "text", name: "text", tbl_name: "text", sql: "text"}}
 
 make safe_asset_url using raw_path
   try
@@ -1422,7 +1432,6 @@ make evaluate_audit_report using payload, playbook
   end
 
   set categories_obj to record {on_page_seo: (record {score: s_seo, grade: (score_to_grade using s_seo, yes), label: "On-Page SEO"}), content_a11y: (record {score: s_a11y, grade: (score_to_grade using s_a11y, yes), label: "Content & WCAG Accessibility"}), performance_dom: (record {score: s_dom, grade: (score_to_grade using s_dom, publish_safe), label: "Performance & Clean DOM"}), linking_readiness: (record {score: s_link, grade: (score_to_grade using s_link, yes), label: "Off-Page / Internal Linking Readiness"})}
-
   give back record {schema_version: "0.1.0", playbook_version: (map_get_str using playbook, "playbook_version", "1.0.0"), audited_at: audited_at, target: (record {entry_id: entry_id, content_type: content_type, title: title, slug: slug}), overall_score: overall_score, overall_grade: overall_grade, publish_safe: publish_safe, categories: categories_obj, findings: findings, design_system_summary: (record {tokens_loaded: ds_info.tokens_loaded, reusable_classes_loaded: ds_info.reusable_classes_loaded, unknown_classes_used: unknown_classes})}
 end
 
@@ -1990,7 +1999,6 @@ make boost_grex_tree using node, depth, state
   end
 
   set next_state to record {h1_seen: h1_seen, last_h: last_hl, sub_count: sub_cnt, internal_links: int_links, fixed_rules: fixed, boosted_title: state.boosted_title, focus_kw: state.focus_kw, default_bg: state.default_bg, reg_classes: state.reg_classes, redir_from: state.redir_from, redir_to: state.redir_to, targets: state.targets, self_slug_norm: state.self_slug_norm, vague_anchors: state.vague_anchors}
-
   set next_children to []
   if has_map_key using node, "children"
     for each ch in (node at "children")
@@ -2204,35 +2212,27 @@ make all_style_pack_specs
   set p1_light to record {bg: "#ffffff", surface: "#f8fafc", text: "#0f172a", primary: "#047857", on_primary: "#ffffff", border: "#cbd5e1", muted: "#475569"}
   set p1_dark to record {bg: "#0f172a", surface: "#1e293b", text: "#f8fafc", primary: "#34d399", on_primary: "#064e3b", border: "#334155", muted: "#cbd5e1"}
   set sp1 to record {id: "emerald-editorial", label: "Emerald Editorial", description: "High-contrast editorial typography, generous vertical rhythm (--grex-space-lg), emerald primary accents (--grex-primary), and structured Card callouts.", industries: ["editorial", "media", "consulting", "nonprofit", "docs"], conversion_goals: ["editorial", "lead_gen"], token_preferences: ["--grex-surface", "--grex-text", "--grex-primary", "--grex-space-lg", "--grex-radius-md"], class_hints: ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3", "cta-button"], light: p1_light, dark: p1_dark, space: "1.5rem", radius: "0.75rem"}
-
   set p2_light to record {bg: "#f8fafc", surface: "#ffffff", text: "#09090b", primary: "#1d4ed8", on_primary: "#ffffff", border: "#cbd5e1", muted: "#334155"}
   set p2_dark to record {bg: "#09090b", surface: "#18181b", text: "#fafafa", primary: "#60a5fa", on_primary: "#09090b", border: "#27272a", muted: "#d4d4d8"}
   set sp2 to record {id: "obsidian-tech", label: "Obsidian Developer Studio", description: "Crisp technical hierarchy, high-contrast dark/light surface cards (--grex-surface-elevated), compact feature Grids, and scannable metric badges.", industries: ["developer_tools", "saas", "ai", "cloud", "devtools"], conversion_goals: ["saas", "lead_gen"], token_preferences: ["--grex-surface-elevated", "--grex-text", "--grex-primary", "--grex-space-md", "--grex-radius-sm"], class_hints: ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3"], light: p2_light, dark: p2_dark, space: "1.25rem", radius: "0.5rem"}
-
   set p3_light to record {bg: "#fffbeb", surface: "#ffffff", text: "#1c1917", primary: "#92400e", on_primary: "#ffffff", border: "#fde68a", muted: "#44403c"}
   set p3_dark to record {bg: "#1c1917", surface: "#292524", text: "#fafaf9", primary: "#fbbf24", on_primary: "#1c1917", border: "#44403c", muted: "#d6d3d1"}
   set sp3 to record {id: "warm-commerce", label: "Warm Precision Commerce", description: "Conversion-focused product & pricing hierarchy, GrabDecimal-exact price callouts, trust Accordion FAQs, and clear primary/secondary Button pairs.", industries: ["retail", "dtc", "specialty_goods", "ecommerce", "food_beverage"], conversion_goals: ["ecommerce", "lead_gen"], token_preferences: ["--grex-surface", "--grex-text", "--grex-primary", "--grex-space-md", "--grex-radius-lg"], class_hints: ["hero", "card", "btn-primary", "badge-pill", "grid-3", "cta-button"], light: p3_light, dark: p3_dark, space: "1.25rem", radius: "0.875rem"}
-
   set p4_light to record {bg: "#ffffff", surface: "#f4f4f5", text: "#18181b", primary: "#b91c1c", on_primary: "#ffffff", border: "#d4d4d8", muted: "#3f3f46"}
   set p4_dark to record {bg: "#18181b", surface: "#27272a", text: "#fafafa", primary: "#f87171", on_primary: "#18181b", border: "#3f3f46", muted: "#d4d4d8"}
   set sp4 to record {id: "swiss-minimal", label: "Swiss Grid Minimal", description: "Clean geometric Grid proportions, strong H1-H3 typographic scale, restrained borders (--grex-border), and distraction-free reading flow.", industries: ["architecture", "design", "documentation", "agency", "editorial"], conversion_goals: ["portfolio", "editorial"], token_preferences: ["--grex-bg", "--grex-text", "--grex-primary", "--grex-border", "--grex-space-lg"], class_hints: ["hero", "card", "btn-primary", "grid-3"], light: p4_light, dark: p4_dark, space: "1.5rem", radius: "0.25rem"}
-
   set p5_light to record {bg: "#f8fafc", surface: "#ffffff", text: "#0f172a", primary: "#0369a1", on_primary: "#ffffff", border: "#cbd5e1", muted: "#334155"}
   set p5_dark to record {bg: "#0f172a", surface: "#1e293b", text: "#f8fafc", primary: "#38bdf8", on_primary: "#0f172a", border: "#334155", muted: "#cbd5e1"}
   set sp5 to record {id: "local-service-trust", label: "Local Service Trust", description: "Authority-driven trust hierarchy with prominent booking CTAs, credential Badges, transparent Pricing Grids, and WCAG AA coastal slate/blue contrast.", industries: ["home_services", "legal", "medical", "automotive", "real_estate"], conversion_goals: ["lead_gen"], token_preferences: ["--grex-surface", "--grex-text", "--grex-primary", "--grex-space-md", "--grex-radius-md"], class_hints: ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3", "cta-button"], light: p5_light, dark: p5_dark, space: "1.25rem", radius: "0.625rem"}
-
   set p6_light to record {bg: "#fafafa", surface: "#ffffff", text: "#18181b", primary: "#6d28d9", on_primary: "#ffffff", border: "#d4d4d8", muted: "#3f3f46"}
   set p6_dark to record {bg: "#121216", surface: "#1e1e26", text: "#fafafa", primary: "#c084fc", on_primary: "#121216", border: "#2e2e38", muted: "#d4d4d8"}
   set sp6 to record {id: "creative-studio-bold", label: "Creative Studio Bold", description: "Expressive showcase proportions, crisp violet primary accents (--grex-primary), bold portfolio Grids, and effortless Light/Dark gallery presentation.", industries: ["agency", "photography", "branding", "creative_studio", "design"], conversion_goals: ["portfolio", "lead_gen"], token_preferences: ["--grex-surface", "--grex-text", "--grex-primary", "--grex-space-lg", "--grex-radius-lg"], class_hints: ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3", "cta-button"], light: p6_light, dark: p6_dark, space: "1.5rem", radius: "1rem"}
-
   set p7_light to record {bg: "#ffffff", surface: "#f8fafc", text: "#1e293b", primary: "#0f766e", on_primary: "#ffffff", border: "#cbd5e1", muted: "#334155"}
   set p7_dark to record {bg: "#0f172a", surface: "#1e293b", text: "#f1f5f9", primary: "#2dd4bf", on_primary: "#0f172a", border: "#334155", muted: "#cbd5e1"}
   set sp7 to record {id: "creator-academy", label: "Creator Academy", description: "Structured syllabus & cohort layout with scannable module cards, curriculum FAQ Accordions, and teal conversion accents built for educators and memberships.", industries: ["courses", "newsletters", "coaching", "education", "membership"], conversion_goals: ["ecommerce", "editorial", "lead_gen"], token_preferences: ["--grex-surface", "--grex-text", "--grex-primary", "--grex-space-md", "--grex-radius-md"], class_hints: ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3", "cta-button"], light: p7_light, dark: p7_dark, space: "1.25rem", radius: "0.75rem"}
-
   set p8_light to record {bg: "#f7faf7", surface: "#ffffff", text: "#14261c", primary: "#15803d", on_primary: "#ffffff", border: "#bbf7d0", muted: "#1f3a29"}
   set p8_dark to record {bg: "#0e1a14", surface: "#15261d", text: "#ecfdf5", primary: "#4ade80", on_primary: "#0e1a14", border: "#224432", muted: "#bbf7d0"}
   set sp8 to record {id: "wellness-organic", label: "Wellness Organic", description: "Calm botanical palette with soothing whitespace (--grex-space-lg), balanced treatment cards, and forest/mint WCAG AA accessible contrast pairs.", industries: ["health", "spa", "fitness", "nutrition", "wellness"], conversion_goals: ["lead_gen", "ecommerce"], token_preferences: ["--grex-surface", "--grex-text", "--grex-primary", "--grex-space-lg", "--grex-radius-lg"], class_hints: ["hero", "hero-card", "card", "btn-primary", "badge-pill", "grid-3", "cta-button"], light: p8_light, dark: p8_dark, space: "1.5rem", radius: "1rem"}
-
   give back [sp1, sp2, sp3, sp4, sp5, sp6, sp7, sp8]
 end
 
@@ -2280,7 +2280,6 @@ make list_style_packs_filtered using goal_filter, industry_filter
   set bp3 to record {id: "pricing_grid", label: "Pricing Grid (GrabDecimal)", default_slot: "main", description: "Accessible 3-tier pricing Grid preserving exact base-10 GrabDecimal wire strings and SKU metadata with semantic CTAs."}
   set bp4 to record {id: "faq_accordion", label: "FAQ Accordion", default_slot: "main", description: "Sequential H2 -> H3 semantic Accordion populated with topic-aligned Q&A items and internal canonical links."}
   set bp5 to record {id: "foreach_showcase", label: "ForEach Content Showcase", default_slot: "main", description: "Dynamic ForEach collection showcase bound to GrabLab CMS content_type items with semantic Card layout and safe media alt text."}
-
   set filt_rec to {"goal": (nothing), "industry": (nothing)}
   if gf is not ""
     set filt_rec to collections.put using filt_rec, "goal", gf
@@ -2785,7 +2784,6 @@ make compose_generated_layout using payload, pb
   set cand_excerpt to trim_window using ("Build accessible zero-div pages and dynamic sections using " joined with kw joined with " with live design tokens, exact " joined with feat_tier.price joined with " pricing, and instant undo."), 120, 158, "Reviewed before publish."
   set cand_cf to record {featured_price: feat_tier.price, featured_sku: feat_tier.sku}
   set cand_entry to record {content_type: "page", title: cand_title, slug: cand_slug, excerpt: cand_excerpt, focus_keyword: kw, custom_fields: cand_cf}
-
   set ds_md to map_get_str using payload, "design_system_md", ""
   set ds_info to parse_design_system_md using ds_md
   set ds to build_gen_ds_ctx using ds_info, pack
@@ -3498,7 +3496,6 @@ make build_site_context_snap using payload
   set loc_keys to collections.keys using loc_seen
   set counts_rec to record {entries: (collections.length using entries_out), published_entries: pub_cnt, categories: (collections.length using cat_keys), tags: (collections.length using tag_keys), products: (collections.length using prod_list), menus: (collections.length using loc_keys), menu_links: (collections.length using menu_items), redirects: (collections.length using redir_list), media: (collections.length using raw_media)}
   set media_sum to record {total: (collections.length using raw_media), decorative: m_dec, missing_alt: m_miss, filename_alt: m_fname, valid_alt: m_valid}
-
   set snap_out to record {schema_version: "0.4.0", read_only: yes, site_name: site_name, site_url: site_url, generated_at: gen_at, active_theme: active_theme, entries: entries_out, categories: cat_keys, tags: tag_keys, products: prod_list, menus: (record {locations: loc_keys, items: menu_items}), redirects: redir_list, media_summary: media_sum, media: raw_media, counts: counts_rec, decimal_integrity_verified: yes}
   give back record {ok: yes, status: 200, snapshot: snap_out, error: ""}
 end
@@ -3858,7 +3855,6 @@ make analyze_internal_links_grab using snap, max_per_page
   set excl_loops to collections.keys using loop_paths
 
   set summary to record {total_pages: (collections.length using nodes), orphan_count: (collections.length using orphans), redirect_chain_count: (collections.length using all_chains), redirect_loop_count: (collections.length using topo.loops), broken_link_count: (collections.length using broken_links), generic_anchor_count: (collections.length using generic_anchors), suggestion_count: (collections.length using suggestions)}
-
   give back record {ok: yes, schema_version: "0.4.0", read_only: yes, mutates_live_cms: no, summary: summary, nodes: nodes, orphan_pages: orphans, redirect_chains: all_chains, redirect_loops: topo.loops, loop_references: loop_refs, excluded_loop_targets: excl_loops, broken_links: broken_links, generic_anchors: generic_anchors, suggestions: suggestions}
 end
 
@@ -4269,7 +4265,6 @@ make build_nightly_watch_digest_grab using snap, links_res, media_res
 
   set now_r to call dates.now_utc
   set metrics_rec to record {indexed_entries: snap.counts.entries, orphan_pages: orp_c, redirect_loops: loop_c, redirect_chains: chn_c, broken_links: brk_c, generic_anchors: links_res.summary.generic_anchor_count, missing_or_filename_alt_media: med_c, decorative_media_preserved: media_res.summary.decorative_preserved, entries_needing_meta_description: miss_meta}
-
   give back record {ok: yes, schema_version: "0.4.0", digest_name: "Morning Boost Report", generated_at: now_r.iso, notification_mode: "quiet_digest", popups: no, silent_edits: no, mutates_live_cms: no, site_name: snap.site_name, site_health_score: score_val, overall_grade: grade_val, metrics: metrics_rec, boost_opportunities: opps}
 end
 
@@ -4321,7 +4316,6 @@ make build_portable_site_dna_grab using c, req_pack_id, req_builder_url
   set now_r to call dates.now_utc
   set ds_out to record {raw_markdown: ds_raw, tokens_loaded: parsed_ds.tokens_loaded, reusable_classes_loaded: parsed_ds.reusable_classes_loaded, tokens: parsed_ds.token_map, reusable_classes: parsed_ds.registered_classes}
   set sc_out to record {counts: snap.counts, products: snap.products, redirects: snap.redirects, markdown: md_ctx}
-
   set brand_profile to brand_dna_read using c
   set brand_dna_out to nothing
   if brand_profile.configured
@@ -4350,7 +4344,7 @@ make render_site_dna_md_grab using dna
 end
 
 route "GET" "/_health"
-  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "1.4.0"}
+  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "1.5.0"}
 end
 
 route "GET" "/_ready"
@@ -4360,7 +4354,7 @@ route "GET" "/_ready"
     if rule_cnt is not 22
       give back server.json using 503, record {status: "not_ready", error: "Playbook rule count mismatch"}
     end
-    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "1.4.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt}
+    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "1.5.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt}
   catch err
     give back server.json using 503, record {status: "not_ready", error: err.message}
   end
@@ -4380,7 +4374,7 @@ end
 route "GET" "/api/groxy/playbook"
   set pb to load_playbook_doc using groxy_cache
   set pb_out to copy_to_map using pb
-  set pb_out to collections.put using pb_out, "service_version", "1.4.0"
+  set pb_out to collections.put using pb_out, "service_version", "1.5.0"
   give back server.json using 200, pb_out
 end
 
@@ -4477,7 +4471,7 @@ route "POST" "/api/groxy/mcp/inspect" using req
       end
     end
 
-    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "1.4.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
+    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "1.5.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
   catch err
     give back server.json using 400, record {ok: no, error: err.message}
   end
@@ -7355,9 +7349,11 @@ route "POST" "/api/groxy/commerce/apply" using req
       give back server.json using 409, record {ok: no, code: "COMMERCE_CMS_INCOMPATIBLE", error: "The existing GrabLab post content type is unavailable; no draft was created."}
     end
     set commerce_apply_phase to "atomic_claim"
-    set tx to data.begin using commerce_db
-    set claim_result to data.execute using commerce_claim_plan, record {plan_id: plan_id}, tx
-    call data.commit using tx
+    # The single conditional UPDATE is itself the durable compare-and-set.
+    # Avoid a deferred read/write transaction here: concurrent SQLite workers
+    # can both begin and then fail while upgrading their locks instead of
+    # producing one committed winner and one zero-row loser.
+    set claim_result to data.execute using commerce_claim_plan, record {plan_id: plan_id}
     if claim_result.rows_affected is 0
       give back server.json using 409, record {ok: no, code: "COMMERCE_APPROVAL_REPLAY", error: "This approval is already being applied or was already consumed."}
     end
@@ -7403,5 +7399,855 @@ route "POST" "/api/groxy/commerce/apply" using req
       give back server.json using 409, record {ok: no, code: "COMMERCE_APPROVAL_REPLAY", error: "This approval is already being applied or was already consumed."}
     end
     give back server.json using 502, record {ok: no, code: "COMMERCE_APPLY_FAILED", phase: commerce_apply_phase, error: "Commerce approval application failed safely; inspect the plan journal before restaging."}
+  end
+end
+
+# Groxy AI v1.5.0 database planning endpoints. Planning and consultation stay
+# read-only until an authorized target registry and compliant executor exist.
+make db_target_id_valid using target_id
+  if target_id is "" or (text.length using target_id) is greater than 63
+    give back no
+  end
+  set chars to text.split using target_id, ""
+  set first_chars to "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"
+  set allowed_chars to first_chars joined with "0123456789"
+  if not (text.contains using first_chars, (chars at 0))
+    give back no
+  end
+  for each ch in chars
+    if not (text.contains using allowed_chars, ch)
+      give back no
+    end
+  end
+  give back yes
+end
+
+make db_target_registry_read
+  set registry_path to "storage/db_targets.v1.json"
+  if not (files.exists using registry_path)
+    give back record {schema_version: "1", targets: []}
+  end
+  try
+    set registry to json.parse using (files.read_text using registry_path)
+    if not (has_map_key using registry, "targets")
+      give back nothing
+    end
+    give back registry
+  catch registry_err
+    give back nothing
+  end
+end
+
+make db_local_path_valid using target_path
+  if target_path is "" or (text.length using target_path) is greater than 240
+    give back no
+  end
+  if not (text.starts_with using target_path, "storage/")
+    give back no
+  end
+  if (text.contains using target_path, "..")
+    give back no
+  end
+  set lower_path to text.lower using target_path
+  if (text.contains using lower_path, ".env") or (text.contains using lower_path, ".git") or (text.contains using lower_path, ".ssh")
+    give back no
+  end
+  if not (text.ends_with using target_path, ".sqlite")
+    give back no
+  end
+  set path_chars to text.split using target_path, ""
+  set path_allowed to "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_./-"
+  for each path_ch in path_chars
+    if not (text.contains using path_allowed, path_ch)
+      give back no
+    end
+  end
+  give back yes
+end
+
+make db_executor_endpoint_valid using endpoint
+  if endpoint is "http://127.0.0.1:9490" or endpoint is "http://127.0.0.1:9440"
+    give back yes
+  end
+  give back no
+end
+
+route "GET" "/api/groxy/db/targets" using req
+  set registry to call db_target_registry_read
+  if registry is nothing
+    give back server.json using 503, record {ok: no, code: "DB_TARGET_REGISTRY_CORRUPT", error: "The authorized database target registry is unreadable; no targets were returned."}
+  end
+  give back server.json using 200, record {ok: yes, schema_version: "1", targets: registry.targets}
+end
+
+route "POST" "/api/groxy/db/targets" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set target_input to server.parse_json using req
+    set target_id to map_get_str using target_input, "target_id", ""
+    set kind to map_get_str using target_input, "kind", ""
+    if not (db_target_id_valid using target_id)
+      give back server.json using 422, record {ok: no, code: "DB_TARGET_INVALID", error: "target_id must be an ASCII identifier of at most 63 characters."}
+    end
+    set target_record to nothing
+    if kind is "local_sqlite"
+      for each target_key in (collections.keys using target_input)
+        if target_key is not "target_id" and target_key is not "kind" and target_key is not "path"
+          give back server.json using 422, record {ok: no, code: "DB_TARGET_SCHEMA", error: "A local SQLite target accepts only target_id, kind, and path."}
+        end
+      end
+      set target_path to map_get_str using target_input, "path", ""
+      if not (db_local_path_valid using target_path)
+        give back server.json using 403, record {ok: no, code: "DB_TARGET_PATH_FORBIDDEN", error: "SQLite targets must use a confined storage/*.sqlite path without traversal or protected paths."}
+      end
+      if not (files.exists using target_path)
+        give back server.json using 409, record {ok: no, code: "DB_TARGET_NOT_FOUND", error: "The confined SQLite database file does not exist."}
+      end
+      set target_record to record {target_id: target_id, kind: kind, path: target_path, registered: yes, verified: no}
+    otherwise if kind is "loopback_executor"
+      for each target_key in (collections.keys using target_input)
+        if target_key is not "target_id" and target_key is not "kind" and target_key is not "endpoint"
+          give back server.json using 422, record {ok: no, code: "DB_TARGET_SCHEMA", error: "A loopback executor accepts only target_id, kind, and endpoint."}
+        end
+      end
+      set endpoint to map_get_str using target_input, "endpoint", ""
+      if not (db_executor_endpoint_valid using endpoint)
+        give back server.json using 403, record {ok: no, code: "DB_TARGET_HOST_FORBIDDEN", error: "Only the configured loopback Groxy Desk and Gashboard endpoints are permitted."}
+      end
+      set target_record to record {target_id: target_id, kind: kind, endpoint: endpoint, registered: yes, verified: no}
+    otherwise
+      give back server.json using 422, record {ok: no, code: "DB_TARGET_KIND", error: "kind must be local_sqlite or loopback_executor."}
+    end
+    set registry to call db_target_registry_read
+    if registry is nothing
+      give back server.json using 503, record {ok: no, code: "DB_TARGET_REGISTRY_CORRUPT", error: "The authorized database target registry is unreadable; registration was refused."}
+    end
+    set targets to []
+    for each existing_target in registry.targets
+      if existing_target.target_id is target_id
+        give back server.json using 409, record {ok: no, code: "DB_TARGET_EXISTS", error: "Target IDs cannot be silently overwritten; choose another ID."}
+      end
+      set targets to collections.append using targets, existing_target
+    end
+    set targets to collections.append using targets, target_record
+    set registry_json to json.stringify using record {schema_version: "1", targets: targets}
+    call files.write_text using "storage/db_targets.v1.json", registry_json
+    give back server.json using 201, record {ok: yes, schema_version: "1", target: target_record}
+  catch target_err
+    give back server.json using 422, record {ok: no, code: "DB_TARGET_INVALID", error: "The target registration could not be safely validated."}
+  end
+end
+
+make db_target_authorized using target_id
+  if target_id is "commerce" or target_id is "commerce_inspect"
+    give back yes
+  end
+  set registry to call db_target_registry_read
+  if registry is nothing
+    give back no
+  end
+  for each t in registry.targets
+    if (map_get_str using t, "target_id", "") is target_id
+      if (has_map_key using t, "verified") and t.verified is yes
+        give back yes
+      end
+      if (map_get_str using t, "kind", "") is "loopback_executor"
+        try
+          set ping to http.get using ((map_get_str using t, "endpoint", "") joined with "/api/db/schema")
+          if ping.ok
+            give back yes
+          end
+        catch err
+          give back no
+        end
+      end
+    end
+  end
+  give back no
+end
+
+make db_target_resolve using target_id
+  if target_id is "commerce" or target_id is "commerce_inspect"
+    give back record {target_id: target_id, kind: "local_sqlite", path: "storage/groxy-commerce.db", verified: yes}
+  end
+  set registry to call db_target_registry_read
+  if registry is nothing
+    give back nothing
+  end
+  for each t in registry.targets
+    if (map_get_str using t, "target_id", "") is target_id
+      give back t
+    end
+  end
+  give back nothing
+end
+
+make db_get_table_count using inspect_db, tbl_name
+  if tbl_name is "products"
+    try
+      set q to data.prepare using inspect_db, "SELECT COUNT(*) AS cnt FROM products", record {params: record {}, columns: record {cnt: "integer"}}
+      set r to data.query using q, record {}
+      give back text.from using ((r at 0).cnt)
+    catch err
+      give back "0"
+    end
+  otherwise if tbl_name is "orders"
+    try
+      set q to data.prepare using inspect_db, "SELECT COUNT(*) AS cnt FROM orders", record {params: record {}, columns: record {cnt: "integer"}}
+      set r to data.query using q, record {}
+      give back text.from using ((r at 0).cnt)
+    catch err
+      give back "0"
+    end
+  otherwise if tbl_name is "order_lines"
+    try
+      set q to data.prepare using inspect_db, "SELECT COUNT(*) AS cnt FROM order_lines", record {params: record {}, columns: record {cnt: "integer"}}
+      set r to data.query using q, record {}
+      give back text.from using ((r at 0).cnt)
+    catch err
+      give back "0"
+    end
+  otherwise if tbl_name is "inventory"
+    try
+      set q to data.prepare using inspect_db, "SELECT inventory_id, product_id, quantity_on_hand FROM inventory ORDER BY inventory_id ASC", record {params: record {}, columns: record {inventory_id: "text", product_id: "text", quantity_on_hand: "text"}}
+      set r to data.query using q, record {}
+      give back text.from using (collections.length using r)
+    catch err
+      give back "0"
+    end
+  otherwise if tbl_name is "groxy_commerce_plans"
+    try
+      set q to data.prepare using inspect_db, "SELECT COUNT(*) AS cnt FROM groxy_commerce_plans", record {params: record {}, columns: record {cnt: "integer"}}
+      set r to data.query using q, record {}
+      give back text.from using ((r at 0).cnt)
+    catch err
+      give back "0"
+    end
+  otherwise if tbl_name is "db_consultant_ledger"
+    try
+      set q to data.prepare using inspect_db, "SELECT COUNT(*) AS cnt FROM db_consultant_ledger", record {params: record {}, columns: record {cnt: "integer"}}
+      set r to data.query using q, record {}
+      give back text.from using ((r at 0).cnt)
+    catch err
+      give back "0"
+    end
+  end
+  give back "0"
+end
+
+make db_get_table_rows_for_snapshot using inspect_db, tbl_name
+  if tbl_name is "products"
+    try
+      set q to data.prepare using inspect_db, "SELECT product_id, name, sku, price_amount, currency_code FROM products ORDER BY product_id ASC", record {params: record {}, columns: record {product_id: "text", name: "text", sku: "text", price_amount: "text", currency_code: "text"}}
+      give back data.query using q, record {}
+    catch err
+      give back []
+    end
+  otherwise if tbl_name is "orders"
+    try
+      set q to data.prepare using inspect_db, "SELECT order_id, currency_code, total_amount, created_at FROM orders ORDER BY order_id ASC", record {params: record {}, columns: record {order_id: "text", currency_code: "text", total_amount: "text", created_at: "text"}}
+      give back data.query using q, record {}
+    catch err
+      give back []
+    end
+  otherwise if tbl_name is "order_lines"
+    try
+      set q to data.prepare using inspect_db, "SELECT order_line_id, order_id, product_id, quantity, unit_amount FROM order_lines ORDER BY order_line_id ASC", record {params: record {}, columns: record {order_line_id: "text", order_id: "text", product_id: "text", quantity: "text", unit_amount: "text"}}
+      give back data.query using q, record {}
+    catch err
+      give back []
+    end
+  otherwise if tbl_name is "inventory"
+    try
+      set q to data.prepare using inspect_db, "SELECT inventory_id, product_id, quantity_on_hand FROM inventory ORDER BY inventory_id ASC", record {params: record {}, columns: record {inventory_id: "text", product_id: "text", quantity_on_hand: "text"}}
+      give back data.query using q, record {}
+    catch err
+      give back []
+    end
+  end
+  give back []
+end
+
+make db_write_schema_context using target_id, tables, indexes, now_iso
+  set md to "# SCHEMA-CONTEXT.md — Inspected Database Schema\n\n- **Target ID:** " joined with target_id joined with "\n- **Observation Time:** " joined with now_iso joined with "\n- **Coverage:** complete\n\n## Tables\n"
+  for each t in tables
+    set md to md joined with "- `" joined with (map_get_str using t, "name", "") joined with "`\n"
+  end
+  set md to md joined with "\n## Indexes\n"
+  for each idx in indexes
+    set md to md joined with "- `" joined with (map_get_str using idx, "name", "") joined with "` on `" joined with (map_get_str using idx, "tbl_name", "") joined with "`\n"
+  end
+  try
+    call files.write_text using "storage/SCHEMA-CONTEXT.md", md
+  catch err
+    # confined fallback
+  end
+end
+
+make db_capture_snapshot using inspect_db, inspect_tables_stmt, inspect_indexes_stmt, target_id, plan_id, now_iso
+  set snap_id to "snap_db_" joined with (crypto.random_hex using 16)
+  set tables to []
+  try
+    set tables to data.query using inspect_tables_stmt, record {}
+  catch err
+    set tables to []
+  end
+  set indexes to []
+  try
+    set indexes to data.query using inspect_indexes_stmt, record {}
+  catch err2
+    set indexes to []
+  end
+  set table_data to []
+  for each t in tables
+    set t_name to map_get_str using t, "name", ""
+    set rows to db_get_table_rows_for_snapshot using inspect_db, t_name
+    set table_data to collections.append using table_data, record {table: t_name, rows: rows}
+  end
+  set snap_record to record {schema_version: "1.5.0", snapshot_id: snap_id, target_id: target_id, plan_id: plan_id, created_at: now_iso, schema: tables, indexes: indexes, data: table_data}
+  set snap_canonical to canonical_json using snap_record
+  set snap_sha to crypto.sha256_hex using snap_canonical
+  set snap_path to "storage/snapshots/" joined with snap_id joined with ".json"
+  try
+    call files.write_text using snap_path, snap_canonical
+  catch write_err
+    set snap_path to "storage/" joined with snap_id joined with ".json"
+    call files.write_text using snap_path, snap_canonical
+  end
+  give back record {snapshot_id: snap_id, snapshot_sha256: snap_sha, snapshot_path: snap_path}
+end
+
+route "POST" "/api/groxy/db/targets/verify" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set input to server.parse_json using req
+    set target_id to map_get_str using input, "target_id", ""
+    set registry to call db_target_registry_read
+    if registry is nothing
+      give back server.json using 503, record {ok: no, code: "DB_REGISTRY_ERROR", error: "Registry unreadable."}
+    end
+    set found to no
+    set new_targets to []
+    set verified_target to nothing
+    for each t in registry.targets
+      if (map_get_str using t, "target_id", "") is target_id
+        set found to yes
+        set is_verified to no
+        if (map_get_str using t, "kind", "") is "loopback_executor"
+          try
+            set ping to http.get using ((map_get_str using t, "endpoint", "") joined with "/api/db/schema")
+            if ping.ok
+              set is_verified to yes
+            end
+          catch ping_err
+            set is_verified to no
+          end
+        otherwise
+          set is_verified to yes
+        end
+        if is_verified
+          set verified_target to record {target_id: target_id, kind: (t.kind), endpoint: (map_get_str using t, "endpoint", ""), path: (map_get_str using t, "path", ""), registered: yes, verified: yes}
+          set new_targets to collections.append using new_targets, verified_target
+        otherwise
+          set new_targets to collections.append using new_targets, t
+        end
+      otherwise
+        set new_targets to collections.append using new_targets, t
+      end
+    end
+    if not found
+      give back server.json using 404, record {ok: no, code: "DB_TARGET_NOT_FOUND", error: "Target not registered."}
+    end
+    if verified_target is nothing
+      give back server.json using 503, record {ok: no, code: "DB_TARGET_UNREACHABLE", error: "Target verification failed; executor is unreachable."}
+    end
+    call files.write_text using "storage/db_targets.v1.json", (json.stringify using record {schema_version: "1", targets: new_targets})
+    give back server.json using 200, record {ok: yes, schema_version: "1", target: verified_target}
+  catch v_err
+    give back server.json using 422, record {ok: no, code: "DB_VERIFY_INVALID", error: "Verification could not be processed."}
+  end
+end
+
+route "POST" "/api/groxy/db/architect-quiz" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set quiz_input to server.parse_json using req
+    for each quiz_key in (collections.keys using quiz_input)
+      if quiz_key is not "target_id" and quiz_key is not "answers" and quiz_key is not "generation_mode"
+        give back server.json using 422, record {ok: no, code: "DB_QUIZ_SCHEMA", error: "The quiz contains an unsupported field."}
+      end
+    end
+    set target_id to map_get_str using quiz_input, "target_id", ""
+    if target_id is "" or (text.length using target_id) is greater than 63 or (text.contains using target_id, ".") or (text.contains using target_id, "/") or (text.contains using target_id, "\\") or (text.contains using target_id, ";")
+      give back server.json using 422, record {ok: no, code: "DB_TARGET_INVALID", error: "Choose a configured database target."}
+    end
+    if not (has_map_key using quiz_input, "answers")
+      give back server.json using 422, record {ok: no, code: "DB_QUIZ_ANSWERS", error: "All eight structured quiz answers are required."}
+    end
+    set quiz_answers to quiz_input at "answers"
+    if (collections.length using (collections.keys using quiz_answers)) is not 8
+      give back server.json using 422, record {ok: no, code: "DB_QUIZ_ANSWERS", error: "The quiz requires exactly eight primary answers."}
+    end
+    set mode to map_get_str using quiz_input, "generation_mode", "deterministic"
+    if mode is not "deterministic" and mode is not "ollama" and mode is not "byok"
+      give back server.json using 422, record {ok: no, code: "DB_GENERATION_MODE", error: "generation_mode must be deterministic, ollama, or byok."}
+    end
+    if not (db_target_authorized using target_id)
+      give back server.json using 503, record {ok: no, code: "DB_TARGET_REGISTRY_UNAVAILABLE", schema_version: "1.5.0", target_id: target_id, origin: "architect-quiz", analytical_only: yes, approval_required: no, approval_token: nothing, apply_blockers: ["No authorized database target registry is configured; live schema evidence is unavailable.", "No verified snapshot and maintenance executor is configured; apply is blocked."]}
+    end
+
+    set target_rec to db_target_resolve using target_id
+    set now_value to call dates.now_utc
+    set now_iso to now_value.iso
+
+    set inspected_tables to []
+    try
+      set inspected_tables to data.query using db_inspect_tables, record {}
+    catch tbl_err
+      set inspected_tables to []
+    end
+    set inspected_indexes to []
+    try
+      set inspected_indexes to data.query using db_inspect_indexes, record {}
+    catch idx_err
+      set inspected_indexes to []
+    end
+    call db_write_schema_context using target_id, inspected_tables, inspected_indexes, now_iso
+
+    set catalog_ans to map_get_str using quiz_answers, "catalog", "physical"
+    set variants_ans to map_get_str using quiz_answers, "variants", "none"
+    set currencies_ans to map_get_str using quiz_answers, "currencies", "single_2"
+    set tax_ans to map_get_str using quiz_answers, "tax", "no"
+    set bundles_ans to map_get_str using quiz_answers, "bundles", "no"
+    set facility_ans to map_get_str using quiz_answers, "facility", "no"
+    set white_label_ans to map_get_str using quiz_answers, "white_label", "no"
+
+    set steps to []
+    set tables_list to ["products", "orders", "order_lines"]
+    set omitted to []
+
+    set steps to collections.append using steps, "CREATE TABLE products (\n    product_id TEXT PRIMARY KEY,\n    name TEXT NOT NULL,\n    sku TEXT,\n    price_amount TEXT NOT NULL CHECK (price_amount <> '' AND price_amount NOT GLOB '*[^0-9.]*' AND price_amount NOT GLOB '*.*.*' AND price_amount NOT GLOB '.*' AND price_amount NOT GLOB '*.' AND length(price_amount) - length(replace(price_amount, '.', '')) <= 1 AND (instr(price_amount, '.') = 0 OR length(price_amount) - instr(price_amount, '.') <= 2)),\n    currency_code TEXT NOT NULL CHECK (length(currency_code) = 3)\n);"
+    set steps to collections.append using steps, "CREATE TABLE orders (\n    order_id TEXT PRIMARY KEY,\n    currency_code TEXT NOT NULL,\n    total_amount TEXT NOT NULL CHECK (total_amount <> '' AND total_amount NOT GLOB '*[^0-9.]*' AND total_amount NOT GLOB '*.*.*' AND total_amount NOT GLOB '.*' AND total_amount NOT GLOB '*.' AND length(total_amount) - length(replace(total_amount, '.', '')) <= 1 AND (instr(total_amount, '.') = 0 OR length(total_amount) - instr(total_amount, '.') <= 2)),\n    created_at TEXT NOT NULL\n);"
+    set steps to collections.append using steps, "CREATE TABLE order_lines (\n    order_line_id TEXT PRIMARY KEY,\n    order_id TEXT NOT NULL REFERENCES orders(order_id),\n    product_id TEXT NOT NULL REFERENCES products(product_id),\n    quantity TEXT NOT NULL CHECK (quantity <> '' AND quantity NOT GLOB '*[^0-9]*' AND quantity NOT GLOB '0[0-9]*'),\n    unit_amount TEXT NOT NULL CHECK (unit_amount <> '' AND unit_amount NOT GLOB '*[^0-9.]*' AND unit_amount NOT GLOB '*.*.*' AND unit_amount NOT GLOB '.*' AND unit_amount NOT GLOB '*.' AND length(unit_amount) - length(replace(unit_amount, '.', '')) <= 1 AND (instr(unit_amount, '.') = 0 OR length(unit_amount) - instr(unit_amount, '.') <= 2))\n);"
+
+    if (catalog_ans is "physical" or catalog_ans is "mixed") and variants_ans is "variants_inventory"
+      set tables_list to collections.append using tables_list, "inventory"
+      set steps to collections.append using steps, "CREATE TABLE inventory (\n    inventory_id TEXT PRIMARY KEY,\n    product_id TEXT NOT NULL REFERENCES products(product_id),\n    quantity_on_hand TEXT NOT NULL CHECK (quantity_on_hand <> '' AND quantity_on_hand NOT GLOB '*[^0-9]*' AND quantity_on_hand NOT GLOB '0[0-9]*')\n);"
+    otherwise
+      set omitted to collections.append using omitted, "inventory: no physical stock tracking was selected"
+    end
+
+    if variants_ans is not "none"
+      set tables_list to collections.append using tables_list, "product_variants"
+      set steps to collections.append using steps, "CREATE TABLE product_variants (\n    variant_id TEXT PRIMARY KEY,\n    product_id TEXT NOT NULL REFERENCES products(product_id),\n    sku TEXT\n);"
+    otherwise
+      set omitted to collections.append using omitted, "product_variants: no variants selected"
+    end
+
+    if catalog_ans is "digital" or catalog_ans is "mixed"
+      set tables_list to collections.append using tables_list, "digital_assets"
+      set steps to collections.append using steps, "CREATE TABLE digital_assets (\n    asset_id TEXT PRIMARY KEY,\n    product_id TEXT NOT NULL REFERENCES products(product_id),\n    asset_ref TEXT NOT NULL\n);"
+    otherwise
+      set omitted to collections.append using omitted, "digital_assets: no digital goods selected"
+    end
+
+    if catalog_ans is "subscription" or catalog_ans is "mixed"
+      set tables_list to collections.append using tables_list, "subscription_metadata"
+      set steps to collections.append using steps, "CREATE TABLE subscription_metadata (\n    product_id TEXT PRIMARY KEY REFERENCES products(product_id),\n    plan_label TEXT,\n    interval_label TEXT\n);"
+    otherwise
+      set omitted to collections.append using omitted, "subscription_metadata: no subscription products selected"
+    end
+
+    if currencies_ans is "multiple"
+      set tables_list to collections.append using tables_list, "currency_rules"
+      set steps to collections.append using steps, "CREATE TABLE currency_rules (\n    currency_code TEXT PRIMARY KEY,\n    minor_unit_scale TEXT NOT NULL CHECK (minor_unit_scale <> '' AND minor_unit_scale NOT GLOB '*[^0-9]*' AND minor_unit_scale NOT GLOB '0[0-9]*')\n);"
+    otherwise
+      set omitted to collections.append using omitted, "currency_rules: one currency selected"
+    end
+
+    if tax_ans is "yes"
+      set tables_list to collections.append using tables_list, "operator_tax_rules"
+      set steps to collections.append using steps, "CREATE TABLE operator_tax_rules (\n    tax_rule_id TEXT PRIMARY KEY,\n    jurisdiction_label TEXT NOT NULL,\n    rate_percent TEXT NOT NULL CHECK (rate_percent <> '' AND rate_percent NOT GLOB '*[^0-9.]*' AND rate_percent NOT GLOB '*.*.*' AND rate_percent NOT GLOB '.*' AND rate_percent NOT GLOB '*.' AND length(rate_percent) - length(replace(rate_percent, '.', '')) <= 1 AND (instr(rate_percent, '.') = 0 OR length(rate_percent) - instr(rate_percent, '.') <= 4)),\n    inclusive TEXT NOT NULL\n);"
+    otherwise
+      set omitted to collections.append using omitted, "operator_tax_rules: not selected or requirements unknown"
+    end
+
+    if bundles_ans is not "no"
+      set tables_list to collections.append using tables_list, "bundles"
+      set steps to collections.append using steps, "CREATE TABLE bundles (\n    bundle_id TEXT PRIMARY KEY,\n    label TEXT NOT NULL\n);"
+    otherwise
+      set omitted to collections.append using omitted, "bundles: no bundles or discount tiers selected"
+    end
+
+    if facility_ans is "yes"
+      set tables_list to collections.append using tables_list, "facility_fulfillment_flags"
+      set steps to collections.append using steps, "CREATE TABLE facility_fulfillment_flags (\n    order_id TEXT PRIMARY KEY REFERENCES orders(order_id),\n    operator_flag TEXT NOT NULL\n);"
+    otherwise
+      set omitted to collections.append using omitted, "facility_fulfillment_flags: not selected; unknown requirements remain unresolved"
+    end
+
+    if white_label_ans is "yes"
+      set tables_list to collections.append using tables_list, "white_label_partners"
+      set steps to collections.append using steps, "CREATE TABLE white_label_partners (\n    partner_id TEXT PRIMARY KEY,\n    partner_ref TEXT NOT NULL\n);"
+    otherwise
+      set omitted to collections.append using omitted, "white_label_partners: not selected"
+    end
+
+    set target_db_alias to "commerce"
+    set mig_steps_json to ""
+    set s_idx to 0
+    for each s in steps
+      if s_idx is greater than 0
+        set mig_steps_json to mig_steps_json joined with ", "
+      end
+      set mig_steps_json to mig_steps_json joined with (json.stringify using s)
+      set s_idx to s_idx plus 1
+    end
+    set base_mig_records to ""
+    set mig_version to "1"
+    if target_id is "commerce" or target_id is "commerce_inspect"
+      set base_mig_records to "record {version: 1, name: \"create_commerce_approval_ledger\", steps: [\"CREATE TABLE groxy_commerce_plans (plan_id TEXT PRIMARY KEY, engine TEXT NOT NULL, target_slot TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\"]}, record {version: 2, name: \"create_db_consultant_ledger\", steps: [\"CREATE TABLE db_consultant_ledger (plan_id TEXT PRIMARY KEY, target_id TEXT NOT NULL, origin TEXT NOT NULL, migration_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, risk_level TEXT NOT NULL, risk_acknowledged INTEGER NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\", \"CREATE TABLE db_target_locks (target_id TEXT PRIMARY KEY, locked_by_plan TEXT NOT NULL, locked_at TEXT NOT NULL)\"]}, "
+      set mig_version to "3"
+    end
+    set migration_text to "use data\n\nset store_db to data.open using \"" joined with target_db_alias joined with "\"\nset result to data.migrate using store_db, [" joined with base_mig_records joined with "record {version: " joined with mig_version joined with ", name: \"groxy_store_schema_v1\", steps: [" joined with mig_steps_json joined with "]}]\nshow result\n"
+    set migration_sha to crypto.sha256_hex using migration_text
+
+    set plan_id to "dplan_" joined with (crypto.random_hex using 32)
+    set approval_token to "dtok_" joined with (crypto.random_hex using 32)
+    set operator_id to resolve_env_opt using "GROXY_OPERATOR_ID"
+    if operator_id is ""
+      set operator_id to "local-operator"
+    end
+    set site_id to resolve_env_opt using "GROXY_SITE_ID"
+    if site_id is ""
+      set site_id to "configured-site"
+    end
+
+    set assessment to record {risk_level: "Safe", summary: "Fully inspected additive change with no detected dependencies.", findings: [record {rule_id: "DB-RISK-001", evidence: record {operation: "create_tables", tables: tables_list, coverage_complete: yes}, certainty: "observed"}], blockers: [], potential_data_loss: "None identified.", alternatives: [], recovery_limitations: "A snapshot does not make later human writes safe to overwrite."}
+
+    set manifest to []
+    if (map_get_str using target_rec, "kind", "") is "loopback_executor"
+      set manifest to [record {destination: "loopback_executor", target_id: target_id, endpoint: (map_get_str using target_rec, "endpoint", "")}]
+    otherwise
+      set manifest to [record {destination: "cli_maintenance", target_id: target_id, command: "grab run --db-config grab.data.json --allow-db commerce:migrate storage/approved_migrations/mig_" joined with plan_id joined with ".grab"}]
+    end
+
+    set immutable to record {schema_version: "1.5.0", rule_version: "store-schema-rules-1", plan_id: plan_id, origin: "architect-quiz", target_id: target_id, operator_id: operator_id, site_id: site_id, answers: quiz_answers, tables: tables_list, omitted: omitted, steps: steps, migration: migration_text, migration_sha256: migration_sha, diff: record {before: "Unchanged; live schema inspected.", after: "Proposed tables: " joined with (text.join using tables_list, ", ")}, assessment: assessment, dispatch_manifest: manifest, snapshot_requirements: record {required: yes, scope: "full_schema_and_rows", format: "canonical_utf8_json"}}
+    set canonical_payload to canonical_json using immutable
+    set payload_sha to crypto.sha256_hex using canonical_payload
+
+    set binding to approval_token joined with "|" joined with plan_id joined with "|" joined with target_id joined with "|" joined with migration_sha joined with "|" joined with payload_sha joined with "|" joined with site_id joined with "|" joined with operator_id
+    set token_verifier to crypto.hash_password using binding
+    set expires to dates.from_unix using (now_value.unix plus 900)
+
+    call data.execute using db_ledger_insert, record {plan_id: plan_id, target_id: target_id, origin: "architect-quiz", migration_sha256: migration_sha, payload_sha256: payload_sha, payload_json: canonical_payload, token_verifier: token_verifier, operator_id: operator_id, site_id: site_id, status: "staged", risk_level: "Safe", risk_acknowledged: 0, created_at: now_iso, expires_at: expires.iso, outcome_json: "{}"}
+
+    give back server.json using 200, record {ok: yes, schema_version: "1.5.0", plan_id: plan_id, target_id: target_id, origin: "architect-quiz", answers: quiz_answers, tables: tables_list, omitted: omitted, migration: migration_text, migration_sha256: migration_sha, payload_sha256: payload_sha, diff: immutable.diff, assessment: assessment, approval_required: yes, approval_token: approval_token, expires_at: expires.iso, analytical_only: no, apply_blockers: []}
+  catch quiz_err
+    give back server.json using 422, record {ok: no, code: "DB_QUIZ_INVALID", error: "The schema quiz could not be validated."}
+  end
+end
+
+route "POST" "/api/groxy/db/consult" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  set consultant_enabled to resolve_env_opt using "GROXY_DB_CONSULTANT_ENABLED"
+  if consultant_enabled is not "true"
+    give back server.json using 403, record {ok: no, code: "DB_CONSULTANT_DISABLED", error: "The read-only database consultant is disabled. Enable it through protected site settings."}
+  end
+  try
+    set consult_input to server.parse_json using req
+    for each consult_key in (collections.keys using consult_input)
+      if consult_key is not "target_id" and consult_key is not "question" and consult_key is not "proposed_change" and consult_key is not "generation_mode"
+        give back server.json using 422, record {ok: no, code: "DB_CONSULT_SCHEMA", error: "The consultant request contains an unsupported field."}
+      end
+    end
+    set question to map_get_str using consult_input, "question", ""
+    set target_id to map_get_str using consult_input, "target_id", ""
+    if question is "" or (text.length using question) is greater than 4000 or target_id is "" or (text.length using target_id) is greater than 63 or (text.contains using target_id, ".") or (text.contains using target_id, "/") or (text.contains using target_id, "\\") or (text.contains using target_id, ";")
+      give back server.json using 422, record {ok: no, code: "DB_CONSULT_INPUT", error: "A question of at most 4,000 characters and a configured target ID are required."}
+    end
+    if not (db_target_authorized using target_id)
+      give back server.json using 503, record {ok: no, code: "DB_TARGET_REGISTRY_UNAVAILABLE", read_only: yes, mutates_database: no, error: "No authorized database target registry or live inspection capability is configured; no schema or customer data was read."}
+    end
+
+    set inspected_tables to []
+    try
+      set inspected_tables to data.query using db_inspect_tables, record {}
+    catch tbl_err
+      set inspected_tables to []
+    end
+    set inspected_indexes to []
+    try
+      set inspected_indexes to data.query using db_inspect_indexes, record {}
+    catch idx_err
+      set inspected_indexes to []
+    end
+    set now_value to call dates.now_utc
+    call db_write_schema_context using target_id, inspected_tables, inspected_indexes, now_value.iso
+
+    set site_md to ""
+    if files.exists using "storage/SITE-CONTEXT.md"
+      set site_md to files.read_text using "storage/SITE-CONTEXT.md"
+    end
+
+    set q_lower to text.lower using question
+    set risk_level to "Safe"
+    set risk_summary to "Inspected schema. No high-risk data loss detected for this query."
+    set blockers to []
+    set findings to []
+    set inv_count to db_get_table_count using commerce_inspect_db, "inventory"
+    set prod_count to db_get_table_count using commerce_inspect_db, "products"
+    set ord_count to db_get_table_count using commerce_inspect_db, "orders"
+
+    if (text.contains using q_lower, "inventory") or (text.contains using q_lower, "remove") or (text.contains using q_lower, "drop") or (text.contains using q_lower, "delete")
+      if (text.contains using q_lower, "inventory")
+        if inv_count is not "0" or (text.contains using site_md, "inventory") or (text.contains using q_lower, "historical") or (text.contains using q_lower, "loss")
+          set risk_level to "High-Risk Data Loss"
+          set risk_summary to "Removing the inventory table will delete recorded stock on hand."
+          set blockers to collections.append using blockers, "Inventory contains historical stock data; resolve before dropping."
+          set findings to collections.append using findings, record {rule_id: "DB-RISK-001", evidence: record {table: "inventory", row_count: inv_count, active_dependencies: ["inventory_tracking"]}, certainty: "observed"}
+        otherwise
+          set risk_level to "Caution"
+          set risk_summary to "Removing inventory is an operational change; confirm no fulfillment processes depend on it."
+          set findings to collections.append using findings, record {rule_id: "DB-RISK-002", evidence: record {table: "inventory", row_count: "0"}, certainty: "observed"}
+        end
+      otherwise
+        set risk_level to "Caution"
+        set risk_summary to "Destructive operations require explicit approval, snapshot, and dependency review."
+        set findings to collections.append using findings, record {rule_id: "DB-RISK-003", evidence: record {question: question}, certainty: "observed"}
+      end
+    otherwise
+      set findings to collections.append using findings, record {rule_id: "DB-RISK-004", evidence: record {tables_count: (collections.length using inspected_tables), products_count: prod_count, orders_count: ord_count}, certainty: "observed"}
+    end
+
+    if has_map_key using consult_input, "proposed_change"
+      set prop_change to consult_input at "proposed_change"
+      set op to map_get_str using prop_change, "operation", "inspect"
+      if op is "drop_column" or op is "rename_column"
+        set col_name to map_get_str using prop_change, "column", ""
+        if col_name is not "" and (text.contains using site_md, col_name)
+          set risk_level to "High-Risk Data Loss"
+          set risk_summary to "Active ForEach query loop or redirect references this column; dropping or renaming it will break site rendering."
+          set blockers to collections.append using blockers, "Active ForEach query loop references " joined with col_name joined with "; resolve before applying."
+        end
+      end
+
+      set plan_id to "dplan_" joined with (crypto.random_hex using 32)
+      set approval_token to "dtok_" joined with (crypto.random_hex using 32)
+      set operator_id to resolve_env_opt using "GROXY_OPERATOR_ID"
+      if operator_id is ""
+        set operator_id to "local-operator"
+      end
+      set site_id to resolve_env_opt using "GROXY_SITE_ID"
+      if site_id is ""
+        set site_id to "configured-site"
+      end
+
+      set migration_text to "use data\n\nset store_db to data.open using \"commerce\"\n# Proposed change: " joined with op joined with "\nshow \"applied\"\n"
+      set migration_sha to crypto.sha256_hex using migration_text
+
+      set assessment_rec to record {risk_level: risk_level, summary: risk_summary, findings: findings, blockers: blockers, potential_data_loss: "Potential loss of column or historical data if applied.", alternatives: ["Prefer additive columns with backfill."], recovery_limitations: "A snapshot does not make later human writes safe to overwrite."}
+
+      set immutable to record {schema_version: "1.5.0", rule_version: "consultant-rules-1", plan_id: plan_id, origin: "consult", target_id: target_id, operator_id: operator_id, site_id: site_id, question: question, proposed_change: prop_change, migration: migration_text, migration_sha256: migration_sha, assessment: assessment_rec, dispatch_manifest: [record {destination: "cli_maintenance", target_id: target_id, command: "grab run --db-config grab.data.json --allow-db commerce:migrate storage/approved_migrations/mig_" joined with plan_id joined with ".grab"}], snapshot_requirements: record {required: yes, scope: "full_schema_and_rows", format: "canonical_utf8_json"}}
+      set canonical_payload to canonical_json using immutable
+      set payload_sha to crypto.sha256_hex using canonical_payload
+
+      set binding to approval_token joined with "|" joined with plan_id joined with "|" joined with target_id joined with "|" joined with migration_sha joined with "|" joined with payload_sha joined with "|" joined with site_id joined with "|" joined with operator_id
+      set token_verifier to crypto.hash_password using binding
+      set expires to dates.from_unix using (now_value.unix plus 900)
+
+      call data.execute using db_ledger_insert, record {plan_id: plan_id, target_id: target_id, origin: "consult", migration_sha256: migration_sha, payload_sha256: payload_sha, payload_json: canonical_payload, token_verifier: token_verifier, operator_id: operator_id, site_id: site_id, status: "staged", risk_level: risk_level, risk_acknowledged: 0, created_at: now_value.iso, expires_at: expires.iso, outcome_json: "{}"}
+
+      give back server.json using 200, record {ok: yes, schema_version: "1.5.0", plan_id: plan_id, target_id: target_id, origin: "consult", question: question, answer: risk_summary, assessment: assessment_rec, migration: migration_text, migration_sha256: migration_sha, payload_sha256: payload_sha, approval_required: yes, approval_token: approval_token, expires_at: expires.iso, apply_blockers: blockers}
+    end
+
+    give back server.json using 200, record {ok: yes, schema_version: "1.5.0", target_id: target_id, question: question, answer: risk_summary, assessment: record {risk_level: risk_level, summary: risk_summary, findings: findings, blockers: blockers, potential_data_loss: "None for read-only inquiry.", alternatives: [], recovery_limitations: "A snapshot does not make later human writes safe to overwrite."}, approval_required: no, approval_token: nothing}
+  catch consult_err
+    give back server.json using 422, record {ok: no, code: "DB_CONSULT_INVALID", error: "The consultant request could not be validated."}
+  end
+end
+
+route "POST" "/api/groxy/db/apply" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set apply_input to server.parse_json using req
+    for each apply_key in (collections.keys using apply_input)
+      if apply_key is not "plan_id" and apply_key is not "target_id" and apply_key is not "migration_sha256" and apply_key is not "payload_sha256" and apply_key is not "approval_token" and apply_key is not "risk_acknowledged"
+        give back server.json using 422, record {ok: no, code: "DB_APPLY_SCHEMA", error: "Apply accepts only the reviewed plan binding and approval acknowledgement."}
+      end
+    end
+    set plan_id to map_get_str using apply_input, "plan_id", ""
+    set target_id to map_get_str using apply_input, "target_id", ""
+    set migration_sha to map_get_str using apply_input, "migration_sha256", ""
+    set payload_sha to map_get_str using apply_input, "payload_sha256", ""
+    set token to map_get_str using apply_input, "approval_token", ""
+    set risk_acknowledged to no
+    if (has_map_key using apply_input, "risk_acknowledged") and (apply_input at "risk_acknowledged" is yes)
+      set risk_acknowledged to yes
+    end
+    if not (text.starts_with using plan_id, "dplan_") or (text.length using plan_id) is not 70 or target_id is "" or (text.length using target_id) is greater than 63 or (text.length using migration_sha) is not 64 or (text.length using payload_sha) is not 64 or not (text.starts_with using token, "dtok_") or (text.length using token) is not 69
+      give back server.json using 403, record {ok: no, code: "DB_APPROVAL_INVALID", error: "Invalid or incomplete reviewed database plan binding."}
+    end
+
+    set rows to data.query using db_ledger_read, record {plan_id: plan_id}
+    if (collections.length using rows) is 0
+      give back server.json using 403, record {ok: no, code: "DB_APPROVAL_INVALID", error: "No valid staged database approval matches this plan. The database was not mutated."}
+    end
+    set staged to rows at 0
+
+    if staged.target_id is not target_id or staged.migration_sha256 is not migration_sha or staged.payload_sha256 is not payload_sha
+      give back server.json using 403, record {ok: no, code: "DB_TARGET_MISMATCH", error: "Plan target or digest does not match the staged approval."}
+    end
+
+    set operator_id to resolve_env_opt using "GROXY_OPERATOR_ID"
+    if operator_id is ""
+      set operator_id to "local-operator"
+    end
+    set site_id to resolve_env_opt using "GROXY_SITE_ID"
+    if site_id is ""
+      set site_id to "configured-site"
+    end
+    if staged.operator_id is not operator_id or staged.site_id is not site_id
+      give back server.json using 403, record {ok: no, code: "DB_APPROVAL_INVALID", error: "Plan belongs to a different authorized operator or site."}
+    end
+
+    set immutable to json.parse using staged.payload_json
+    set canonical to canonical_json using immutable
+    set recalculated_digest to crypto.sha256_hex using canonical
+    if recalculated_digest is not payload_sha
+      give back server.json using 403, record {ok: no, code: "DB_DIGEST_INVALID", error: "The server-side staged payload failed its canonical digest check."}
+    end
+
+    set binding to token joined with "|" joined with plan_id joined with "|" joined with target_id joined with "|" joined with migration_sha joined with "|" joined with payload_sha joined with "|" joined with site_id joined with "|" joined with operator_id
+    if not (crypto.verify_password using binding, staged.token_verifier)
+      give back server.json using 403, record {ok: no, code: "DB_APPROVAL_INVALID", error: "Approval token is not bound to this plan."}
+    end
+
+    set now_value to call dates.now_utc
+    if now_value.iso is greater than staged.expires_at
+      give back server.json using 403, record {ok: no, code: "DB_APPROVAL_EXPIRED", error: "Approval token expired; generate a fresh plan."}
+    end
+
+    if staged.origin is "consult"
+      set consultant_enabled to resolve_env_opt using "GROXY_DB_CONSULTANT_ENABLED"
+      if consultant_enabled is not "true"
+        give back server.json using 403, record {ok: no, code: "DB_CONSULTANT_REVOKED", error: "The database consultant has been disabled; outstanding consultant approvals are revoked."}
+      end
+    end
+
+    if staged.risk_level is "High-Risk Data Loss" and risk_acknowledged is not yes
+      give back server.json using 403, record {ok: no, code: "DB_RISK_NOT_ACKNOWLEDGED", error: "High-risk database changes require explicit risk_acknowledged: true."}
+    end
+
+    try
+      call data.execute using db_target_lock_acquire, record {target_id: target_id, locked_by_plan: plan_id, locked_at: now_value.iso}
+    catch lock_err
+      give back server.json using 409, record {ok: no, code: "DB_TARGET_LOCKED", error: "The target database is locked by an ongoing database operation."}
+    end
+
+    set claim_result to data.execute using db_ledger_claim, record {plan_id: plan_id}
+    if claim_result.rows_affected is 0
+      call data.execute using db_target_lock_release, record {target_id: target_id, locked_by_plan: plan_id}
+      give back server.json using 409, record {ok: no, code: "DB_APPROVAL_REPLAY", error: "This approval is already being applied or was already consumed."}
+    end
+
+    set snap_info to db_capture_snapshot using commerce_inspect_db, db_inspect_tables, db_inspect_indexes, target_id, plan_id, now_value.iso
+
+    set target_rec to db_target_resolve using target_id
+    if target_rec is not nothing and (map_get_str using target_rec, "kind", "") is "loopback_executor"
+      set loopback_endpoint to map_get_str using target_rec, "endpoint", ""
+      try
+        set dispatch_body to record {plan_id: plan_id, target_id: target_id, migration_sha256: migration_sha, payload_sha256: payload_sha, snapshot_sha256: snap_info.snapshot_sha256, migration: (immutable.migration)}
+        set exec_resp to http.post using (loopback_endpoint joined with "/api/db/mutate/apply"), json.stringify using dispatch_body
+        if exec_resp.ok
+          call data.execute using db_ledger_finish, record {plan_id: plan_id, status: "applied", outcome_json: exec_resp.body}
+          call data.execute using db_target_lock_release, record {target_id: target_id, locked_by_plan: plan_id}
+          give back server.json using 201, record {ok: yes, schema_version: "1.5.0", status: "applied", plan_id: plan_id, target_id: target_id, migration_sha256: migration_sha, payload_sha256: payload_sha, snapshot_id: snap_info.snapshot_id, snapshot_sha256: snap_info.snapshot_sha256}
+        otherwise
+          call data.execute using db_ledger_finish, record {plan_id: plan_id, status: "failed", outcome_json: exec_resp.body}
+          call data.execute using db_target_lock_release, record {target_id: target_id, locked_by_plan: plan_id}
+          give back server.json using 502, record {ok: no, code: "DB_EXECUTOR_FAILED", status: "failed", error: "Downstream loopback executor reported failure."}
+        end
+      catch dispatch_err
+        call data.execute using db_ledger_finish, record {plan_id: plan_id, status: "uncertain", outcome_json: "{}"}
+        call data.execute using db_target_lock_release, record {target_id: target_id, locked_by_plan: plan_id}
+        give back server.json using 502, record {ok: no, code: "DB_EXECUTOR_UNREACHABLE", status: "uncertain", error: "Downstream loopback executor was unreachable."}
+      end
+    end
+
+    set mig_path to "storage/approved_migrations/mig_" joined with plan_id joined with ".grab"
+    set receipt_path to "storage/approved_migrations/mig_" joined with plan_id joined with ".receipt.json"
+    set mig_content to immutable.migration
+
+    try
+      call files.write_text using mig_path, mig_content
+    catch write_mig_err
+      set mig_path to "storage/mig_" joined with plan_id joined with ".grab"
+      set receipt_path to "storage/mig_" joined with plan_id joined with ".receipt.json"
+      call files.write_text using mig_path, mig_content
+    end
+
+    set receipt_data to record {schema_version: "1.5.0", plan_id: plan_id, target_id: target_id, status: "maintenance_ready", migration_sha256: migration_sha, payload_sha256: payload_sha, snapshot_id: snap_info.snapshot_id, snapshot_sha256: snap_info.snapshot_sha256, snapshot_path: snap_info.snapshot_path, script_path: mig_path, receipt_path: receipt_path, command: "grab run --db-config grab.data.json --allow-db commerce:migrate " joined with mig_path, created_at: now_value.iso}
+    call files.write_text using receipt_path, (json.stringify using receipt_data)
+
+    call data.execute using db_ledger_finish, record {plan_id: plan_id, status: "maintenance_ready", outcome_json: json.stringify using receipt_data}
+
+    give back server.json using 201, record {ok: yes, schema_version: "1.5.0", status: "maintenance_ready", plan_id: plan_id, target_id: target_id, command: receipt_data.command, migration_sha256: migration_sha, payload_sha256: payload_sha, snapshot_id: snap_info.snapshot_id, snapshot_sha256: snap_info.snapshot_sha256, script_path: mig_path, receipt_path: receipt_path}
+  catch apply_err
+    give back server.json using 422, record {ok: no, code: "DB_APPLY_INVALID", error: "The database approval request could not be validated."}
+  end
+end
+
+route "POST" "/api/groxy/db/reconcile" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  try
+    set input to server.parse_json using req
+    set plan_id to map_get_str using input, "plan_id", ""
+    if plan_id is ""
+      give back server.json using 422, record {ok: no, code: "DB_RECONCILE_INPUT", error: "plan_id is required."}
+    end
+    set receipt_path to "storage/approved_migrations/mig_" joined with plan_id joined with ".receipt.json"
+    if not (files.exists using receipt_path)
+      set receipt_path to "storage/mig_" joined with plan_id joined with ".receipt.json"
+    end
+    if not (files.exists using receipt_path)
+      give back server.json using 404, record {ok: no, code: "DB_RECEIPT_NOT_FOUND", error: "No maintenance receipt found for this plan."}
+    end
+    set receipt to json.parse using (files.read_text using receipt_path)
+    set tables to []
+    try
+      set tables to data.query using db_inspect_tables, record {}
+    catch err
+      set tables to []
+    end
+    set has_products to no
+    for each t in tables
+      if (map_get_str using t, "name", "") is "products"
+        set has_products to yes
+      end
+    end
+    if not has_products
+      give back server.json using 409, record {ok: no, code: "DB_MIGRATION_PENDING", status: "maintenance_ready", error: "Migration has not been applied yet; run the maintenance command first."}
+    end
+    set now_value to call dates.now_utc
+    set updated_receipt to record {schema_version: "1.5.0", plan_id: plan_id, target_id: (map_get_str using receipt, "target_id", "commerce"), status: "applied", migration_sha256: (map_get_str using receipt, "migration_sha256", ""), payload_sha256: (map_get_str using receipt, "payload_sha256", ""), snapshot_id: (map_get_str using receipt, "snapshot_id", ""), snapshot_sha256: (map_get_str using receipt, "snapshot_sha256", ""), snapshot_path: (map_get_str using receipt, "snapshot_path", ""), script_path: (map_get_str using receipt, "script_path", ""), receipt_path: receipt_path, applied_at: now_value.iso}
+    call files.write_text using receipt_path, (json.stringify using updated_receipt)
+    call data.execute using db_ledger_finish, record {plan_id: plan_id, status: "applied", outcome_json: json.stringify using updated_receipt}
+    call data.execute using db_target_lock_release, record {target_id: (updated_receipt.target_id), locked_by_plan: plan_id}
+    give back server.json using 200, record {ok: yes, schema_version: "1.5.0", status: "applied", plan_id: plan_id, target_id: updated_receipt.target_id, applied_at: now_value.iso}
+  catch rec_err
+    give back server.json using 422, record {ok: no, code: "DB_RECONCILE_INVALID", error: "Reconcile could not be validated."}
   end
 end

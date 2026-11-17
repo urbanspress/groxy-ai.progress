@@ -947,6 +947,228 @@ def render_v130_html() -> str:
 <footer>Groxy AI v1.3.0 · Urban's Press / GRAB Ecosystem · Release promotion pending</footer></body></html>"""
 
 
+def render_v150_html() -> str:
+    return """<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Groxy AI v1.5.0 Walkthrough Guide</title>
+  <style>
+    @page { size: letter; margin: 0.65in; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      line-height: 1.48;
+      font-size: 9.6pt;
+      margin: 0;
+    }
+    header {
+      border-bottom: 3px solid #047857;
+      padding-bottom: 0.65rem;
+      margin-bottom: 0.9rem;
+    }
+    h1 { margin: 0 0 0.2rem 0; font-size: 19pt; color: #064e3b; }
+    .subtitle { margin: 0; color: #334155; font-size: 10.6pt; font-weight: 600; }
+    .meta { margin: 0.3rem 0 0 0; color: #475569; font-size: 9pt; }
+    h2 {
+      margin: 1rem 0 0.4rem 0;
+      font-size: 12.2pt;
+      color: #065f46;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 0.16rem;
+      page-break-after: avoid;
+    }
+    p { margin: 0.3rem 0 0.5rem 0; }
+    ul { margin: 0.2rem 0 0.6rem 1.2rem; padding: 0; }
+    li { margin-bottom: 0.22rem; }
+    .callout {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      border-left: 4px solid #047857;
+      border-radius: 6px;
+      padding: 0.6rem 0.8rem;
+      margin: 0.65rem 0;
+      page-break-inside: avoid;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.65rem 0 0.9rem 0;
+      font-size: 8.8pt;
+      page-break-inside: avoid;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 0.36rem 0.48rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #ecfdf5; color: #0f172a; font-weight: 700; }
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      background: #f1f5f9;
+      padding: 0.06rem 0.25rem;
+      border-radius: 4px;
+      font-size: 8.5pt;
+    }
+    footer {
+      margin-top: 1.15rem;
+      padding-top: 0.55rem;
+      border-top: 1px solid #e2e8f0;
+      color: #475569;
+      font-size: 8.8pt;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Groxy AI v1.5.0 — Release Walkthrough Guide</h1>
+    <p class="subtitle">Bespoke Store Schema Quiz &bull; Opt-In &ldquo;Talk to Groxy&rdquo; Database &amp; Store Consultant &bull; Pre-Mutation Logical Snapshots &amp; CLI Maintenance</p>
+    <p class="meta">Post-1.0 Ecosystem Step 4 &bull; Built natively on GRAB v1.1.0 + Grex JS v1.0.0 + GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0</p>
+  </header>
+
+  <section class="callout">
+    <p><strong>What Groxy AI v1.5.0 Delivers in Plain English:</strong> Groxy AI v1.5.0 introduces an intelligent database and store schema design layer. Merchants and operators get an eight-step guided interview that generates lean, zero-bloat <code>.grab</code> database migrations tailored to their exact catalog model (physical goods, digital downloads, product variants, inventory, subscription metadata, currency scale rules, operator taxes, bundles, facility fulfillment flags, and white-label partner references). For existing stores, an opt-in AI consultant inspects live table schemas and row counts (via statically configured <code>commerce_inspect:read</code>) alongside template query loops and 301 redirects, flags potential data loss before changes occur, writes verifiable canonical UTF-8 JSON Pre-Mutation Snapshots, and coordinates safe execution through single-winner atomic locking and explicit CLI maintenance.</p>
+  </section>
+
+  <section>
+    <h2>1. Bespoke Store Architecture Quiz (<code>POST /api/groxy/db/architect-quiz</code>)</h2>
+    <ul>
+      <li><strong>Eight Semantic Questions:</strong> Interactively configures store capabilities without manual SQL authoring. Generates clean <code>ADR-024f</code> migrations with exact <code>ADR-025c</code> base-10 decimal wire strings.</li>
+      <li><strong>Grounding &amp; Impact Diffs:</strong> When bound to an authorized target (such as <code>commerce</code> / <code>commerce_inspect</code> or a verified loopback Desk/Gashboard executor), inspects live <code>sqlite_master</code> tables, columns, indexes, and row counts to produce Before/After schema diffs and mint target-bound <code>dtok_&lt;hex&gt;</code> approval tokens.</li>
+      <li><strong>Analytical-Only Safe Mode:</strong> Unconfigured or unregistered targets remain strictly analytical (503 response, zero approval tokens, zero mutations).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>2. Opt-In &ldquo;Talk to Groxy&rdquo; Database Consultant (<code>POST /api/groxy/db/consult</code>)</h2>
+    <ul>
+      <li><strong>Protected Site Setting (<code>groxy_db_consultant_enabled</code>):</strong> Default-disabled (403); must be explicitly enabled by authorized operators. Disabling the consultant immediately revokes outstanding consultant-minted plans at apply time.</li>
+      <li><strong>Live Grounding &amp; Impact Analysis:</strong> Queries row counts and live structure from <code>commerce_inspect</code> while checking <code>SCHEMA-CONTEXT.md</code> and <code>SITE-CONTEXT.md</code> for template <code>ForEach</code> query loops or <code>slug_history</code> 301 redirect dependencies.</li>
+      <li><strong>Three-Tier Risk Classification:</strong> Categorizes proposed schema changes into <em>Safe</em> (additive columns/tables), <em>Caution</em> (empty tables or operational adjustments), and <em>High-Risk Data Loss</em> (dropping tables/columns with existing rows or active template dependencies). High-risk proposals require explicit <code>risk_acknowledged: true</code> to proceed.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3. Target Locks, Logical Snapshots &amp; Compliant Apply (<code>/apply</code> &amp; <code>/reconcile</code>)</h2>
+    <ul>
+      <li><strong>Atomic Single-Winner Coordination:</strong> Durable SQLite locking via <code>db_target_locks</code> and single-use approval claiming via <code>db_consultant_ledger</code> ensure that concurrent worker races produce exactly one <code>201</code> winner and <code>409</code> conflict/replay rejection.</li>
+      <li><strong>Pre-Mutation Logical JSON Snapshots:</strong> Queries <code>commerce_inspect</code> and deterministically captures <code>storage/snapshots/snap_db_&lt;id&gt;.json</code> with canonical sorted keys and SHA-256 verification before any mutation receipt is issued. Snapshot restore logic preserves subsequent non-affected orders.</li>
+      <li><strong>Strict Separation of HTTP Handlers &amp; DDL:</strong> HTTP handlers never execute DDL. The apply endpoint generates canonical CLI maintenance scripts (<code>storage/approved_migrations/mig_&lt;plan_id&gt;.grab</code>) with a <code>.receipt.json</code> sidecar and status <code>maintenance_ready</code>, or dispatches to a verified loopback executor (<code>127.0.0.1:9490</code>). Post-maintenance reconciliation (<code>POST /api/groxy/db/reconcile</code>) reads back live schema state, verifies table creation, transitions the receipt to <code>applied</code>, and safely releases the target lock.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>4. Database Management API Routes</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Endpoint</th>
+          <th>Method</th>
+          <th>Purpose &amp; Security Controls</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>/api/groxy/db/targets</code></td>
+          <td>GET / POST</td>
+          <td>List configured database targets or register confined local SQLite / loopback executor endpoints. CSRF protected.</td>
+        </tr>
+        <tr>
+          <td><code>/api/groxy/db/targets/verify</code></td>
+          <td>POST</td>
+          <td>Probe loopback executor connectivity (<code>GET /api/db/schema</code>) before marking targets as verified.</td>
+        </tr>
+        <tr>
+          <td><code>/api/groxy/db/architect-quiz</code></td>
+          <td>POST</td>
+          <td>Inspect live schema, generate tailor-made store migration, and mint single-use <code>dtok_</code> token.</td>
+        </tr>
+        <tr>
+          <td><code>/api/groxy/db/consult</code></td>
+          <td>POST</td>
+          <td>Opt-in schema consultant for plain-English queries, dependency inspection, and risk assessment.</td>
+        </tr>
+        <tr>
+          <td><code>/api/groxy/db/apply</code></td>
+          <td>POST</td>
+          <td>Atomically acquire target lock, claim approval token, capture pre-mutation snapshot, and stage maintenance script.</td>
+        </tr>
+        <tr>
+          <td><code>/api/groxy/db/reconcile</code></td>
+          <td>POST</td>
+          <td>Inspect live schema after CLI migration execution, advance receipt to <code>applied</code>, and release target lock.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>5. Ecosystem Compatibility Matrix &amp; Verification Gates</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Ecosystem Layer</th>
+          <th>Repository</th>
+          <th>Required Version Range</th>
+          <th>Touched in Release?</th>
+          <th>Neighbor Upgrade Required?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Core Language, Bytecode VM &amp; Grisp Server</strong></td>
+          <td><code>urbanspress/grab</code></td>
+          <td><code>&gt;= v1.1.0 (&lt; v2.0.0)</code></td>
+          <td>No</td>
+          <td>No &bull; 100% drop-in compatible</td>
+        </tr>
+        <tr>
+          <td><strong>Reactive Frontend Runtime &amp; 20-Element Library</strong></td>
+          <td><code>urbanspress/grex-js</code></td>
+          <td><code>&gt;= v1.0.0 (&lt; v2.0.0)</code></td>
+          <td>No</td>
+          <td>No &bull; 100% drop-in compatible</td>
+        </tr>
+        <tr>
+          <td><strong>Flagship Zero-Plugin CMS</strong></td>
+          <td><code>urbanspress/grablab-cms</code></td>
+          <td><code>&gt;= v1.0.1 (&lt; v2.0.0)</code></td>
+          <td>No</td>
+          <td>No &bull; 100% drop-in compatible</td>
+        </tr>
+        <tr>
+          <td><strong>Exclusive <code>mode: "visual"</code> Theme &amp; Studio</strong></td>
+          <td><code>urbanspress/grex-builder</code></td>
+          <td><code>&gt;= v1.0.0 (&lt; v2.0.0)</code></td>
+          <td>No</td>
+          <td>No &bull; 100% drop-in compatible</td>
+        </tr>
+        <tr>
+          <td><strong>Autonomous Design, Content &amp; SEO Agent</strong></td>
+          <td><code>urbanspress/groxy-ai</code></td>
+          <td><code>&gt;= v0.1.0</code></td>
+          <td>Yes (<code>v1.5.0</code>)</td>
+          <td>No &bull; 100% drop-in compatible</td>
+        </tr>
+      </tbody>
+    </table>
+    <ul>
+      <li><strong>Verification Gates:</strong> <code>grab check</code> passed; byte-for-byte canonical <code>grab format</code> matched; 80/80 Node unit/DOM tests passed (zero <code>&lt;div&gt;</code> elements, zero <code>innerHTML</code> writes, WCAG AA Light/Dark); full 4-layer integration suite (Gates 1, 2, 3A, 3B on <code>127.0.0.1</code>) passed 100% printing <code>release-ready: True</code>.</li>
+      <li><strong>Strict Sibling Boundary Protection:</strong> All 8 sibling repositories in <code>C:\\Development\\*</code> verified clean with zero modifications.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <p>Groxy AI v1.5.0 &bull; Urban's Press / GRAB Ecosystem &bull; SemVer Tier: MINOR (1.x.0) &bull; Approved &amp; Frozen — Complete</p>
+  </footer>
+</body>
+</html>
+"""
+
+
 def main():
     version = sys.argv[1].lstrip("v") if len(sys.argv) > 1 else "1.0.0"
     renderers = {
@@ -958,6 +1180,7 @@ def main():
         "1.1.0": render_v110_html,
         "1.2.0": render_v120_html,
         "1.3.0": render_v130_html,
+        "1.5.0": render_v150_html,
     }
     if version not in renderers:
         raise ValueError(f"Unsupported guide version '{version}'. Available: {', '.join(sorted(renderers))}")

@@ -4,6 +4,7 @@ Package Groxy AI release bundle and compute SHA256SUMS.txt for GitHub Release di
 """
 
 import hashlib
+import json
 import shutil
 import subprocess
 import sys
@@ -22,7 +23,21 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
+def validate_read_only_inspection_alias():
+    """Ensure the release carries a distinct alias for CLI read-only grants."""
+    config_path = REPO_ROOT / "grab.data.json"
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    connections = config.get("connections", {})
+    commerce = connections.get("commerce")
+    inspection = connections.get("commerce_inspect")
+    if not isinstance(commerce, dict) or not isinstance(inspection, dict):
+        raise ValueError("grab.data.json must declare commerce and commerce_inspect aliases")
+    if commerce != inspection:
+        raise ValueError("commerce_inspect must resolve to the same connection definition as commerce")
+
+
 def collect_release_files():
+    validate_read_only_inspection_alias()
     include_dirs = ["src", "views", "public", "assets", "playbook", "deploy"]
     include_files = ["grab.platform.json", "grab.data.json", "scripts/migrate_commerce.grab", "README.md", "CHANGELOG.md", "GROXY-EXPERT.md", "LICENSE"]
     files = []
@@ -49,10 +64,15 @@ def collect_release_files():
         "tests/unit_commerce_engines.test.js",
         "scripts/migrate_commerce.grab",
     }
+    new_v150_modules = {
+        "assets/db-consultant.js",
+        "public/groxy/db-consultant.js",
+        "tests/unit_db_consultant.test.js",
+    }
 
     for fname in include_files:
         p = REPO_ROOT / fname
-        if p.exists() and p.is_file() and (fname in tracked or fname in new_v140_modules):
+        if p.exists() and p.is_file() and (fname in tracked or fname in new_v140_modules or fname in new_v150_modules):
             files.append(p)
 
     for dname in include_dirs:
@@ -64,7 +84,7 @@ def collect_release_files():
             if (
                 item.is_file()
                 and "__pycache__" not in item.parts
-                and (rel in tracked or rel in new_v120_modules or rel in new_v130_modules or rel in new_v140_modules)
+                and (rel in tracked or rel in new_v120_modules or rel in new_v130_modules or rel in new_v140_modules or rel in new_v150_modules)
             ):
                 files.append(item)
 

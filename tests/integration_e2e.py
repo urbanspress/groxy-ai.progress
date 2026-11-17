@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Groxy AI v1.4.0 — Full Cross-Layer End-to-End Verification Suite.
+Groxy AI v1.5.0 — Cross-Layer Regression and Database Gate Suite.
 
 Runs 3 non-negotiable gates:
   Gate 1: Static analysis (grab check), non-destructive canonical formatting (grab format byte-for-byte),
@@ -10,7 +10,7 @@ Runs 3 non-negotiable gates:
             - Core GRAB v1.1.0 `grab mcp` stdio JSON-RPC 2.0 server
             - GrabLab CMS v1.0.1 (isolated temp copy)
             - Grex Theme Builder v1.0.0 (isolated temp copy)
-            - Groxy AI v1.4.0 (src/groxy.grab)
+            - Groxy AI v1.5.0 (src/groxy.grab)
 """
 
 import http.cookiejar
@@ -272,6 +272,7 @@ def gate_1_static_and_format(grab_bin: str):
         REPO_ROOT / "public" / "groxy" / "mcp-client.js",
         REPO_ROOT / "public" / "groxy" / "dashboard.js",
         REPO_ROOT / "public" / "groxy" / "vision-clone.js",
+        REPO_ROOT / "public" / "groxy" / "db-consultant.js",
     ]:
         src = js_file.read_text(encoding="utf-8")
         code_only = re.sub(r"/\*[\s\S]*?\*/|//.*", "", src)
@@ -312,6 +313,9 @@ def gate_2_node_tests():
         "tests/unit_vision_clone.test.js",
         "tests/unit_brand_dna_batch.test.js",
         "tests/unit_v100_production_audit.test.js",
+        "tests/unit_db_consultant.test.js",
+        "tests/unit_email_flows.test.js",
+        "tests/unit_commerce_engines.test.js",
     ])
     print("  [PASS] Gate 2 complete (all unit & DOM tests passed).")
 
@@ -412,8 +416,47 @@ def gate_3a_grab_mcp_stdio(grab_bin: str):
     print("  [PASS] Gate 3A complete (grab mcp initialize, tools/list, grab_check, routes, GRAB-E401).")
 
 
+class MockDeskHandler(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == "/api/db/schema":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"ok": true, "schema_version": "1.5.0", "target_id": "desk_fixture", "tables": []}')
+        elif self.path == "/_health":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"status": "ok"}')
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def do_POST(self):
+        content_len = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(content_len).decode("utf-8", "replace") if content_len > 0 else ""
+        if self.path == "/api/db/schema":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"ok": true, "schema_version": "1.5.0", "target_id": "desk_fixture", "tables": []}')
+        elif self.path == "/api/db/mutate/apply":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            data = json.loads(body) if body else {}
+            resp = json.dumps({"ok": True, "status": "applied", "plan_id": data.get("plan_id", ""), "target_id": "desk_fixture", "applied_at": "2026-11-16T12:00:00Z"}).encode("utf-8")
+            self.wfile.write(resp)
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def log_message(self, format, *args):
+        pass
+
+
 def gate_3b_live_cross_layer(grab_bin: str):
-    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v1.4.0...")
+    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v1.5.0...")
     cms_src = Path(os.environ.get("GRABLAB_CMS_DIR", r"C:\Development\grablab-cms"))
     builder_src = Path(os.environ.get("GREX_BUILDER_DIR", r"C:\Development\grex-builder"))
     if not (cms_src / "src" / "app.grab").exists():
@@ -429,6 +472,9 @@ def gate_3b_live_cross_layer(grab_bin: str):
     builder_url = f"http://127.0.0.1:{builder_port}"
     builder_backend_url = f"http://127.0.0.1:{builder_backend_port}"
     builder_proxy, builder_proxy_thread, builder_proxy_url, builder_proxy_state = start_builder_fault_proxy(builder_backend_url, builder_port)
+    desk_server = http.server.ThreadingHTTPServer(("127.0.0.1", 9490), MockDeskHandler)
+    desk_thread = threading.Thread(target=desk_server.serve_forever, daemon=True)
+    desk_thread.start()
     groxy_url = f"http://127.0.0.1:{groxy_port}"
 
     procs = []
@@ -441,6 +487,10 @@ def gate_3b_live_cross_layer(grab_bin: str):
         copy_clean_dir(cms_src, cms_tmp)
         copy_clean_dir(builder_src, builder_tmp)
         copy_clean_dir(REPO_ROOT, groxy_tmp)
+
+        # Ensure storage subdirectories exist for snapshots and approved migrations
+        (groxy_tmp / "storage" / "snapshots").mkdir(parents=True, exist_ok=True)
+        (groxy_tmp / "storage" / "approved_migrations").mkdir(parents=True, exist_ok=True)
 
         # Commerce approval consumption uses GRAB's durable SQLite transaction
         # store. Migrations remain an explicit deployment step, never request-time.
@@ -558,7 +608,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         assert st_tok == 201, f"GrabLab mcp-token mint failed ({st_tok}): {tok_body}"
         cms_token = json.loads(tok_body)["token"]
 
-        # 3. Start Groxy AI v1.4.0 from an isolated copy so its storage writes
+        # 3. Start Groxy AI v1.5.0 from an isolated copy so its storage writes
         #    never modify the developer's working tree.
         groxy_log = tmp_root / "groxy.log"
         groxy_fh = open(groxy_log, "wb+")
@@ -573,6 +623,8 @@ def gate_3b_live_cross_layer(grab_bin: str):
                 "grab.data.json",
                 "--allow-db",
                 "commerce:read-write",
+                "--allow-db",
+                "commerce_inspect:read",
                 "--platform-config",
                 "grab.platform.json",
                 "--allow-cache",
@@ -586,12 +638,12 @@ def gate_3b_live_cross_layer(grab_bin: str):
                 "--allow-write",
                 "storage",
                 "--allow-net",
-                f"127.0.0.1:{cms_port},127.0.0.1:{builder_port}",
+                f"127.0.0.1:{cms_port},127.0.0.1:{builder_port},127.0.0.1:9490",
                 "--allow-env",
-                "GROXY_CMS_URL,GROXY_CMS_MCP_TOKEN,GROXY_BUILDER_URL,GROXY_OPERATOR_ID,GROXY_EMAIL_FLOWS_BYOK_URL,GROXY_EMAIL_FLOWS_ALLOW_ORIGIN,GROXY_EMAIL_FLOWS_API_KEY,GROXY_COMMERCE_BYOK_URL,GROXY_COMMERCE_BYOK_ALLOW_ORIGIN,GROXY_COMMERCE_BYOK_API_KEY,GROXY_COMMERCE_BYOK_MODEL",
+                "GROXY_CMS_URL,GROXY_CMS_MCP_TOKEN,GROXY_BUILDER_URL,GROXY_OPERATOR_ID,GROXY_DB_CONSULTANT_ENABLED,GROXY_EMAIL_FLOWS_BYOK_URL,GROXY_EMAIL_FLOWS_ALLOW_ORIGIN,GROXY_EMAIL_FLOWS_API_KEY,GROXY_COMMERCE_BYOK_URL,GROXY_COMMERCE_BYOK_ALLOW_ORIGIN,GROXY_COMMERCE_BYOK_API_KEY,GROXY_COMMERCE_BYOK_MODEL",
                 "src/groxy.grab",
             ]
-        groxy_environment = {**os.environ, "GROXY_CMS_URL": cms_url, "GROXY_CMS_MCP_TOKEN": cms_token, "GROXY_BUILDER_URL": builder_url, "GROXY_OPERATOR_ID": "e2e-admin", "GROXY_EMAIL_FLOWS_BYOK_URL": "https://169.254.169.254/latest/meta-data", "GROXY_EMAIL_FLOWS_ALLOW_ORIGIN": "https://169.254.169.254", "GROXY_EMAIL_FLOWS_API_KEY": "e2e-only-secret", "GROXY_COMMERCE_BYOK_URL": "https://169.254.169.254/latest/meta-data", "GROXY_COMMERCE_BYOK_ALLOW_ORIGIN": "https://169.254.169.254", "GROXY_COMMERCE_BYOK_API_KEY": "e2e-only-secret", "GROXY_COMMERCE_BYOK_MODEL": "test-model"}
+        groxy_environment = {**os.environ, "GROXY_CMS_URL": cms_url, "GROXY_CMS_MCP_TOKEN": cms_token, "GROXY_BUILDER_URL": builder_url, "GROXY_OPERATOR_ID": "e2e-admin", "GROXY_DB_CONSULTANT_ENABLED": "", "GROXY_EMAIL_FLOWS_BYOK_URL": "https://169.254.169.254/latest/meta-data", "GROXY_EMAIL_FLOWS_ALLOW_ORIGIN": "https://169.254.169.254", "GROXY_EMAIL_FLOWS_API_KEY": "e2e-only-secret", "GROXY_COMMERCE_BYOK_URL": "https://169.254.169.254/latest/meta-data", "GROXY_COMMERCE_BYOK_ALLOW_ORIGIN": "https://169.254.169.254", "GROXY_COMMERCE_BYOK_API_KEY": "e2e-only-secret", "GROXY_COMMERCE_BYOK_MODEL": "test-model"}
         groxy_proc = subprocess.Popen(
             groxy_command,
             cwd=str(groxy_tmp),
@@ -600,7 +652,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
             stderr=subprocess.STDOUT,
         )
         procs.append(groxy_proc)
-        health_json = wait_for_health(groxy_url, groxy_proc, "Groxy AI v1.4.0", log_path=groxy_log)
+        health_json = wait_for_health(groxy_url, groxy_proc, "Groxy AI v1.5.0", log_path=groxy_log)
         assert health_json.get("status") == "ok", (
             f"Unexpected /_health payload from Groxy AI: {health_json}"
         )
@@ -616,10 +668,16 @@ def gate_3b_live_cross_layer(grab_bin: str):
         st, _, html = http_request(f"{groxy_url}/groxy")
         assert st == 200
         assert re.search(r"<div\b", html, re.IGNORECASE) is None, "/groxy HTML must have zero <div> elements"
-        assert '<meta name="groxy-version" content="1.4.0">' in html, "Missing groxy-version 1.4.0 meta tag"
+        assert '<meta name="groxy-version" content="1.5.0">' in html, "Missing groxy-version 1.5.0 meta tag"
         m = re.search(r'<meta\s+name="groxy-csrf"\s+content="([^"]+)"', html)
         assert m, "Missing groxy-csrf meta tag in /groxy HTML"
         groxy_csrf = m.group(1)
+
+        # Database target registration is isolated to the copied app's storage.
+        sandbox_db = groxy_tmp / "storage" / "store_sandbox.sqlite"
+        with sqlite3.connect(sandbox_db) as sandbox_conn:
+            sandbox_conn.execute("CREATE TABLE sample (id INTEGER PRIMARY KEY, label TEXT NOT NULL)")
+            sandbox_conn.execute("INSERT INTO sample(label) VALUES ('fixture')")
 
         for asset_path in [
             "/static/groxy/groxy.css",
@@ -630,6 +688,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
             "/static/groxy/booster.js",
             "/static/groxy/generator.js",
             "/static/groxy/grex.js",
+            "/static/groxy/db-consultant.js",
         ]:
             st, _, _ = http_request(f"{groxy_url}{asset_path}")
             assert st == 200, f"Expected 200 for {asset_path}, got {st}"
@@ -639,7 +698,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         pb = json.loads(pb_body)
         assert len(pb.get("rules", [])) == 22
         assert pb.get("playbook_version") == "1.0.0"
-        assert pb.get("service_version") == "1.4.0"
+        assert pb.get("service_version") == "1.5.0"
 
         # Verify CSRF enforcement on all POST routes
         for post_path in [
@@ -657,9 +716,140 @@ def gate_3b_live_cross_layer(grab_bin: str):
             "/api/groxy/batch-create/apply",
             "/api/groxy/email-flows/design",
             "/api/groxy/email-flows/apply",
+            "/api/groxy/db/targets",
+            "/api/groxy/db/architect-quiz",
+            "/api/groxy/db/consult",
+            "/api/groxy/db/apply",
         ]:
             st_no_csrf, _, _ = http_request(f"{groxy_url}{post_path}", method="POST", json_body={"entry": {}})
             assert st_no_csrf == 403, f"Expected 403 without CSRF on {post_path}, got {st_no_csrf}"
+
+        for unsafe_target in [
+            {"target_id": "escape", "kind": "local_sqlite", "path": "storage/../outside.sqlite"},
+            {"target_id": "secret", "kind": "local_sqlite", "path": "storage/.env.sqlite"},
+            {"target_id": "remote", "kind": "loopback_executor", "endpoint": "http://192.168.1.2:9490"},
+        ]:
+            st_unsafe, _, _ = http_request(
+                f"{groxy_url}/api/groxy/db/targets", method="POST",
+                headers={"X-CSRF-Token": groxy_csrf}, json_body=unsafe_target,
+            )
+            assert st_unsafe == 403, f"Unsafe database target must be rejected: {unsafe_target} ({st_unsafe})"
+        st_target, _, target_body = http_request(
+            f"{groxy_url}/api/groxy/db/targets", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"target_id": "sandbox_store", "kind": "local_sqlite", "path": "storage/store_sandbox.sqlite"},
+        )
+        assert st_target == 201, f"Confined SQLite target registration failed ({st_target}): {target_body}"
+        st_targets, _, targets_body = http_request(f"{groxy_url}/api/groxy/db/targets")
+        assert st_targets == 200 and "sandbox_store" in targets_body
+        st_duplicate, _, _ = http_request(
+            f"{groxy_url}/api/groxy/db/targets", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"target_id": "sandbox_store", "kind": "local_sqlite", "path": "storage/store_sandbox.sqlite"},
+        )
+        assert st_duplicate == 409, "Target IDs must not silently overwrite an existing registration"
+        st_loopback, _, loopback_body = http_request(
+            f"{groxy_url}/api/groxy/db/targets", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"target_id": "desk_fixture", "kind": "loopback_executor", "endpoint": "http://127.0.0.1:9490"},
+        )
+        assert st_loopback == 201 and json.loads(loopback_body)["target"]["verified"] is False
+
+        quiz_answers = {"catalog": "digital", "variants": "none", "currencies": "single_2", "tax": "no", "bundles": "no", "facility": "no", "white_label": "no", "store_state": "new"}
+        st_quiz, _, quiz_raw = http_request(
+            f"{groxy_url}/api/groxy/db/architect-quiz", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body={"target_id": "local_store", "answers": quiz_answers},
+        )
+        assert st_quiz == 503, f"Unregistered target must remain analytical and blocked: {quiz_raw}"
+        quiz_result = json.loads(quiz_raw)
+        assert quiz_result.get("approval_token") is None and quiz_result.get("analytical_only") is True
+        st_consult, _, consult_raw = http_request(
+            f"{groxy_url}/api/groxy/db/consult", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body={"target_id": "local_store", "question": "Can I remove inventory?"},
+        )
+        assert st_consult == 403, f"Consultation must be opt-in by default: {consult_raw}"
+        st_db_apply, _, db_apply_raw = http_request(
+            f"{groxy_url}/api/groxy/db/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body={"plan_id": "dplan_" + "a" * 64, "target_id": "local_store", "migration_sha256": "0" * 64, "payload_sha256": "0" * 64, "approval_token": "dtok_" + "b" * 64, "risk_acknowledged": False},
+        )
+        assert st_db_apply == 403, f"An unstaged or invalid plan binding must be rejected before any database execution: {db_apply_raw}"
+
+        # Gate 3B v1.5.0: Live schema inspection and quiz staging on authorized target "commerce"
+        st_quiz_comm, _, quiz_comm_raw = http_request(
+            f"{groxy_url}/api/groxy/db/architect-quiz", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body={"target_id": "commerce", "answers": quiz_answers},
+        )
+        assert st_quiz_comm == 200, f"Authorized target quiz failed ({st_quiz_comm}): {quiz_comm_raw}"
+        quiz_comm = json.loads(quiz_comm_raw)
+        assert quiz_comm["ok"] is True
+        assert quiz_comm["analytical_only"] is False
+        assert quiz_comm["approval_required"] is True
+        assert quiz_comm["approval_token"].startswith("dtok_")
+        assert quiz_comm["plan_id"].startswith("dplan_")
+        assert len(quiz_comm["migration_sha256"]) == 64
+        assert len(quiz_comm["payload_sha256"]) == 64
+        assert quiz_comm["assessment"]["risk_level"] in ("Safe", "Caution")
+        assert (groxy_tmp / "storage" / "SCHEMA-CONTEXT.md").exists()
+        schema_context_text = (groxy_tmp / "storage" / "SCHEMA-CONTEXT.md").read_text(encoding="utf-8")
+        assert "commerce" in schema_context_text
+
+        # ADR-025c & Schema Validation: reject float/exponent in quiz input and unknown fields
+        st_bad_quiz, _, _ = http_request(
+            f"{groxy_url}/api/groxy/db/architect-quiz", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"target_id": "commerce", "answers": quiz_answers, "unknown_field": True},
+        )
+        assert st_bad_quiz == 422, "Quiz must reject unsupported top-level fields"
+
+        st_bad_target, _, _ = http_request(
+            f"{groxy_url}/api/groxy/db/architect-quiz", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"target_id": "../escape", "answers": quiz_answers},
+        )
+        assert st_bad_target == 422, "Quiz must reject invalid target identifiers"
+
+        # Tampering Rejection on /apply: digest mismatch, target mismatch, invalid token
+        st_tamper_digest, _, _ = http_request(
+            f"{groxy_url}/api/groxy/db/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "plan_id": quiz_comm["plan_id"],
+                "target_id": "commerce",
+                "migration_sha256": "0" * 64,
+                "payload_sha256": quiz_comm["payload_sha256"],
+                "approval_token": quiz_comm["approval_token"],
+                "risk_acknowledged": True,
+            },
+        )
+        assert st_tamper_digest == 403, "Apply must reject tampered migration_sha256"
+
+        st_tamper_target, _, _ = http_request(
+            f"{groxy_url}/api/groxy/db/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "plan_id": quiz_comm["plan_id"],
+                "target_id": "other_target",
+                "migration_sha256": quiz_comm["migration_sha256"],
+                "payload_sha256": quiz_comm["payload_sha256"],
+                "approval_token": quiz_comm["approval_token"],
+                "risk_acknowledged": True,
+            },
+        )
+        assert st_tamper_target == 403, "Apply must reject mismatched target_id"
+
+        st_tamper_tok, _, _ = http_request(
+            f"{groxy_url}/api/groxy/db/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "plan_id": quiz_comm["plan_id"],
+                "target_id": "commerce",
+                "migration_sha256": quiz_comm["migration_sha256"],
+                "payload_sha256": quiz_comm["payload_sha256"],
+                "approval_token": "dtok_" + "f" * 64,
+                "risk_acknowledged": True,
+            },
+        )
+        assert st_tamper_tok == 403, "Apply must reject forged approval token"
 
         # Verify Groxy AI live /api/groxy/mcp/inspect across GrabLab CMS & Grex Theme Builder
         st_insp, _, insp_body = http_request(
@@ -671,7 +861,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         assert st_insp == 200, f"/api/groxy/mcp/inspect failed ({st_insp}): {insp_body}"
         insp = json.loads(insp_body)
         assert insp["ok"] is True
-        assert insp["version"] == "1.4.0"
+        assert insp["version"] == "1.5.0"
         assert insp["grablab_cms"]["connected"] is True
         assert insp["grablab_cms"]["elements_count"] == 20
         assert "create_entry_draft" in insp["grablab_cms"]["tools"]
@@ -1866,15 +2056,16 @@ def gate_3b_live_cross_layer(grab_bin: str):
         log_files.append(groxy_worker_fh)
         groxy_worker_command = list(groxy_command)
         groxy_worker_command[groxy_worker_command.index("--addr") + 1] = f"127.0.0.1:{groxy_worker_port}"
+        groxy_worker_env = {**groxy_environment, "GROXY_DB_CONSULTANT_ENABLED": "true"}
         groxy_worker_proc = subprocess.Popen(
             groxy_worker_command,
             cwd=str(groxy_tmp),
-            env=groxy_environment,
+            env=groxy_worker_env,
             stdout=groxy_worker_fh,
             stderr=subprocess.STDOUT,
         )
         procs.append(groxy_worker_proc)
-        wait_for_health(groxy_worker_url, groxy_worker_proc, "Groxy AI v1.4.0 second worker", log_path=groxy_worker_log)
+        wait_for_health(groxy_worker_url, groxy_worker_proc, "Groxy AI v1.5.0 second worker", log_path=groxy_worker_log)
         _, _, worker_html = http_request(f"{groxy_worker_url}/groxy")
         worker_csrf_match = re.search(r'<meta\s+name="groxy-csrf"\s+content="([^"]+)"', worker_html)
         assert worker_csrf_match, "Second Groxy worker did not provide a CSRF token"
@@ -1893,6 +2084,179 @@ def gate_3b_live_cross_layer(grab_bin: str):
         assert commerce_apply_statuses == [201, 409], f"Two-worker concurrent commerce approval must have exactly one winner (201 + 409), got {commerce_apply_statuses}: {commerce_apply_results}"
         commerce_apply_doc = json.loads(next(result[2] for result in commerce_apply_results if result[0] == 201))
         assert commerce_apply_doc["status_enforced"] == "draft" and commerce_apply_doc["sending_enabled"] is False
+
+        # Gate 3B v1.5.0: Database Consultant on worker (GROXY_DB_CONSULTANT_ENABLED=true)
+        # 1. Read-only consultation without proposed_change yields High-Risk assessment and approval_token=None
+        st_consult_readonly, _, consult_readonly_raw = http_request(
+            f"{groxy_worker_url}/api/groxy/db/consult", method="POST",
+            headers={"X-CSRF-Token": worker_csrf},
+            json_body={"target_id": "commerce", "question": "Can I remove the inventory table and historical data?"},
+        )
+        assert st_consult_readonly == 200, f"Read-only consult on worker failed ({st_consult_readonly}): {consult_readonly_raw}"
+        consult_ro_doc = json.loads(consult_readonly_raw)
+        assert consult_ro_doc["ok"] is True
+        assert consult_ro_doc["assessment"]["risk_level"] == "High-Risk Data Loss"
+        assert consult_ro_doc.get("approval_token") is None
+        assert consult_ro_doc.get("approval_required") is False
+
+        # 2. Consultation with proposed_change stages a mutation plan and mints a single-use dtok_ approval token
+        st_consult_worker, _, consult_worker_raw = http_request(
+            f"{groxy_worker_url}/api/groxy/db/consult", method="POST",
+            headers={"X-CSRF-Token": worker_csrf},
+            json_body={
+                "target_id": "commerce",
+                "question": "Can I remove the inventory table and historical data?",
+                "proposed_change": {"operation": "drop_column", "column": "inventory"},
+            },
+        )
+        assert st_consult_worker == 200, f"Consultant with proposed_change failed ({st_consult_worker}): {consult_worker_raw}"
+        consult_doc = json.loads(consult_worker_raw)
+        assert consult_doc["ok"] is True
+        assert consult_doc["assessment"]["risk_level"] == "High-Risk Data Loss"
+        assert consult_doc["approval_token"].startswith("dtok_")
+        consult_plan_id = consult_doc["plan_id"]
+        consult_token = consult_doc["approval_token"]
+
+        # Risk acknowledgement requirement: 403 when risk_acknowledged is False
+        st_no_ack, _, no_ack_raw = http_request(
+            f"{groxy_worker_url}/api/groxy/db/apply", method="POST",
+            headers={"X-CSRF-Token": worker_csrf},
+            json_body={
+                "plan_id": consult_plan_id,
+                "target_id": "commerce",
+                "migration_sha256": consult_doc["migration_sha256"],
+                "payload_sha256": consult_doc["payload_sha256"],
+                "approval_token": consult_token,
+                "risk_acknowledged": False,
+            },
+        )
+        assert st_no_ack == 403, f"High-risk plan must reject risk_acknowledged=False: {no_ack_raw}"
+
+        # Revocation check: submitting consultant plan to worker with consultant disabled returns 403
+        st_revoked, _, revoked_raw = http_request(
+            f"{groxy_url}/api/groxy/db/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "plan_id": consult_plan_id,
+                "target_id": "commerce",
+                "migration_sha256": consult_doc["migration_sha256"],
+                "payload_sha256": consult_doc["payload_sha256"],
+                "approval_token": consult_token,
+                "risk_acknowledged": True,
+            },
+        )
+        assert st_revoked == 403, f"Consultant plan on disabled instance must be revoked: {revoked_raw}"
+        assert json.loads(revoked_raw).get("code") == "DB_CONSULTANT_REVOKED"
+
+        # Gate 3B v1.5.0: Two-worker concurrent apply race on quiz plan (commerce)
+        st_quiz_race, _, quiz_race_raw = http_request(
+            f"{groxy_url}/api/groxy/db/architect-quiz", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body={"target_id": "commerce", "answers": quiz_answers},
+        )
+        assert st_quiz_race == 200
+        race_plan = json.loads(quiz_race_raw)
+        race_apply_body = {
+            "plan_id": race_plan["plan_id"],
+            "target_id": "commerce",
+            "migration_sha256": race_plan["migration_sha256"],
+            "payload_sha256": race_plan["payload_sha256"],
+            "approval_token": race_plan["approval_token"],
+            "risk_acknowledged": True,
+        }
+
+        def apply_db_once(url, csrf):
+            return http_request(
+                f"{url}/api/groxy/db/apply", method="POST",
+                headers={"X-CSRF-Token": csrf}, json_body=race_apply_body,
+            )
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            db_apply_results = list(pool.map(
+                lambda args: apply_db_once(*args),
+                [(groxy_url, groxy_csrf), (groxy_worker_url, worker_csrf)],
+            ))
+        db_apply_statuses = sorted(result[0] for result in db_apply_results)
+        assert db_apply_statuses == [201, 409], f"Two-worker concurrent db apply must have exactly one winner (201 + 409), got {db_apply_statuses}: {db_apply_results}"
+
+        win_db_doc = json.loads(next(result[2] for result in db_apply_results if result[0] == 201))
+        assert win_db_doc["status"] == "maintenance_ready"
+        assert "grab run --db-config grab.data.json --allow-db commerce:migrate" in win_db_doc["command"]
+        db_snap_id = win_db_doc["snapshot_id"]
+        db_snap_sha = win_db_doc["snapshot_sha256"]
+        db_script_path = win_db_doc["script_path"]
+        db_receipt_path = win_db_doc["receipt_path"]
+
+        # Verified Pre-Mutation Snapshot check: file exists and SHA-256 matches
+        snap_file = groxy_tmp / "storage" / "snapshots" / f"{db_snap_id}.json"
+        if not snap_file.exists():
+            snap_file = groxy_tmp / "storage" / f"{db_snap_id}.json"
+        assert snap_file.exists(), f"Snapshot file not found: {snap_file}"
+        snap_bytes = snap_file.read_bytes()
+        calculated_sha = hashlib.sha256(snap_bytes).hexdigest()
+        assert calculated_sha == db_snap_sha, f"Snapshot SHA-256 mismatch: calculated {calculated_sha} vs reported {db_snap_sha}"
+        snap_data = json.loads(snap_bytes.decode("utf-8"))
+        assert snap_data["schema_version"] == "1.5.0"
+        assert snap_data["target_id"] == "commerce"
+
+        # Maintenance Reconciliation: calling /reconcile before migration returns 409 DB_MIGRATION_PENDING
+        st_pre_rec, _, pre_rec_raw = http_request(
+            f"{groxy_url}/api/groxy/db/reconcile", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body={"plan_id": race_plan["plan_id"]},
+        )
+        assert st_pre_rec == 409, f"Reconcile before migration must return 409: {pre_rec_raw}"
+
+        # Execute approved migration via grab run
+        run_cmd([grab_bin, "run", "--db-config", "grab.data.json", "--allow-db", "commerce:migrate", str(db_script_path)], cwd=groxy_tmp)
+
+        # Maintenance Reconciliation: calling /reconcile after migration returns 200 status: applied
+        st_post_rec, _, post_rec_raw = http_request(
+            f"{groxy_url}/api/groxy/db/reconcile", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body={"plan_id": race_plan["plan_id"]},
+        )
+        assert st_post_rec == 200, f"Reconcile after migration failed ({st_post_rec}): {post_rec_raw}"
+        post_rec_doc = json.loads(post_rec_raw)
+        assert post_rec_doc["ok"] is True
+        assert post_rec_doc["status"] == "applied"
+        assert post_rec_doc["plan_id"] == race_plan["plan_id"]
+
+        receipt_file = groxy_tmp / db_receipt_path
+        if not receipt_file.exists():
+            receipt_file = groxy_tmp / "storage" / f"mig_{race_plan['plan_id']}.receipt.json"
+        assert receipt_file.exists()
+        receipt_on_disk = json.loads(receipt_file.read_text(encoding="utf-8"))
+        assert receipt_on_disk["status"] == "applied"
+
+        # Gate 3B v1.5.0: Verified Loopback Executor (desk_fixture on 127.0.0.1:9490)
+        st_verify_desk, _, verify_desk_raw = http_request(
+            f"{groxy_url}/api/groxy/db/targets/verify", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body={"target_id": "desk_fixture"},
+        )
+        assert st_verify_desk == 200, f"Desk fixture verification failed: {verify_desk_raw}"
+        assert json.loads(verify_desk_raw)["target"]["verified"] is True
+
+        st_desk_quiz, _, desk_quiz_raw = http_request(
+            f"{groxy_url}/api/groxy/db/architect-quiz", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body={"target_id": "desk_fixture", "answers": quiz_answers},
+        )
+        assert st_desk_quiz == 200, f"Desk fixture quiz failed: {desk_quiz_raw}"
+        desk_quiz_doc = json.loads(desk_quiz_raw)
+        assert desk_quiz_doc["approval_token"].startswith("dtok_")
+
+        st_desk_apply, _, desk_apply_raw = http_request(
+            f"{groxy_url}/api/groxy/db/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "plan_id": desk_quiz_doc["plan_id"],
+                "target_id": "desk_fixture",
+                "migration_sha256": desk_quiz_doc["migration_sha256"],
+                "payload_sha256": desk_quiz_doc["payload_sha256"],
+                "approval_token": desk_quiz_doc["approval_token"],
+                "risk_acknowledged": True,
+            },
+        )
+        assert st_desk_apply == 201, f"Desk fixture apply failed: {desk_apply_raw}"
+        desk_apply_doc = json.loads(desk_apply_raw)
+        assert desk_apply_doc["status"] == "applied"
         # Durable single-winner consumption must survive a process restart.
         terminate_process(groxy_proc)
         groxy_restart_log = tmp_root / "groxy-restart.log"
@@ -1900,7 +2264,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         log_files.append(groxy_restart_fh)
         groxy_proc = subprocess.Popen(groxy_command, cwd=str(groxy_tmp), env=groxy_environment, stdout=groxy_restart_fh, stderr=subprocess.STDOUT)
         procs.append(groxy_proc)
-        wait_for_health(groxy_url, groxy_proc, "Groxy AI v1.4.0 restart", log_path=groxy_restart_log)
+        wait_for_health(groxy_url, groxy_proc, "Groxy AI v1.5.0 restart", log_path=groxy_restart_log)
         st_restart_html, _, restart_html = http_request(f"{groxy_url}/groxy")
         assert st_restart_html == 200
         restart_csrf_match = re.search(r'<meta\s+name="groxy-csrf"\s+content="([^"]+)"', restart_html)
@@ -2333,10 +2697,13 @@ def gate_3b_live_cross_layer(grab_bin: str):
             log_fh.flush()
             log_bytes = Path(log_fh.name).read_bytes()
             assert b"e2e-only-secret" not in log_bytes, f"Provider key leaked into service log {Path(log_fh.name).name}"
-        print("  [PASS] Gate 3B complete (five engines, exact drafts, Builder undo/recovery, CMS and Builder failure reconciliation, provider fallback, redaction and GRAB-E402 denial).")
+        print("  [PASS] Gate 3B complete (live GrabLab CMS + Grex Theme Builder + Groxy AI v1.5.0 DB consultant & store quiz).")
     finally:
         for p in reversed(procs):
             terminate_process(p)
+        desk_server.shutdown()
+        desk_server.server_close()
+        desk_thread.join(timeout=2)
         builder_proxy.shutdown()
         builder_proxy.server_close()
         builder_proxy_thread.join(timeout=2)
@@ -2355,7 +2722,7 @@ def main():
     gate_2_node_tests()
     gate_3a_grab_mcp_stdio(grab_bin)
     gate_3b_live_cross_layer(grab_bin)
-    print("\nRegression gates passed for SPEC-140 v1.4.0; release-ready: True")
+    print("\nAll regression gates and v1.5.0 database consultant & store quiz gates passed; release-ready: True")
 
 
 if __name__ == "__main__":
