@@ -132,7 +132,7 @@ Scope:
 
 ## `v1.6.0` — Lovable/Base44-Style Iterative Section Co-Pilot & Golden-Ratio Design-Craft Engine
 
-**Status:** Approved target; specification in review — Backwards-Compatible Minor Feature ([SPEC-160](../specifications/GROXY-AI-SPEC-160.md))
+**Status:** Approved; implementation in progress — Backwards-Compatible Minor Feature ([SPEC-160](../specifications/GROXY-AI-SPEC-160.md)). The project owner approved SPEC-160 as written on 2026-11-16. Stage 2 Pre-Implementation Cross-Layer Security & Contract Audit: **`PASS`** (SPEC-160 Section 11, zero upstream changes; Stage 3 conditions C1–C8). Section 9 acceptance gates pending.
 
 Scope:
 - **Targeted Section Refinement (`POST /api/groxy/section-refine`):** Conversational per-section editing inside **Grex Theme Builder** patching only the selected subtree via `POST /api/mcp/layout` (`actor: "groxy-ai"`, 1-click `Ctrl+Z` undo, `GROXY-SAFE-001` approval gate).

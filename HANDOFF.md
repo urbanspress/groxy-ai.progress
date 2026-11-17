@@ -3,7 +3,24 @@
 - **Current Owner:** Google Antigravity (`Google Hydrogen High` / `Orchestrator Argon`)
 - **Current Milestone State:** `v1.0.0` through `v1.5.0` are `Approved & Frozen — Complete`.
 - **Current Milestone:** `v1.5.0` — Bespoke Store Schema Quiz & Opt-In "Talk to Groxy" Database & Store Consultant (`Approved & Frozen — Complete`). All capability gaps resolved; live inspection, durable locking, pre-mutation snapshots, CLI maintenance execution, post-maintenance reconciliation, and loopback executor verification passed 100% with `release-ready: True` ([SPEC-150](specifications/GROXY-AI-SPEC-150.md)).
-- **Next Milestone Action:** Milestone `v1.6.0` (Lovable/Base44-Style Iterative Section Co-Pilot & Golden-Ratio Design-Craft Engine) is **Approved target; specification in review** ([SPEC-160](specifications/GROXY-AI-SPEC-160.md)). No implementation code until the owner approves SPEC-160. Frozen `v1.0.0`–`v1.5.0`, sibling repositories, and untracked `playbook/genres/` remain preserved. Model routing now follows the 4-pool matrix in `AGENTS.md`; next step after approval is a Stage 2 audit on Claude Opus (High) or Orchestrator (Argon).
+- **Next Milestone Action:** Milestone `v1.6.0` (Lovable/Base44-Style Iterative Section Co-Pilot & Golden-Ratio Design-Craft Engine) is **Approved; implementation in progress** ([SPEC-160](specifications/GROXY-AI-SPEC-160.md)). The owner approved SPEC-160 as written on 2026-11-16, and the Stage 2 Pre-Implementation Cross-Layer Security & Contract Audit passed (`PASS`, SPEC-160 Section 11). **Claude Sonnet (High)** is cleared for Stage 3 implementation under Conditions C1–C8 and all Section 9 gates. Frozen `v1.0.0`–`v1.5.0`, sibling repositories, `stable` (`v1.5.0`), and untracked `playbook/genres/` remain preserved.
+
+## `v1.6.0` Owner Approval & Stage 2 Pre-Implementation Cross-Layer Security & Contract Audit (`Claude Opus (High)` — `PASS`) — 2026-11-16
+- **Approval:** The project owner approved [SPEC-160](specifications/GROXY-AI-SPEC-160.md) as written. Status: `Approved; implementation in progress` in SPEC-160 and [the roadmap](docs/ROADMAP.md).
+- **Audit Verdict:** **`PASS`**. SPEC-160 aligns with frozen **GRAB `v1.1.0`**, **Grex JS `v1.0.0`**, **GrabLab CMS `v1.0.1`**, and **Grex Theme Builder `v1.0.0`** with **zero upstream changes required**. Evidence came from read-only inspection of Builder `src/studio.grab`, `theme/assets/{schema,commands,store}.js`, `theme/grex.elements.json`, `tokens.css`, and the CMS `src/app.grab` MCP schemas and field types. `grex-builder` and `grablab-cms` working trees stayed clean.
+- **Verified contracts:** The Builder exposes `GET /api/studio/state` for draft slot reads plus its CSRF token, and `POST /api/mcp/layout` (`slot` + `layout`) for slot-scoped replacement with an `applyAiLayout` command and a server-captured `inverse`, which gives 1-click Ctrl+Z parity. `section_id` resolves via `node.id` / `node.props.id`. Builder guards cover `div`/`script`/`iframe`/`on*`/`innerHTML`/`srcdoc`, unsafe URLs, and depth 24. `GET /api/design-system.md` publishes live `--grex-*` / `.grex-c-*`. CMS `list_content_types` exposes field definitions including `decimal`/`integer`, and Builder `ForEach` binds through `queryLoop` + `props.query`. Groxy's existing durable conditional-claim ledger (`201`/`403`/`409`) and `GRAB-E402` BYOK/Ollama checks carry over.
+- **Binding Stage 3 conditions (SPEC-160 §11.2):**
+  - **C1:** Builder-semantics id resolution; Groxy enforces duplicate-id `422`; never target `Fragment`/`TemplatePart`/slot root.
+  - **C2:** Server-side `slot_sha256`, with a freshness pre-check and post-claim re-read so a sibling edit between propose and apply returns `409` instead of being overwritten (no upstream compare-and-swap), plus readback verification.
+  - **C3:** Slot-form dispatch only; never use the `document` form.
+  - **C4:** Design-craft token roles resolve against live tokens. `--grex-surface-1/-2` and a measure token are absent from shipped defaults, so report `token_unavailable` and never fabricate tokens or `65ch` literals; the `12px` default spacing token is 4pt-only.
+  - **C5:** Groxy's own gates run before staging and before dispatch.
+  - **C6:** Groxy runs Light/Dark contrast itself; the Builder audits a single background only.
+  - **C7:** Bind only live CMS types/fields; no fabricated form `action`, because CMS `v1.0.1` has no form-submission route.
+  - **C8:** Additive Groxy-owned ledger table, hashed `rtok`, canonical hashing reuse, terminal `dispatch_failed`, and no secrets in logs.
+- **Verification boundary:** This is a documentation checkpoint. No v1.6.0 implementation gate is claimed passed; all Section 9 gates (plus the C2/C3/C4/C7 tests) remain required.
+- **Repository scope:** SPEC-160, `docs/ROADMAP.md`, and this handoff are committed to `origin/main` only. `stable` stays at `v1.5.0`. Untracked `playbook/genres/` is preserved.
+- **Next action:** Switch to **Claude Sonnet (High)** for Stage 3 multi-file implementation and unit/DOM tests (per the `AGENTS.md` 4-pool matrix), then Stage 4 Gate 3B closure on Gemini 3.8 Flash or Hydrogen (High).
 
 ## `v1.5.0` Milestone Implementation & Section 9 Verification Sign-Off (`PASS`) — 2026-11-16
 - **Status:** **`Complete`** — `Groxy AI v1.5.0` verified 100% against frozen **`GRAB v1.1.0`**, **`Grex JS v1.0.0`**, **`GrabLab CMS v1.0.1`**, **`Grex Theme Builder v1.0.0`**, **`Gashboard v1.0.0`**, and **`Groxy Desk v1.0.0`**.
@@ -196,7 +213,7 @@ Completed multi-repository security, DOM, accessibility, precision, container, a
 - **Milestone `v1.5.0` — Bespoke Store Schema Quiz & Opt-In "Talk to Groxy" Database & Store Consultant:** `Status: Approved; implementation in progress — verification gates pending` ([SPEC-150](specifications/GROXY-AI-SPEC-150.md)):
   - **Store Architecture Quiz (`POST /api/groxy/db/architect-quiz`):** Generates tailored migration previews. Any eventual DDL must run through a verified Desk/Gashboard executor or an explicit GRAB CLI `data.migrate` maintenance invocation; HTTP handlers never execute raw DDL.
   - **Opt-In Database & Store Consultant (`groxy_db_consultant_enabled`):** The intended read-only schema/context inspection, durable target locking, snapshots and execution receipts remain incomplete. Keep apply fail-closed until implementation and all SPEC-150 gates pass.
-- **Milestone `v1.6.0` — Lovable/Base44-Style Iterative Section Co-Pilot & Golden-Ratio Design-Craft Engine:** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified):
+- **Milestone `v1.6.0` — Lovable/Base44-Style Iterative Section Co-Pilot & Golden-Ratio Design-Craft Engine:** `Status: Approved; implementation in progress — Stage 2 audit PASS` ([SPEC-160](specifications/GROXY-AI-SPEC-160.md)) (zero `v1.0.0` implementation code modified):
   - **Targeted Section Refinement (`POST /api/groxy/section-refine`):** Conversational per-section editing inside **Grex Theme Builder** patching only the selected subtree via `POST /api/mcp/layout` (`actor: "groxy-ai"`, 1-click `Ctrl+Z` undo, `GROXY-SAFE-001` approval gate).
   - **Design-Craft & Visual Rhythm Playbook (`playbook/design-craft.v1.json`):** Enforces `8pt` spacing rhythm, `60–65ch` readable line measure, 1-primary-CTA-per-fold hierarchy, Light/Dark surface elevation (`--grex-surface-1` / `--grex-surface-2`), and automatic full-stack wiring of generated forms and `ForEach` grids to live **GrabLab CMS** content types and `ADR-025c` `GrabDecimal` product fields.
 - **Milestone `v1.7.0` — Multi-Genre Storytelling Brain, Hemingway Readability Auditor & `schema.org/Book` JSON-LD Engine:** `Status: Planned — Backwards-Compatible Minor Feature` (zero `v1.0.0` implementation code modified):
@@ -211,7 +228,7 @@ Completed multi-repository security, DOM, accessibility, precision, container, a
 
 ---
 
-## Next Step Guidance (`Groxy AI v1.5.0`)
-1. **Frozen Baselines:** Keep Groxy AI `v1.0.0` through `v1.4.0` and all upstream contracts frozen and unchanged.
-2. **Current Task:** Pre-Implementation Cross-Layer Review (`Orchestrator (Argon)`) passed (`PASS`). **`GPT-6 Luna High`** is cleared to implement **`Groxy AI v1.5.0`** (`SPEC-150`) and run all Section 9 acceptance gates immediately.
-3. **Recommended Model:** **`GPT-6 Luna High`** (OpenAI Codex) or **`Google Hydrogen (High/Extra)`** for implementing `Groxy AI v1.5.0` and executing all unit, DOM/WCAG, concurrency, snapshot/restore, and live Gate 3B verification checks.
+## Next Step Guidance (`Groxy AI v1.6.0`)
+1. **Frozen Baselines:** Keep Groxy AI `v1.0.0` through `v1.5.0`, `stable` (`v1.5.0`), all upstream contracts, and untracked `playbook/genres/` frozen and unchanged.
+2. **Current Task:** SPEC-160 is owner-approved and the Stage 2 Pre-Implementation Cross-Layer Security & Contract Audit passed (`PASS`). Implement `Groxy AI v1.6.0` under SPEC-160 Conditions C1–C8 and run all Section 9 acceptance gates.
+3. **Recommended Model:** **`Claude Sonnet (High)`** for Stage 3 multi-file implementation and unit/DOM/a11y/playbook tests; then **`Gemini 3.8 Flash (Single Package)`** or **`Hydrogen (High)`** for Stage 4 Gate 3B closure, walkthrough PDF, and dual-remote packaging.
