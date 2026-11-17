@@ -142,7 +142,7 @@ Scope:
 
 ## `v1.7.0` — Multi-Genre Storytelling Brain, Hemingway Readability Auditor & `schema.org/Book` JSON-LD Engine
 
-**Status:** Approved target; specification in review ([`specifications/GROXY-AI-SPEC-170.md`](../specifications/GROXY-AI-SPEC-170.md)) — Backwards-Compatible Minor Feature
+**Status:** Approved; implementation in progress — Stage 2 Cross-Layer Audit `PASS` ([`specifications/GROXY-AI-SPEC-170.md`](../specifications/GROXY-AI-SPEC-170.md)) — Backwards-Compatible Minor Feature. The project owner approved `SPEC-170` as written on 2026-11-17; Stage 2 Pre-Implementation Cross-Layer Security & Contract Audit passed 100% (Section 11, Conditions `C1–C8`) with zero upstream changes required.
 
 Scope:
 - **Multi-Genre Storytelling Playbook Registry (`playbook/genres/*.v1.json`) & Reusable Agent Skill (`.agents/skills/genre-research/SKILL.md`):** Fail-closed `groxy-genre-playbook-v1.0` schema loader covering *Urban Fiction*, *Thriller/Mystery*, *Romance*, *Sci-Fi/Fantasy*, *Self-Help/Re-Entry*, and *True Crime*, enforcing exact `ADR-025c` base-10 `GrabDecimal` pricing tiers (`"0.00"`, `"2.99"`, `"4.99"`, `"9.99"`, `"14.99"`—rejecting JS floats with `422`) and zero inline HTML/XSS (`divCount === 0`, `</script>`-safe).
