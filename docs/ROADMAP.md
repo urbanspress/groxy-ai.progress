@@ -142,12 +142,13 @@ Scope:
 
 ## `v1.7.0` — Multi-Genre Storytelling Brain, Hemingway Readability Auditor & `schema.org/Book` JSON-LD Engine
 
-**Status:** Planned — Backwards-Compatible Minor Feature
+**Status:** Approved target; specification in review ([`specifications/GROXY-AI-SPEC-170.md`](../specifications/GROXY-AI-SPEC-170.md)) — Backwards-Compatible Minor Feature
 
 Scope:
-- **Genre-Specific Storytelling Playbooks (`playbook/genres/*.v1.json`):** First-class genre playbooks covering *Thriller/Mystery*, *Sci-Fi/Fantasy*, *Romance*, *Horror*, *Literary Fiction*, *Business/How-To*, *Memoir/Biography*, and *Self-Help*, enforcing proven pacing beats (*Three-Act*, *Hero's Journey*, *Save the Cat*, and *Hook-Problem-Framework-Action*).
-- **Interactive Story, Genre & Audience Quiz (`POST /api/groxy/author/brief`) & Hemingway Readability Auditor:** Interactive discovery quiz saving a persistent `BOOK-BIBLE.md` continuity file (`POV`, tone, character/world rules) plus deterministic Hemingway-grade readability, passive-voice, pacing, and continuity auditing (`GROXY-SAFE-001` approval-gated draft creation with `status_enforced: "draft"`).
-- **Autonomous Book SEO & XSS-Safe `schema.org/Book` JSON-LD Engine:** Deterministic book landing-page SEO and XSS-safe `schema.org/Book` / `Chapter` / `Person` / `Offer` (`ADR-025c` `GrabDecimal` price & `ISBN`) JSON-LD generator.
+- **Multi-Genre Storytelling Playbook Registry (`playbook/genres/*.v1.json`) & Reusable Agent Skill (`.agents/skills/genre-research/SKILL.md`):** Fail-closed `groxy-genre-playbook-v1.0` schema loader covering *Urban Fiction*, *Thriller/Mystery*, *Romance*, *Sci-Fi/Fantasy*, *Self-Help/Re-Entry*, and *True Crime*, enforcing exact `ADR-025c` base-10 `GrabDecimal` pricing tiers (`"0.00"`, `"2.99"`, `"4.99"`, `"9.99"`, `"14.99"`—rejecting JS floats with `422`) and zero inline HTML/XSS (`divCount === 0`, `</script>`-safe).
+- **Author Mode Co-Writer & Chapter/Blurb Generator (`POST /api/groxy/author/generate` & `POST /api/groxy/author/apply`):** Reads `storage/BRAND-DNA.md`, `storage/SITE-CONTEXT.md`, and `playbook/genres/<slug>.v1.json` to generate chapter outlines (with end-of-chapter cliffhanger hooks), chapter drafts, back-cover conversion blurbs, and series reading-order grids (deterministic offline default + optional local Ollama `127.0.0.1:11434` fallback or `GRAB-E402` allowlisted BYOK). Stages recursive canonical `payload_sha256` + single-use target-bound `atok_<hex>` tokens (`X-CSRF-Token` + atomic single-winner `201`/`403`/`409`) dispatching strictly as drafts to GrabLab CMS (`create_entry_draft`, `status_enforced: "draft"`) and/or one-slot Builder `POST /api/mcp/layout` (`actor: "groxy-ai"`, `Ctrl+Z` undo).
+- **Hemingway Clarity & Readability Auditor (`POST /api/groxy/author/readability-audit`):** Deterministic prose analyzer scoring grade level, passive voice density, adverb clutter, complex/nested clause chains, and dialogue-to-narration pacing with line-level plain-English rewrite suggestions.
+- **XSS-Safe `schema.org/Book` & `BookSeries` JSON-LD Engine + Pure `Grex JS v1.0.0` Author Studio Panel:** Emits `</script>`-escaped `schema.org/Book` / `BookSeries` JSON-LD (`bookFormat`, `isbn`, `numberOfPages`, `inLanguage`, `genre`, `typicalAgeRange`, exact `ADR-025c` `offers.price`) and renders in `/groxy` with `divCount === 0`, `innerHTMLWriteCount === 0`, keyboard accessibility, and Light/Dark WCAG AA `>= 4.5:1` contrast.
 
 ---
 
