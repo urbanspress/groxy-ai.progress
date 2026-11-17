@@ -3,6 +3,15 @@
 All notable changes to **Groxy AI** (`urbanspress/groxy-ai`) are documented in this file.
 Versioning follows `MAJOR.MINOR.PATCH` SemVer rules per [`AGENTS.md`](AGENTS.md).
 
+## [v1.6.0] - 2026-11-17
+
+- Added Golden-Ratio Design-Craft & Visual Rhythm Playbook (`playbook/design-craft.v1.json`) with fail-closed startup validation and deterministic rules for `8pt` spacing rhythm (`4pt` tight inline pairs only), `60–65ch` readable line measure, 1-primary-CTA-per-fold hierarchy, Light/Dark surface elevation (`--grex-surface-1`/`--grex-surface-2`, reporting `token_unavailable` per `C4` without inventing missing tokens or `65ch`), and full-stack GrabLab CMS `ForEach`/`Form` wiring without fabricated form `action` URLs (`C7`).
+- Added Iterative Section Co-Pilot (`POST /api/groxy/section-refine` & `POST /api/groxy/section-refine/apply`, `public/groxy/section-copilot.js`, `assets/section-copilot.js`) patching only the targeted `section_id` subtree (`C1`) while preserving all sibling and ancestor nodes byte-for-byte.
+- Enforced strict 20-element `grex.elements.json` compliance (`divCount === 0`, `innerHTMLWriteCount === 0`), live `--grex-*` tokens & `.grex-c-*` classes from `GET /api/design-system.md`, Light/Dark WCAG AA `>= 4.5:1` auto-contrast repair (`C6`), `ADR-025c` base-10 wire strings (`422` for JS floats), 22-rule `Grade A`/`A+` gating, deterministic offline refinement with optional local Ollama (`127.0.0.1:11434`) fallback or `GRAB-E402` SSRF-allowlisted BYOK, and recursive duplicate-JSON-key rejection (`HTTP 400`).
+- Added durable single-use `rtok_<hex>` approval ledger (`groxy_section_refine_ledger`, `scripts/migrate_commerce.grab` v3) with server-side `slot_sha256` drift detection (`409 SECTION_SLOT_DRIFT`), two-worker single-winner consumption (`201` winner, `403` target mismatch, `409` replay/race), one-slot `POST /api/mcp/layout` (`actor: "groxy-ai"`, `C3`) dispatch with readback verification and 1-click `Ctrl+Z` `applyAiLayout` undo parity, and terminal `dispatch_failed` error recovery (`C8`).
+- Added zero-`<div>`, zero-`innerHTML` Section Co-Pilot Studio UI in `/groxy` (`views/dashboard.grab.html`, `public/groxy/dashboard.js`, `public/groxy/groxy.css`) with native `<details>` diff, `<dialog>` confirmation with `Escape` handling and focus restoration, and Light/Dark WCAG AA pass.
+- Passed all Section 9 verification gates: `grab check` zero errors, byte-for-byte `grab format` on `src/groxy.grab` and `scripts/migrate_commerce.grab`, `87/87` Node unit/DOM tests (`tests/unit_section_copilot.test.js`), and live 4-layer `tests/integration_e2e.py` (`release-ready: True`).
+
 ## [v1.5.0] - 2026-11-16
 
 - Added bespoke Store Architecture Quiz (`POST /api/groxy/db/architect-quiz`) generating tailor-made, zero-bloat `.grab` database migrations (`ADR-024f` + `ADR-025c`) with exact numeric validation, single-use `dtok_<hex>` approval tokens, and impact assessments (*Safe*, *Caution*, *High-Risk Data Loss*).

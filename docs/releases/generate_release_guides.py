@@ -1169,6 +1169,206 @@ def render_v150_html() -> str:
 """
 
 
+def render_v160_html() -> str:
+    return """<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Groxy AI v1.6.0 Walkthrough Guide</title>
+  <style>
+    @page { size: letter; margin: 0.65in; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      line-height: 1.48;
+      font-size: 9.6pt;
+      margin: 0;
+    }
+    header {
+      border-bottom: 3px solid #047857;
+      padding-bottom: 0.65rem;
+      margin-bottom: 0.9rem;
+    }
+    h1 { margin: 0 0 0.2rem 0; font-size: 19pt; color: #064e3b; }
+    .subtitle { margin: 0; color: #334155; font-size: 10.6pt; font-weight: 600; }
+    .meta { margin: 0.3rem 0 0 0; color: #475569; font-size: 9pt; }
+    h2 {
+      margin: 1rem 0 0.4rem 0;
+      font-size: 12.2pt;
+      color: #065f46;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 0.16rem;
+      page-break-after: avoid;
+    }
+    p { margin: 0.3rem 0 0.5rem 0; }
+    ul { margin: 0.2rem 0 0.6rem 1.2rem; padding: 0; }
+    li { margin-bottom: 0.22rem; }
+    .callout {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      border-left: 4px solid #047857;
+      border-radius: 6px;
+      padding: 0.6rem 0.8rem;
+      margin: 0.65rem 0;
+      page-break-inside: avoid;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.65rem 0 0.9rem 0;
+      font-size: 8.8pt;
+      page-break-inside: avoid;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 0.36rem 0.48rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #ecfdf5; color: #0f172a; font-weight: 700; }
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      background: #f1f5f9;
+      padding: 0.06rem 0.25rem;
+      border-radius: 4px;
+      font-size: 8.5pt;
+    }
+    footer {
+      margin-top: 1.15rem;
+      padding-top: 0.55rem;
+      border-top: 1px solid #e2e8f0;
+      color: #475569;
+      font-size: 8.8pt;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Groxy AI v1.6.0 &mdash; Release Walkthrough Guide</h1>
+    <p class="subtitle">Lovable/Base44-Style Iterative Section Co-Pilot &bull; Golden-Ratio Design-Craft Playbook &bull; Atomic One-Slot Builder Patch</p>
+    <p class="meta">Post-1.0 Ecosystem Step 4 &bull; Built natively on GRAB v1.1.0 + Grex JS v1.0.0 + GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 &bull; Status: Complete</p>
+  </header>
+
+  <section class="callout">
+    <p><strong>What Groxy AI v1.6.0 Delivers in Plain English:</strong> Operators can now ask Groxy in plain conversation to refine a <em>single section</em> of a Grex Theme Builder page (for example, &ldquo;make this hero calmer, keep one primary button, and tighten spacing&rdquo;) without regenerating the whole page or touching sibling sections. Every proposal is checked against the Golden-Ratio Design-Craft Playbook, Light and Dark WCAG AA contrast, exact <code>ADR-025c</code> numbers, and the 22-rule <code>Grade A/A+</code> gate, then shown as a side-by-side diff before applying via one-click undoable <code>applyAiLayout</code>.</p>
+  </section>
+
+  <section>
+    <h2>1. Iterative Section Co-Pilot (<code>POST /api/groxy/section-refine</code> &amp; <code>/apply</code>)</h2>
+    <ul>
+      <li><strong>Targeted Subtree Isolation (<code>C1</code>):</strong> Resolves <code>section_id</code> using Builder semantics (<code>node.id</code> else <code>node.props.id</code>), rejecting missing IDs (<code>404</code>), duplicate IDs (<code>422</code>), and structural nodes (<code>Fragment</code>, <code>TemplatePart</code>, slot root). Every sibling section and ancestor stays byte-for-byte identical.</li>
+      <li><strong>Human-in-the-Loop Diff &amp; Single-Use <code>rtok_&lt;hex&gt;</code> Ledger (<code>C2</code>, <code>C8</code>):</strong> Stages a side-by-side text and structural diff with an approval token hashed in SQLite (<code>groxy_section_refine_ledger</code>). If a human edits any sibling section between propose and apply, apply returns <code>409 SECTION_SLOT_DRIFT</code> instead of overwriting their work.</li>
+      <li><strong>One-Slot Dispatch &amp; 1-Click Undo (<code>C3</code>):</strong> Concurrent apply races resolve atomically (one <code>201</code> winner, <code>409</code> losers/replays, <code>403</code> mismatches). The winner dispatches strictly via one-slot <code>POST /api/mcp/layout</code> (<code>actor: "groxy-ai"</code>), verifies readback digest parity, and preserves 1-click <code>Ctrl+Z</code> <code>applyAiLayout</code> undo.</li>
+      <li><strong>Local-First Modes:</strong> Runs deterministically offline with zero API fees by default, with optional local Ollama (<code>127.0.0.1:11434</code>) offline fallback or <code>GRAB-E402</code> SSRF-allowlisted HTTPS BYOK enrichment.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>2. Golden-Ratio Design-Craft Playbook (<code>playbook/design-craft.v1.json</code>)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Rule ID</th>
+          <th>Family</th>
+          <th>What It Checks &amp; Repairs</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>GROXY-CRAFT-001</code></td>
+          <td>Spacing Rhythm</td>
+          <td>Enforces <code>8pt</code> spacing via live <code>--grex-*</code> tokens (<code>4pt</code> allowed only for tight inline pairs) and snaps off-grid values to the nearest live 8pt token.</td>
+        </tr>
+        <tr>
+          <td><code>GROXY-CRAFT-002</code></td>
+          <td>Line Measure</td>
+          <td>Targets <code>60&ndash;65ch</code> readable body copy via live measure tokens; reports <code>token_unavailable</code> if missing (<code>C4</code>) instead of inventing tokens or hardcoding <code>65ch</code>.</td>
+        </tr>
+        <tr>
+          <td><code>GROXY-CRAFT-003</code></td>
+          <td>CTA Hierarchy</td>
+          <td>Allows at most one primary CTA per fold and deterministically demotes extra primary CTAs to secondary.</td>
+        </tr>
+        <tr>
+          <td><code>GROXY-CRAFT-004</code></td>
+          <td>Surface Elevation &amp; Contrast</td>
+          <td>Checks Light/Dark <code>--grex-surface-1</code> / <code>--grex-surface-2</code> (reporting <code>token_unavailable</code> if absent) and repairs Light/Dark contrast to WCAG AA <code>&gt;= 4.5:1</code> (<code>C6</code>).</td>
+        </tr>
+        <tr>
+          <td><code>GROXY-CRAFT-005</code></td>
+          <td>Full-Stack CMS Wiring</td>
+          <td>Binds <code>ForEach</code> grids and <code>Form</code> inputs strictly to live GrabLab CMS types/fields with exact <code>ADR-025c</code> strings and never fabricates form <code>action</code> URLs (<code>C7</code>).</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>3. Ecosystem Compatibility Matrix &amp; Verification Gates</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Ecosystem Layer</th>
+          <th>Repository</th>
+          <th>Required Version Range</th>
+          <th>Touched in Release?</th>
+          <th>Neighbor Upgrade Required?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Core Language, Bytecode VM &amp; Grisp Server</strong></td>
+          <td><code>urbanspress/grab</code></td>
+          <td><code>&gt;= v1.1.0 (&lt; v2.0.0)</code></td>
+          <td>No</td>
+          <td>No &bull; 100% drop-in compatible</td>
+        </tr>
+        <tr>
+          <td><strong>Reactive Frontend Runtime &amp; 20-Element Library</strong></td>
+          <td><code>urbanspress/grex-js</code></td>
+          <td><code>&gt;= v1.0.0 (&lt; v2.0.0)</code></td>
+          <td>No</td>
+          <td>No &bull; 100% drop-in compatible</td>
+        </tr>
+        <tr>
+          <td><strong>Flagship Zero-Plugin CMS</strong></td>
+          <td><code>urbanspress/grablab-cms</code></td>
+          <td><code>&gt;= v1.0.1 (&lt; v2.0.0)</code></td>
+          <td>No</td>
+          <td>No &bull; 100% drop-in compatible</td>
+        </tr>
+        <tr>
+          <td><strong>Exclusive <code>mode: "visual"</code> Theme &amp; Studio</strong></td>
+          <td><code>urbanspress/grex-builder</code></td>
+          <td><code>&gt;= v1.0.0 (&lt; v2.0.0)</code></td>
+          <td>No</td>
+          <td>No &bull; 100% drop-in compatible</td>
+        </tr>
+        <tr>
+          <td><strong>Autonomous Design, Content &amp; SEO Agent</strong></td>
+          <td><code>urbanspress/groxy-ai</code></td>
+          <td><code>&gt;= v0.1.0</code></td>
+          <td>Yes (<code>v1.6.0</code>)</td>
+          <td>No &bull; 100% drop-in compatible</td>
+        </tr>
+      </tbody>
+    </table>
+    <ul>
+      <li><strong>Verification Gates:</strong> <code>grab check</code> passed; byte-for-byte canonical <code>grab format</code> matched on both <code>.grab</code> files; <code>87/87</code> Node unit/DOM tests passed (zero <code>&lt;div&gt;</code> elements, zero <code>innerHTML</code> writes, Light/Dark WCAG AA); full 4-layer integration suite (Gates 1, 2, 3A, 3B on <code>127.0.0.1</code>) passed 100% printing <code>release-ready: True</code>.</li>
+      <li><strong>Strict Sibling Boundary Protection:</strong> All 8 frozen sibling repositories in <code>C:\\Development\\*</code> verified clean with zero modifications; untracked <code>playbook/genres/</code> preserved.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <p>Groxy AI v1.6.0 &bull; Urban's Press / GRAB Ecosystem &bull; SemVer Tier: MINOR (1.x.0) &bull; Approved &amp; Frozen &mdash; Complete</p>
+  </footer>
+</body>
+</html>
+"""
+
+
 def main():
     version = sys.argv[1].lstrip("v") if len(sys.argv) > 1 else "1.0.0"
     renderers = {
@@ -1181,6 +1381,7 @@ def main():
         "1.2.0": render_v120_html,
         "1.3.0": render_v130_html,
         "1.5.0": render_v150_html,
+        "1.6.0": render_v160_html,
     }
     if version not in renderers:
         raise ValueError(f"Unsupported guide version '{version}'. Available: {', '.join(sorted(renderers))}")

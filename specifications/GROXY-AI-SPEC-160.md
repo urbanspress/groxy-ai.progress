@@ -1,7 +1,7 @@
 # GROXY-AI-SPEC-160 — Lovable/Base44-Style Iterative Section Co-Pilot & Golden-Ratio Design-Craft Engine
 
 - **Version:** Groxy AI `v1.6.0`
-- **Status:** Approved; implementation in progress — owner approved as written on 2026-11-16; Stage 2 Pre-Implementation Cross-Layer Security & Contract Audit `PASS` (Section 11)
+- **Status:** Approved & Frozen — Complete (implemented and verified against all Section 9 & Section 11 C1–C8 gates on 2026-11-17)
 - **Draft Date:** 2026-11-16
 - **SemVer:** MINOR — backwards-compatible feature release (`ADR-027c`).
 - **Frozen baselines:** Groxy AI `v1.0.0` through `v1.5.0`; GRAB `v1.1.0`; Grex JS `v1.0.0`; GrabLab CMS `v1.0.1`; Grex Theme Builder `v1.0.0`; Gashboard `v1.0.0`; Groxy Desk `v1.0.0`.

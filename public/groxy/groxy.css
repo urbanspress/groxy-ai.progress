@@ -584,3 +584,40 @@ main#groxy-inspector-root {
 .groxy-db-consultant button { cursor: pointer; }
 .groxy-db-consultant :focus-visible { outline: 3px solid var(--grex-color-primary, var(--groxy-primary, #047857)); outline-offset: 2px; }
 .groxy-db-consultant pre { max-inline-size: 100%; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+.groxy-section-copilot {
+  color: var(--groxy-text);
+  background: var(--groxy-surface);
+  border: 1px solid var(--groxy-border);
+}
+.groxy-section-copilot label,
+.groxy-section-copilot summary,
+.groxy-section-copilot dialog {
+  color: var(--groxy-text);
+  background: var(--groxy-surface);
+}
+.groxy-section-copilot input,
+.groxy-section-copilot select,
+.groxy-section-copilot textarea {
+  color: var(--groxy-text);
+  background: var(--groxy-bg);
+  border: 1px solid var(--groxy-border);
+}
+.groxy-section-copilot button {
+  min-height: 2.75rem;
+}
+.groxy-section-copilot button:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+.groxy-section-copilot pre {
+  max-inline-size: 100%;
+  max-height: 22rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 0.75rem;
+  background: var(--groxy-bg);
+  color: var(--groxy-text);
+  border: 1px solid var(--groxy-border);
+  border-radius: 6px;
+}

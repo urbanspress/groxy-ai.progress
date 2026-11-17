@@ -8,7 +8,7 @@
  * `auditAccessibility()` compliance, and pre-dispatch 4-pillar Grade A / A+ gating.
  */
 
-export const GROXY_VERSION = "1.5.0";
+export const GROXY_VERSION = "1.6.0";
 
 import {
   auditAccessibility,

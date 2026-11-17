@@ -5,7 +5,7 @@
  * Zero innerHTML writes, zero eval(), zero wrapper <div> elements.
  */
 
-export const GROXY_VERSION = "1.5.0";
+export const GROXY_VERSION = "1.6.0";
 
 import {
   auditAccessibility,
@@ -40,6 +40,7 @@ import { mountBatchCampaignStudio } from "./batch-campaign.js";
 import { mountEmailFlowStudio } from "./email-flows.js";
 import { mountCommerceStudio } from "./commerce-engines.js";
 import { mountDbConsultant } from "./db-consultant.js";
+import { mountSectionCopilotStudio } from "./section-copilot.js";
 
 export const SAMPLE_AUDIT_PRESETS = Object.freeze({
   clean: {
@@ -2293,6 +2294,7 @@ export function mountGroxyDashboard(options = {}) {
   const emailFlowStudio = mountEmailFlowStudio({ root, document: doc, csrfToken, fetchFn });
   const commerceStudio = mountCommerceStudio({ root, document: doc, csrfToken, fetchFn });
   const dbConsultantStudio = mountDbConsultant({ root, document: doc, csrfToken, fetchFn });
+  const sectionCopilotStudio = mountSectionCopilotStudio({ root, document: doc, csrfToken, fetchFn });
 
   return {
     auditDomSafety() {
@@ -2346,6 +2348,8 @@ export function mountGroxyDashboard(options = {}) {
     getEmailFlowState() { return emailFlowStudio.getStaged(); },
     getCommercePlanState() { return commerceStudio.getStaged(); },
     getDbConsultantStudio() { return dbConsultantStudio.section; },
+    getSectionCopilotState() { return sectionCopilotStudio.getStaged(); },
+    getSectionCopilotStudio() { return sectionCopilotStudio; },
     runAudit: executeAudit,
     triggerPrePublishReview,
     triggerBoost,
@@ -2378,6 +2382,8 @@ export function mountGroxyDashboard(options = {}) {
       batchCampaignStudio.dispose();
       emailFlowStudio.dispose();
       commerceStudio.dispose();
+      dbConsultantStudio.dispose();
+      sectionCopilotStudio.dispose();
     },
   };
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Groxy AI v1.5.0 — Cross-Layer Regression and Database Gate Suite.
+Groxy AI v1.6.0 — Cross-Layer Regression, Section Co-Pilot & Database Gate Suite.
 
 Runs 3 non-negotiable gates:
   Gate 1: Static analysis (grab check), non-destructive canonical formatting (grab format byte-for-byte),
@@ -10,7 +10,7 @@ Runs 3 non-negotiable gates:
             - Core GRAB v1.1.0 `grab mcp` stdio JSON-RPC 2.0 server
             - GrabLab CMS v1.0.1 (isolated temp copy)
             - Grex Theme Builder v1.0.0 (isolated temp copy)
-            - Groxy AI v1.5.0 (src/groxy.grab)
+            - Groxy AI v1.6.0 (src/groxy.grab)
 """
 
 import http.cookiejar
@@ -236,6 +236,15 @@ def gate_1_static_and_format(grab_bin: str):
         f"src/groxy.grab differs from canonical `grab format` output "
         f"(disk={len(disk_bytes)} bytes, formatted={len(fmt_proc.stdout)} bytes). Run `grab format --write src/groxy.grab`."
     )
+    mig_grab = REPO_ROOT / "scripts" / "migrate_commerce.grab"
+    fmt_mig = subprocess.run(
+        [grab_bin, "format", "scripts/migrate_commerce.grab"],
+        cwd=str(REPO_ROOT),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    assert fmt_mig.returncode == 0, f"grab format failed on migrate_commerce.grab: {fmt_mig.stderr.decode('utf-8', 'replace')}"
+    assert fmt_mig.stdout == mig_grab.read_bytes(), "scripts/migrate_commerce.grab differs from canonical `grab format` output."
 
     # Probe views/dashboard.grab.html compilation directly through GRAB template validator
     probe_dir = Path(tempfile.mkdtemp(prefix="groxy_html_probe_"))
@@ -273,6 +282,7 @@ def gate_1_static_and_format(grab_bin: str):
         REPO_ROOT / "public" / "groxy" / "dashboard.js",
         REPO_ROOT / "public" / "groxy" / "vision-clone.js",
         REPO_ROOT / "public" / "groxy" / "db-consultant.js",
+        REPO_ROOT / "public" / "groxy" / "section-copilot.js",
     ]:
         src = js_file.read_text(encoding="utf-8")
         code_only = re.sub(r"/\*[\s\S]*?\*/|//.*", "", src)
@@ -316,6 +326,7 @@ def gate_2_node_tests():
         "tests/unit_db_consultant.test.js",
         "tests/unit_email_flows.test.js",
         "tests/unit_commerce_engines.test.js",
+        "tests/unit_section_copilot.test.js",
     ])
     print("  [PASS] Gate 2 complete (all unit & DOM tests passed).")
 
@@ -456,7 +467,7 @@ class MockDeskHandler(http.server.BaseHTTPRequestHandler):
 
 
 def gate_3b_live_cross_layer(grab_bin: str):
-    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v1.5.0...")
+    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v1.6.0...")
     cms_src = Path(os.environ.get("GRABLAB_CMS_DIR", r"C:\Development\grablab-cms"))
     builder_src = Path(os.environ.get("GREX_BUILDER_DIR", r"C:\Development\grex-builder"))
     if not (cms_src / "src" / "app.grab").exists():
@@ -608,7 +619,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         assert st_tok == 201, f"GrabLab mcp-token mint failed ({st_tok}): {tok_body}"
         cms_token = json.loads(tok_body)["token"]
 
-        # 3. Start Groxy AI v1.5.0 from an isolated copy so its storage writes
+        # 3. Start Groxy AI v1.6.0 from an isolated copy so its storage writes
         #    never modify the developer's working tree.
         groxy_log = tmp_root / "groxy.log"
         groxy_fh = open(groxy_log, "wb+")
@@ -652,7 +663,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
             stderr=subprocess.STDOUT,
         )
         procs.append(groxy_proc)
-        health_json = wait_for_health(groxy_url, groxy_proc, "Groxy AI v1.5.0", log_path=groxy_log)
+        health_json = wait_for_health(groxy_url, groxy_proc, "Groxy AI v1.6.0", log_path=groxy_log)
         assert health_json.get("status") == "ok", (
             f"Unexpected /_health payload from Groxy AI: {health_json}"
         )
@@ -668,7 +679,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         st, _, html = http_request(f"{groxy_url}/groxy")
         assert st == 200
         assert re.search(r"<div\b", html, re.IGNORECASE) is None, "/groxy HTML must have zero <div> elements"
-        assert '<meta name="groxy-version" content="1.5.0">' in html, "Missing groxy-version 1.5.0 meta tag"
+        assert '<meta name="groxy-version" content="1.6.0">' in html, "Missing groxy-version 1.6.0 meta tag"
         m = re.search(r'<meta\s+name="groxy-csrf"\s+content="([^"]+)"', html)
         assert m, "Missing groxy-csrf meta tag in /groxy HTML"
         groxy_csrf = m.group(1)
@@ -683,6 +694,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
             "/static/groxy/groxy.css",
             "/static/groxy/dashboard.js",
             "/static/groxy/vision-clone.js",
+            "/static/groxy/section-copilot.js",
             "/static/groxy/brand-dna.js",
             "/static/groxy/batch-campaign.js",
             "/static/groxy/booster.js",
@@ -698,7 +710,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         pb = json.loads(pb_body)
         assert len(pb.get("rules", [])) == 22
         assert pb.get("playbook_version") == "1.0.0"
-        assert pb.get("service_version") == "1.5.0"
+        assert pb.get("service_version") == "1.6.0"
 
         # Verify CSRF enforcement on all POST routes
         for post_path in [
@@ -720,6 +732,8 @@ def gate_3b_live_cross_layer(grab_bin: str):
             "/api/groxy/db/architect-quiz",
             "/api/groxy/db/consult",
             "/api/groxy/db/apply",
+            "/api/groxy/section-refine",
+            "/api/groxy/section-refine/apply",
         ]:
             st_no_csrf, _, _ = http_request(f"{groxy_url}{post_path}", method="POST", json_body={"entry": {}})
             assert st_no_csrf == 403, f"Expected 403 without CSRF on {post_path}, got {st_no_csrf}"
@@ -861,7 +875,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         assert st_insp == 200, f"/api/groxy/mcp/inspect failed ({st_insp}): {insp_body}"
         insp = json.loads(insp_body)
         assert insp["ok"] is True
-        assert insp["version"] == "1.5.0"
+        assert insp["version"] == "1.6.0"
         assert insp["grablab_cms"]["connected"] is True
         assert insp["grablab_cms"]["elements_count"] == 20
         assert "create_entry_draft" in insp["grablab_cms"]["tools"]
@@ -2065,7 +2079,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
             stderr=subprocess.STDOUT,
         )
         procs.append(groxy_worker_proc)
-        wait_for_health(groxy_worker_url, groxy_worker_proc, "Groxy AI v1.5.0 second worker", log_path=groxy_worker_log)
+        wait_for_health(groxy_worker_url, groxy_worker_proc, "Groxy AI v1.6.0 second worker", log_path=groxy_worker_log)
         _, _, worker_html = http_request(f"{groxy_worker_url}/groxy")
         worker_csrf_match = re.search(r'<meta\s+name="groxy-csrf"\s+content="([^"]+)"', worker_html)
         assert worker_csrf_match, "Second Groxy worker did not provide a CSRF token"
@@ -2264,7 +2278,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         log_files.append(groxy_restart_fh)
         groxy_proc = subprocess.Popen(groxy_command, cwd=str(groxy_tmp), env=groxy_environment, stdout=groxy_restart_fh, stderr=subprocess.STDOUT)
         procs.append(groxy_proc)
-        wait_for_health(groxy_url, groxy_proc, "Groxy AI v1.5.0 restart", log_path=groxy_restart_log)
+        wait_for_health(groxy_url, groxy_proc, "Groxy AI v1.6.0 restart", log_path=groxy_restart_log)
         st_restart_html, _, restart_html = http_request(f"{groxy_url}/groxy")
         assert st_restart_html == 200
         restart_csrf_match = re.search(r'<meta\s+name="groxy-csrf"\s+content="([^"]+)"', restart_html)
@@ -2693,11 +2707,229 @@ def gate_3b_live_cross_layer(grab_bin: str):
         )
         assert st_cms_replay == 409, f"CMS downstream failure replay must be rejected: {cms_replay_raw}"
 
+        # -----------------------------------------------------------------
+        # v1.6.0: Iterative Section Co-Pilot & Golden-Ratio Design-Craft
+        # -----------------------------------------------------------------
+        # Ensure Builder draft home slot holds the multi-section Fragment template (from untouched published baseline)
+        _, _, sec_init_state_raw = http_request(f"{builder_url}/api/studio/state")
+        sec_init_state = json.loads(sec_init_state_raw)
+        sec_pub_before = copy.deepcopy(sec_init_state["published"])
+        sec_single_before = copy.deepcopy(sec_init_state["draft"]["templates"]["single"])
+        sec_builder_csrf = sec_init_state["csrf_token"]
+        sec_home_before = copy.deepcopy(sec_pub_before["templates"]["home"])
+        st_seed_home, _, seed_home_raw = http_request(
+            f"{builder_url}/api/mcp/layout", method="POST",
+            headers={"X-CSRF-Token": sec_builder_csrf},
+            json_body={"slot": "home", "actor": "designer-init", "summary": "Restore default multi-section home template for v1.6.0", "layout": sec_home_before},
+        )
+        assert st_seed_home == 200, f"Failed restoring default home slot for v1.6.0: {seed_home_raw}"
+
+        # 1. Duplicate JSON keys & unknown fields rejected with HTTP 400
+        dup_req = urllib.request.Request(
+            f"{groxy_url}/api/groxy/section-refine",
+            data=b'{"slot":"home","slot":"single","section_id":"home-hero","instruction":"Make this calmer"}',
+            headers={"Content-Type": "application/json", "X-CSRF-Token": groxy_csrf},
+            method="POST",
+        )
+        try:
+            urllib.request.urlopen(dup_req, timeout=10)
+            raise AssertionError("Duplicate JSON keys must be rejected with 400")
+        except urllib.error.HTTPError as dup_err:
+            assert dup_err.code == 400, f"Expected 400 on duplicate JSON key, got {dup_err.code}"
+
+        st_unk_field, _, _ = http_request(
+            f"{groxy_url}/api/groxy/section-refine", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"slot": "home", "section_id": "home-hero", "instruction": "calm", "unknown_extra": True},
+        )
+        assert st_unk_field == 400, f"Expected 400 on unknown field, got {st_unk_field}"
+
+        # 2. C1 targeting guards: unknown section -> 404; TemplatePart -> 422
+        st_sec_404, _, _ = http_request(
+            f"{groxy_url}/api/groxy/section-refine", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"slot": "home", "section_id": "nonexistent-section-id", "instruction": "calm"},
+        )
+        assert st_sec_404 == 404, f"Expected 404 for unknown section_id, got {st_sec_404}"
+
+        st_sec_part, _, _ = http_request(
+            f"{groxy_url}/api/groxy/section-refine", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"slot": "home", "section_id": "home-header-part", "instruction": "calm"},
+        )
+        assert st_sec_part == 422, f"Expected 422 when targeting TemplatePart, got {st_sec_part}"
+
+        # 3. Ollama offline fallback & GRAB-E402 BYOK SSRF rejection
+        st_sec_ollama, _, sec_ollama_raw = http_request(
+            f"{groxy_url}/api/groxy/section-refine", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"slot": "home", "section_id": "home-hero", "instruction": "Make this calmer", "generation_mode": "ollama"},
+        )
+        assert st_sec_ollama == 200, f"Section refine Ollama fallback failed ({st_sec_ollama}): {sec_ollama_raw}"
+        sec_ollama_doc = json.loads(sec_ollama_raw)
+        assert sec_ollama_doc["generation"]["provider_used"] == "deterministic" and sec_ollama_doc["generation"]["fallback_used"] is True
+
+        st_sec_byok, _, sec_byok_raw = http_request(
+            f"{groxy_url}/api/groxy/section-refine", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"slot": "home", "section_id": "home-hero", "instruction": "Make this calmer", "generation_mode": "byok"},
+        )
+        assert st_sec_byok == 403 and json.loads(sec_byok_raw).get("code") == "GRAB-E402", f"Expected GRAB-E402 BYOK rejection, got {st_sec_byok}: {sec_byok_raw}"
+
+        # 4. Snapshot live Builder state before v1.6.0 refinement
+        _, _, sec_pre_state_raw = http_request(f"{builder_url}/api/studio/state")
+        sec_pre_state = json.loads(sec_pre_state_raw)
+        assert sec_pre_state["draft"]["templates"]["home"] == sec_home_before
+
+        # 5. Stage valid section refinement on home#home-hero (C4 token_unavailable + copy preserved)
+        st_sec_prop, _, sec_prop_raw = http_request(
+            f"{groxy_url}/api/groxy/section-refine", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"slot": "home", "section_id": "home-hero", "instruction": "Make this hero calmer, one primary button, shorter line length."},
+        )
+        assert st_sec_prop == 200, f"Section refine staging failed ({st_sec_prop}): {sec_prop_raw}"
+        sec_prop = json.loads(sec_prop_raw)
+        assert sec_prop["ok"] is True and sec_prop["schema_version"] == "1.6.0"
+        assert sec_prop["approval_token"].startswith("rtok_")
+        assert sec_prop["audit_report"]["overall_score"] >= 90 and sec_prop["audit_report"]["publish_safe"] is True
+        assert sec_prop["diff"]["copy_preserved"] is True
+        # C4: missing --grex-surface-1/-2 and measure token reported as token_unavailable, never fabricated
+        tu_roles = {item["token_role"] for item in sec_prop["design_craft"]["token_unavailable"]}
+        assert "line_measure" in tu_roles and "surface_elevation" in tu_roles
+        after_serialized = json.dumps(sec_prop["after_subtree"])
+        assert "--grex-surface-1" not in after_serialized and "--grex-measure" not in after_serialized and "65ch" not in after_serialized
+
+        # 6. C2 Sibling-drift protection: human edits sibling home-feed -> apply must return 409 without overwriting
+        drift_home = copy.deepcopy(sec_home_before)
+        drift_home["children"][1]["children"][1]["children"][0]["props"]["text"] = "Latest Published Stories"
+        st_drift_edit, _, _ = http_request(
+            f"{builder_url}/api/mcp/layout", method="POST",
+            headers={"X-CSRF-Token": sec_builder_csrf},
+            json_body={"slot": "home", "actor": "designer", "summary": "Sibling human edit", "layout": drift_home},
+        )
+        assert st_drift_edit == 200
+        sec_apply_body = {
+            "refine_id": sec_prop["refine_id"],
+            "slot": sec_prop["slot"],
+            "section_id": sec_prop["section_id"],
+            "subtree_sha256": sec_prop["subtree_sha256"],
+            "approval_token": sec_prop["approval_token"],
+        }
+        st_drift_409, _, drift_409_raw = http_request(
+            f"{groxy_url}/api/groxy/section-refine/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body=sec_apply_body,
+        )
+        assert st_drift_409 == 409 and json.loads(drift_409_raw).get("code") == "SECTION_SLOT_DRIFT", f"Expected 409 SECTION_SLOT_DRIFT, got {st_drift_409}: {drift_409_raw}"
+        # Verify sibling edit in Builder was NOT overwritten
+        _, _, after_drift_state_raw = http_request(f"{builder_url}/api/studio/state")
+        assert json.loads(after_drift_state_raw)["draft"]["templates"]["home"]["children"][1]["children"][1]["children"][0]["props"]["text"] == "Latest Published Stories"
+        # Restore home before race test
+        http_request(
+            f"{builder_url}/api/mcp/layout", method="POST",
+            headers={"X-CSRF-Token": sec_builder_csrf},
+            json_body={"slot": "home", "actor": "designer-restore", "summary": "Restore home", "layout": sec_home_before},
+        )
+
+        # 7. Re-stage, check 403 target mismatch, and verify two-worker atomic 201 + 409 race
+        st_sec_prop2, _, sec_prop2_raw = http_request(
+            f"{groxy_url}/api/groxy/section-refine", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"slot": "home", "section_id": "home-hero", "instruction": "Make this hero calmer with one primary button."},
+        )
+        assert st_sec_prop2 == 200, f"Second section refine failed: {sec_prop2_raw}"
+        sec_prop2 = json.loads(sec_prop2_raw)
+        sec_apply2 = {
+            "refine_id": sec_prop2["refine_id"],
+            "slot": sec_prop2["slot"],
+            "section_id": sec_prop2["section_id"],
+            "subtree_sha256": sec_prop2["subtree_sha256"],
+            "approval_token": sec_prop2["approval_token"],
+        }
+        st_sec_403, _, _ = http_request(
+            f"{groxy_url}/api/groxy/section-refine/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body={**sec_apply2, "section_id": "home-feed"},
+        )
+        assert st_sec_403 == 403, f"Expected 403 on target mismatch, got {st_sec_403}"
+
+        def apply_section_once():
+            return http_request(
+                f"{groxy_url}/api/groxy/section-refine/apply", method="POST",
+                headers={"X-CSRF-Token": groxy_csrf}, json_body=sec_apply2,
+            )
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            sec_race_results = list(pool.map(lambda _: apply_section_once(), range(2)))
+        sec_race_statuses = sorted(r[0] for r in sec_race_results)
+        assert sec_race_statuses == [201, 409], f"Concurrent section apply must yield [201, 409], got {sec_race_statuses}: {sec_race_results}"
+        sec_winner = json.loads(next(r[2] for r in sec_race_results if r[0] == 201))
+        assert sec_winner["actor"] == "groxy-ai" and sec_winner["command_stack_action"] == "applyAiLayout" and sec_winner["undo_available"] is True
+
+        # Replay must return 409
+        st_sec_replay, _, _ = apply_section_once()
+        assert st_sec_replay == 409, f"Replayed section token must return 409, got {st_sec_replay}"
+
+        # 8. C3 One-slot dispatch, sibling preservation, and 1-click Undo restoration
+        _, _, sec_post_state_raw = http_request(f"{builder_url}/api/studio/state")
+        sec_post_state = json.loads(sec_post_state_raw)
+        sec_home_after = sec_post_state["draft"]["templates"]["home"]
+        # Sibling home-feed and TemplateParts and other slots must remain byte-for-byte identical
+        assert sec_home_after["children"][0] == sec_home_before["children"][0]
+        assert sec_home_after["children"][1]["children"][1] == sec_home_before["children"][1]["children"][1]
+        assert sec_home_after["children"][2] == sec_home_before["children"][2]
+        assert sec_post_state["draft"]["templates"]["single"] == sec_single_before
+        assert sec_post_state["published"] == sec_pub_before
+
+        _, _, sec_cmds_raw = http_request(f"{builder_url}/api/studio/commands")
+        sec_cmds = json.loads(sec_cmds_raw)["commands"]
+        latest_sec_cmd = json.loads(sec_cmds[0]["command_json"])
+        assert latest_sec_cmd["actor"] == "groxy-ai" and latest_sec_cmd["slot"] == "home" and latest_sec_cmd["inverse"]["_restore"] is True
+        st_sec_undo, _, _ = http_request(
+            f"{builder_url}/api/mcp/layout", method="POST",
+            headers={"X-CSRF-Token": sec_builder_csrf},
+            json_body={"slot": "home", "actor": "designer-undo", "summary": "Undo v1.6.0 section refine", "layout": latest_sec_cmd["inverse"]["nextTree"]},
+        )
+        assert st_sec_undo == 200
+        _, _, sec_restored_state_raw = http_request(f"{builder_url}/api/studio/state")
+        assert json.loads(sec_restored_state_raw)["draft"]["templates"]["home"] == sec_home_before
+
+        # 9. C8 Downstream Builder failure records terminal dispatch_failed & prevents token reuse
+        st_sec_fail_prop, _, sec_fail_prop_raw = http_request(
+            f"{groxy_url}/api/groxy/section-refine", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"slot": "home", "section_id": "home-hero", "instruction": "Make this hero calmer."},
+        )
+        assert st_sec_fail_prop == 200
+        sec_fail_prop = json.loads(sec_fail_prop_raw)
+        sec_fail_apply = {
+            "refine_id": sec_fail_prop["refine_id"],
+            "slot": sec_fail_prop["slot"],
+            "section_id": sec_fail_prop["section_id"],
+            "subtree_sha256": sec_fail_prop["subtree_sha256"],
+            "approval_token": sec_fail_prop["approval_token"],
+        }
+        builder_proxy_state["fail_next_layout"] = True
+        st_sec_fail_apply, _, sec_fail_apply_raw = http_request(
+            f"{groxy_url}/api/groxy/section-refine/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body=sec_fail_apply,
+        )
+        assert st_sec_fail_apply == 502 and json.loads(sec_fail_apply_raw).get("status") == "dispatch_failed"
+        with sqlite3.connect(groxy_tmp / "storage" / "groxy-commerce.db") as commerce_db:
+            sec_fail_status = commerce_db.execute(
+                "SELECT status FROM groxy_section_refine_ledger WHERE refine_id = ?",
+                (sec_fail_prop["refine_id"],),
+            ).fetchone()[0]
+        assert sec_fail_status == "dispatch_failed", f"Expected terminal dispatch_failed, got {sec_fail_status}"
+        st_sec_fail_replay, _, _ = http_request(
+            f"{groxy_url}/api/groxy/section-refine/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body=sec_fail_apply,
+        )
+        assert st_sec_fail_replay == 409, f"dispatch_failed proposal must never be reusable (got {st_sec_fail_replay})"
+
         for log_fh in log_files:
             log_fh.flush()
             log_bytes = Path(log_fh.name).read_bytes()
             assert b"e2e-only-secret" not in log_bytes, f"Provider key leaked into service log {Path(log_fh.name).name}"
-        print("  [PASS] Gate 3B complete (live GrabLab CMS + Grex Theme Builder + Groxy AI v1.5.0 DB consultant & store quiz).")
+        print("  [PASS] Gate 3B complete (live GrabLab CMS + Grex Theme Builder + Groxy AI v1.6.0 Section Co-Pilot & Design-Craft).")
     finally:
         for p in reversed(procs):
             terminate_process(p)
@@ -2722,7 +2954,7 @@ def main():
     gate_2_node_tests()
     gate_3a_grab_mcp_stdio(grab_bin)
     gate_3b_live_cross_layer(grab_bin)
-    print("\nAll regression gates and v1.5.0 database consultant & store quiz gates passed; release-ready: True")
+    print("\nAll regression gates and v1.6.0 Section Co-Pilot & Design-Craft gates passed; release-ready: True")
 
 
 if __name__ == "__main__":

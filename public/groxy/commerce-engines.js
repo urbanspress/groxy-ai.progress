@@ -1,7 +1,7 @@
 /** Deterministic, local-first commerce plan builders for Groxy AI v1.5.0. */
 import { auditAccessibility, validateElementNode } from "./grex.js";
 export const COMMERCE_VERSION = "1.5.0";
-export const GROXY_VERSION = "1.5.0";
+export const GROXY_VERSION = "1.6.0";
 export const COMMERCE_ENGINES = Object.freeze(["recovery", "concierge", "bundles", "reviews-mine", "campaign-plan"]);
 const FOOTER = "Unsubscribe or manage preferences: {{unsubscribe_url}}\n{{sender_name}}\n{{sender_postal_address}}";
 const fail = (message, code = "COMMERCE_INVALID", status = 422) => Object.assign(new Error(message), { code, status });

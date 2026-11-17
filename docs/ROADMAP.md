@@ -132,11 +132,11 @@ Scope:
 
 ## `v1.6.0` — Lovable/Base44-Style Iterative Section Co-Pilot & Golden-Ratio Design-Craft Engine
 
-**Status:** Approved; implementation in progress — Backwards-Compatible Minor Feature ([SPEC-160](../specifications/GROXY-AI-SPEC-160.md)). The project owner approved SPEC-160 as written on 2026-11-16. Stage 2 Pre-Implementation Cross-Layer Security & Contract Audit: **`PASS`** (SPEC-160 Section 11, zero upstream changes; Stage 3 conditions C1–C8). Section 9 acceptance gates pending.
+**Status:** Approved & Frozen — Complete — Backwards-Compatible Minor Feature ([SPEC-160](../specifications/GROXY-AI-SPEC-160.md)). Owner-approved on 2026-11-16; Stage 2 Pre-Implementation Cross-Layer Security & Contract Audit `PASS` (Section 11, Conditions C1–C8); implemented and verified 100% across all Section 9 gates (`grab check`, byte-for-byte `grab format`, `87/87` Node unit/DOM tests, and live 4-layer Gate 3B with `release-ready: True`) on 2026-11-17.
 
 Scope:
-- **Targeted Section Refinement (`POST /api/groxy/section-refine`):** Conversational per-section editing inside **Grex Theme Builder** patching only the selected subtree via `POST /api/mcp/layout` (`actor: "groxy-ai"`, 1-click `Ctrl+Z` undo, `GROXY-SAFE-001` approval gate).
-- **Design-Craft & Visual Rhythm Playbook (`playbook/design-craft.v1.json`):** Enforces `8pt` spacing rhythm, `60–65ch` readable line measure, 1-primary-CTA-per-fold hierarchy, Light/Dark surface elevation (`--grex-surface-1` / `--grex-surface-2`), and automatic full-stack wiring of generated forms and `ForEach` grids to live **GrabLab CMS** content types and `ADR-025c` `GrabDecimal` product fields.
+- **Targeted Section Refinement (`POST /api/groxy/section-refine` & `POST /api/groxy/section-refine/apply`):** Conversational per-section editing inside **Grex Theme Builder** patching only the selected subtree via one-slot `POST /api/mcp/layout` (`actor: "groxy-ai"`, 1-click `Ctrl+Z` `applyAiLayout` undo, `GROXY-SAFE-001` single-use `rtok_<hex>` ledger, full-slot drift `409`, and two-worker `201`/`409` single-winner atomicity).
+- **Design-Craft & Visual Rhythm Playbook (`playbook/design-craft.v1.json`):** Enforces `8pt` spacing rhythm (`4pt` tight inline pairs), `60–65ch` readable line measure, 1-primary-CTA-per-fold hierarchy, Light/Dark surface elevation (`--grex-surface-1` / `--grex-surface-2`, reporting `token_unavailable` per `C4`), dual-theme WCAG AA `>= 4.5:1` auto-contrast repair (`C6`), and automatic full-stack wiring of generated forms and `ForEach` grids to live **GrabLab CMS** content types and `ADR-025c` `GrabDecimal` product fields without fabricating form `action` URLs (`C7`).
 
 ---
 

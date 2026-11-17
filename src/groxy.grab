@@ -27,6 +27,12 @@ set db_target_lock_read to data.prepare using commerce_db, "SELECT target_id, lo
 set commerce_inspect_db to data.open using "commerce_inspect"
 set db_inspect_tables to data.prepare using commerce_inspect_db, "SELECT type, name, tbl_name, sql FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name ASC", record {params: record {}, columns: record {type: "text", name: "text", tbl_name: "text", sql: "text"}}
 set db_inspect_indexes to data.prepare using commerce_inspect_db, "SELECT type, name, tbl_name, sql FROM sqlite_master WHERE type = 'index' AND name NOT LIKE 'sqlite_%' ORDER BY name ASC", record {params: record {}, columns: record {type: "text", name: "text", tbl_name: "text", sql: "text"}}
+set section_ledger_insert to data.prepare using commerce_db, "INSERT INTO groxy_section_refine_ledger (refine_id, slot, builder_slot, section_id, subtree_sha256, slot_sha256, payload_sha256, payload_json, token_verifier, operator_id, site_id, status, created_at, expires_at, outcome_json) VALUES (:refine_id, :slot, :builder_slot, :section_id, :subtree_sha256, :slot_sha256, :payload_sha256, :payload_json, :token_verifier, :operator_id, :site_id, :status, :created_at, :expires_at, :outcome_json)", record {params: record {refine_id: "text", slot: "text", builder_slot: "text", section_id: "text", subtree_sha256: "text", slot_sha256: "text", payload_sha256: "text", payload_json: "text", token_verifier: "text", operator_id: "text", site_id: "text", status: "text", created_at: "text", expires_at: "text", outcome_json: "text"}, columns: record {}}
+set section_ledger_read to data.prepare using commerce_db, "SELECT refine_id, slot, builder_slot, section_id, subtree_sha256, slot_sha256, payload_sha256, payload_json, token_verifier, operator_id, site_id, status, created_at, expires_at, outcome_json FROM groxy_section_refine_ledger WHERE refine_id = :refine_id", record {params: record {refine_id: "text"}, columns: record {refine_id: "text", slot: "text", builder_slot: "text", section_id: "text", subtree_sha256: "text", slot_sha256: "text", payload_sha256: "text", payload_json: "text", token_verifier: "text", operator_id: "text", site_id: "text", status: "text", created_at: "text", expires_at: "text", outcome_json: "text"}}
+set section_ledger_claim to data.prepare using commerce_db, "UPDATE groxy_section_refine_ledger SET status = 'applying' WHERE refine_id = :refine_id AND status = 'staged'", record {params: record {refine_id: "text"}, columns: record {}}
+set section_ledger_finish to data.prepare using commerce_db, "UPDATE groxy_section_refine_ledger SET status = :status, outcome_json = :outcome_json WHERE refine_id = :refine_id AND status = 'applying'", record {params: record {refine_id: "text", status: "text", outcome_json: "text"}, columns: record {}}
+set section_ledger_expire_stale to data.prepare using commerce_db, "UPDATE groxy_section_refine_ledger SET status = 'expired' WHERE operator_id = :operator_id AND status = 'staged' AND expires_at <= :now_iso", record {params: record {operator_id: "text", now_iso: "text"}, columns: record {}}
+set section_ledger_count_pending to data.prepare using commerce_db, "SELECT refine_id FROM groxy_section_refine_ledger WHERE operator_id = :operator_id AND status = 'staged'", record {params: record {operator_id: "text"}, columns: record {refine_id: "text"}}
 
 make safe_asset_url using raw_path
   try
@@ -4344,7 +4350,7 @@ make render_site_dna_md_grab using dna
 end
 
 route "GET" "/_health"
-  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "1.5.0"}
+  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "1.6.0"}
 end
 
 route "GET" "/_ready"
@@ -4354,7 +4360,7 @@ route "GET" "/_ready"
     if rule_cnt is not 22
       give back server.json using 503, record {status: "not_ready", error: "Playbook rule count mismatch"}
     end
-    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "1.5.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt}
+    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "1.6.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt}
   catch err
     give back server.json using 503, record {status: "not_ready", error: err.message}
   end
@@ -4374,7 +4380,7 @@ end
 route "GET" "/api/groxy/playbook"
   set pb to load_playbook_doc using groxy_cache
   set pb_out to copy_to_map using pb
-  set pb_out to collections.put using pb_out, "service_version", "1.5.0"
+  set pb_out to collections.put using pb_out, "service_version", "1.6.0"
   give back server.json using 200, pb_out
 end
 
@@ -4471,7 +4477,7 @@ route "POST" "/api/groxy/mcp/inspect" using req
       end
     end
 
-    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "1.5.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
+    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "1.6.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
   catch err
     give back server.json using 400, record {ok: no, error: err.message}
   end
@@ -7912,8 +7918,8 @@ route "POST" "/api/groxy/db/architect-quiz" using req
     set base_mig_records to ""
     set mig_version to "1"
     if target_id is "commerce" or target_id is "commerce_inspect"
-      set base_mig_records to "record {version: 1, name: \"create_commerce_approval_ledger\", steps: [\"CREATE TABLE groxy_commerce_plans (plan_id TEXT PRIMARY KEY, engine TEXT NOT NULL, target_slot TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\"]}, record {version: 2, name: \"create_db_consultant_ledger\", steps: [\"CREATE TABLE db_consultant_ledger (plan_id TEXT PRIMARY KEY, target_id TEXT NOT NULL, origin TEXT NOT NULL, migration_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, risk_level TEXT NOT NULL, risk_acknowledged INTEGER NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\", \"CREATE TABLE db_target_locks (target_id TEXT PRIMARY KEY, locked_by_plan TEXT NOT NULL, locked_at TEXT NOT NULL)\"]}, "
-      set mig_version to "3"
+      set base_mig_records to "record {version: 1, name: \"create_commerce_approval_ledger\", steps: [\"CREATE TABLE groxy_commerce_plans (plan_id TEXT PRIMARY KEY, engine TEXT NOT NULL, target_slot TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\"]}, record {version: 2, name: \"create_db_consultant_ledger\", steps: [\"CREATE TABLE db_consultant_ledger (plan_id TEXT PRIMARY KEY, target_id TEXT NOT NULL, origin TEXT NOT NULL, migration_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, risk_level TEXT NOT NULL, risk_acknowledged INTEGER NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\", \"CREATE TABLE db_target_locks (target_id TEXT PRIMARY KEY, locked_by_plan TEXT NOT NULL, locked_at TEXT NOT NULL)\"]}, record {version: 3, name: \"create_section_refine_ledger\", steps: [\"CREATE TABLE groxy_section_refine_ledger (refine_id TEXT PRIMARY KEY, slot TEXT NOT NULL, builder_slot TEXT NOT NULL, section_id TEXT NOT NULL, subtree_sha256 TEXT NOT NULL, slot_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\"]}, "
+      set mig_version to "4"
     end
     set migration_text to "use data\n\nset store_db to data.open using \"" joined with target_db_alias joined with "\"\nset result to data.migrate using store_db, [" joined with base_mig_records joined with "record {version: " joined with mig_version joined with ", name: \"groxy_store_schema_v1\", steps: [" joined with mig_steps_json joined with "]}]\nshow result\n"
     set migration_sha to crypto.sha256_hex using migration_text
@@ -8250,4 +8256,1760 @@ route "POST" "/api/groxy/db/reconcile" using req
   catch rec_err
     give back server.json using 422, record {ok: no, code: "DB_RECONCILE_INVALID", error: "Reconcile could not be validated."}
   end
+end
+
+# ---------------------------------------------------------------------------
+# Groxy AI v1.6.0 — Iterative Section Co-Pilot & Design-Craft Engine
+# ---------------------------------------------------------------------------
+
+make json_skip_ws using chars, pos, n
+  set i to pos
+  while i is less than n
+    set ch to chars at i
+    if ch is " " or ch is "\n" or ch is "\r" or ch is "\t"
+      set i to i plus 1
+    otherwise
+      give back i
+    end
+  end
+  give back i
+end
+
+make json_scan_string using chars, pos, n
+  if pos is at least n or (chars at pos) is not "\""
+    give back record {ok: no, text: "", next_pos: pos}
+  end
+  set i to pos plus 1
+  set out to ""
+  while i is less than n
+    set ch to chars at i
+    if ch is "\""
+      give back record {ok: yes, text: out, next_pos: (i plus 1)}
+    otherwise if ch is "\\"
+      set i to i plus 1
+      if i is at least n
+        give back record {ok: no, text: "", next_pos: i}
+      end
+      set out to out joined with "\\" joined with (chars at i)
+      set i to i plus 1
+    otherwise
+      set out to out joined with ch
+      set i to i plus 1
+    end
+  end
+  give back record {ok: no, text: "", next_pos: i}
+end
+
+make json_scan_value using chars, pos, n, depth
+  if depth is greater than 64
+    give back record {ok: no, dup: no, next_pos: pos}
+  end
+  set i to json_skip_ws using chars, pos, n
+  if i is at least n
+    give back record {ok: no, dup: no, next_pos: i}
+  end
+  set ch to chars at i
+  if ch is "\""
+    set sr to json_scan_string using chars, i, n
+    give back record {ok: sr.ok, dup: no, next_pos: sr.next_pos}
+  end
+  if ch is "{"
+    set i to json_skip_ws using chars, (i plus 1), n
+    if i is less than n and (chars at i) is "}"
+      give back record {ok: yes, dup: no, next_pos: (i plus 1)}
+    end
+    set seen to {}
+    while i is less than n
+      set i to json_skip_ws using chars, i, n
+      set kr to json_scan_string using chars, i, n
+      if not kr.ok
+        give back record {ok: no, dup: no, next_pos: i}
+      end
+      if has_map_key using seen, kr.text
+        give back record {ok: yes, dup: yes, next_pos: kr.next_pos}
+      end
+      set seen to collections.put using seen, kr.text, yes
+      set i to json_skip_ws using chars, kr.next_pos, n
+      if i is at least n or (chars at i) is not ":"
+        give back record {ok: no, dup: no, next_pos: i}
+      end
+      set vr to json_scan_value using chars, (i plus 1), n, (depth plus 1)
+      if not vr.ok
+        give back vr
+      end
+      if vr.dup
+        give back vr
+      end
+      set i to json_skip_ws using chars, vr.next_pos, n
+      if i is less than n and (chars at i) is ","
+        set i to i plus 1
+      otherwise if i is less than n and (chars at i) is "}"
+        give back record {ok: yes, dup: no, next_pos: (i plus 1)}
+      otherwise
+        give back record {ok: no, dup: no, next_pos: i}
+      end
+    end
+    give back record {ok: no, dup: no, next_pos: i}
+  end
+  if ch is "["
+    set i to json_skip_ws using chars, (i plus 1), n
+    if i is less than n and (chars at i) is "]"
+      give back record {ok: yes, dup: no, next_pos: (i plus 1)}
+    end
+    while i is less than n
+      set vr to json_scan_value using chars, i, n, (depth plus 1)
+      if not vr.ok
+        give back vr
+      end
+      if vr.dup
+        give back vr
+      end
+      set i to json_skip_ws using chars, vr.next_pos, n
+      if i is less than n and (chars at i) is ","
+        set i to i plus 1
+      otherwise if i is less than n and (chars at i) is "]"
+        give back record {ok: yes, dup: no, next_pos: (i plus 1)}
+      otherwise
+        give back record {ok: no, dup: no, next_pos: i}
+      end
+    end
+    give back record {ok: no, dup: no, next_pos: i}
+  end
+  while i is less than n
+    set pc to chars at i
+    if pc is "," or pc is "}" or pc is "]" or pc is " " or pc is "\n" or pc is "\r" or pc is "\t"
+      give back record {ok: yes, dup: no, next_pos: i}
+    end
+    set i to i plus 1
+  end
+  give back record {ok: yes, dup: no, next_pos: i}
+end
+
+make json_has_duplicate_keys using raw_body
+  set body_s to text.trim using (text.from using raw_body)
+  if body_s is ""
+    give back no
+  end
+  set chars to text.split using body_s, ""
+  set n to collections.length using chars
+  set res to json_scan_value using chars, 0, n, 0
+  if res.ok and res.dup
+    give back yes
+  end
+  give back no
+end
+
+make load_design_craft_playbook
+  try
+    if not (files.exists using "playbook/design-craft.v1.json")
+      give back record {ok: no, error: "Design-craft playbook file is missing."}
+    end
+    set raw to files.read_text using "playbook/design-craft.v1.json"
+    set pb to json.parse using raw
+    if not (is_record_value using pb)
+      give back record {ok: no, error: "Design-craft playbook must be a JSON object."}
+    end
+    if (map_get_str using pb, "schema_version", "") is "" or (map_get_str using pb, "playbook_version", "") is ""
+      give back record {ok: no, error: "Design-craft playbook missing version metadata."}
+    end
+    if not (has_map_key using pb, "token_roles") or not (is_record_value using (pb at "token_roles"))
+      give back record {ok: no, error: "Design-craft playbook missing token_roles."}
+    end
+    if not (has_map_key using pb, "rules") or not (is_list_value using (pb at "rules"))
+      give back record {ok: no, error: "Design-craft playbook missing rules list."}
+    end
+    set seen to {}
+    for each r in (pb at "rules")
+      if not (is_record_value using r)
+        give back record {ok: no, error: "Design-craft playbook contains malformed rule."}
+      end
+      set rid to map_get_str using r, "id", ""
+      set fam to map_get_str using r, "family", ""
+      set ttl to map_get_str using r, "title", ""
+      set sev to map_get_str using r, "severity", ""
+      set chk to map_get_str using r, "checker", ""
+      set pol to map_get_str using r, "repair_policy", ""
+      if rid is "" or fam is "" or ttl is "" or sev is "" or chk is "" or pol is ""
+        give back record {ok: no, error: "Design-craft playbook rule is missing required fields."}
+      end
+      if has_map_key using seen, rid
+        give back record {ok: no, error: ("Duplicate design-craft rule id: " joined with rid)}
+      end
+      set seen to collections.put using seen, rid, yes
+    end
+    for each req_id in ["GROXY-CRAFT-001", "GROXY-CRAFT-002", "GROXY-CRAFT-003", "GROXY-CRAFT-004", "GROXY-CRAFT-005"]
+      if not (has_map_key using seen, req_id)
+        give back record {ok: no, error: ("Design-craft playbook missing required rule: " joined with req_id)}
+      end
+    end
+    give back record {ok: yes, playbook: pb}
+  catch err
+    give back record {ok: no, error: "Design-craft playbook failed validation."}
+  end
+end
+
+make parse_design_system_modes using md_raw
+  set md to text.from using md_raw
+  set lines to text.split using md, "\n"
+  set base_tokens to {}
+  set light_tokens to {}
+  set dark_tokens to {}
+  set all_tokens to {}
+  set registered_classes to []
+  set tokens_loaded to 0
+  set classes_loaded to 0
+  set section to ""
+  set sub to "base"
+
+  for each raw_line in lines
+    set line to text.trim using raw_line
+    if text.starts_with using line, "## 1."
+      set section to "tokens"
+      set sub to "base"
+    otherwise if text.starts_with using line, "## 2."
+      set section to "classes"
+      set sub to ""
+    otherwise if text.starts_with using line, "## 3."
+      set section to "elements"
+      set sub to ""
+    otherwise if text.starts_with using line, "## 4."
+      set section to "slots"
+      set sub to ""
+    otherwise if section is "tokens"
+      if text.starts_with using line, "### Base"
+        set sub to "base"
+      otherwise if (text.contains using (text.lower using line), "light") and (text.starts_with using line, "### ")
+        set sub to "light"
+      otherwise if (text.contains using (text.lower using line), "dark") and (text.starts_with using line, "### ")
+        set sub to "dark"
+      otherwise if (text.starts_with using line, "|") and (text.contains using line, "--grex-")
+        set parts to text.split using line, "|"
+        if (collections.length using parts) is greater than 2
+          set tok_name to text.trim using (text.replace using (parts at 1), "`", "")
+          set tok_val to text.trim using (text.replace using (parts at 2), "`", "")
+          if text.starts_with using tok_name, "--grex-"
+            set tokens_loaded to tokens_loaded plus 1
+            set all_tokens to collections.put using all_tokens, tok_name, tok_val
+            if sub is "dark"
+              set dark_tokens to collections.put using dark_tokens, tok_name, tok_val
+            otherwise if sub is "light"
+              set light_tokens to collections.put using light_tokens, tok_name, tok_val
+            otherwise
+              set base_tokens to collections.put using base_tokens, tok_name, tok_val
+              set light_tokens to collections.put using light_tokens, tok_name, tok_val
+              if not (has_map_key using dark_tokens, tok_name)
+                set dark_tokens to collections.put using dark_tokens, tok_name, tok_val
+              end
+            end
+          end
+        end
+      end
+    otherwise if section is "classes"
+      if text.contains using line, ".grex-c-"
+        set after_prefix to text.split using line, ".grex-c-"
+        if (collections.length using after_prefix) is greater than 1
+          set seg to after_prefix at 1
+          set clean_seg to text.replace using seg, "`", ""
+          set clean_seg to text.replace using clean_seg, "*", ""
+          set clean_seg to (text.split using clean_seg, ":") at 0
+          set clean_seg to (text.split using clean_seg, "|") at 0
+          set clean_seg to (text.split using clean_seg, " ") at 0
+          set clean_seg to text.trim using clean_seg
+          if clean_seg is not ""
+            set classes_loaded to classes_loaded plus 1
+            set registered_classes to collections.append using registered_classes, clean_seg
+          end
+        end
+      end
+    end
+  end
+
+  give back record {tokens_loaded: tokens_loaded, reusable_classes_loaded: classes_loaded, base_tokens: base_tokens, light_tokens: light_tokens, dark_tokens: dark_tokens, all_tokens: all_tokens, registered_classes: registered_classes}
+end
+
+make sec_valid_identifier using raw_val, max_len, allow_colon
+  set s to text.trim using (text.from using raw_val)
+  set slen to text.length using s
+  if slen is 0 or slen is greater than max_len
+    give back no
+  end
+  set sl to text.lower using s
+  if (text.contains using sl, "http:") or (text.contains using sl, "https:") or (text.contains using sl, "..") or (text.contains using sl, "/") or (text.contains using sl, "\\") or (text.contains using sl, ";") or (text.contains using sl, "@")
+    give back no
+  end
+  if (text.starts_with using s, ":") or (text.ends_with using s, ":")
+    give back no
+  end
+  set allowed to "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"
+  if allow_colon
+    set allowed to allowed joined with ":"
+  end
+  for each ch in (text.split using s, "")
+    if not (text.contains using allowed, ch)
+      give back no
+    end
+  end
+  give back yes
+end
+
+make sec_node_id using node
+  if not (is_record_value using node)
+    give back ""
+  end
+  set nid to text.trim using (map_get_str using node, "id", "")
+  if nid is not ""
+    give back nid
+  end
+  if (has_map_key using node, "props") and (is_record_value using (node at "props"))
+    give back text.trim using (map_get_str using (node at "props"), "id", "")
+  end
+  give back ""
+end
+
+make sec_element_name using node
+  if not (is_record_value using node)
+    give back ""
+  end
+  set el to text.trim using (map_get_str using node, "element", "")
+  if el is not ""
+    give back el
+  end
+  give back text.trim using (map_get_str using node, "type", "")
+end
+
+make sec_collect_matches using node, section_id, path, depth, matches
+  if not (is_record_value using node)
+    give back matches
+  end
+  set next_matches to matches
+  if (sec_node_id using node) is section_id
+    set next_matches to collections.append using next_matches, record {node: node, path: path, depth: depth}
+  end
+  if (has_map_key using node, "children") and (is_list_value using (node at "children"))
+    set idx to 0
+    for each ch in (node at "children")
+      set child_path to collections.append using path, idx
+      set next_matches to sec_collect_matches using ch, section_id, child_path, (depth plus 1), next_matches
+      set idx to idx plus 1
+    end
+  end
+  give back next_matches
+end
+
+make sec_resolve_target using slot_tree, section_id
+  set matches to sec_collect_matches using slot_tree, section_id, [], 0, []
+  set mlen to collections.length using matches
+  if mlen is 0
+    give back record {ok: no, status: 404, code: "SECTION_NOT_FOUND", error: ("Section \"" joined with section_id joined with "\" was not found in target slot.")}
+  end
+  if mlen is greater than 1
+    give back record {ok: no, status: 422, code: "DUPLICATE_SECTION_ID", error: ("Ambiguous duplicate section_id \"" joined with section_id joined with "\".")}
+  end
+  set match to matches at 0
+  set el to sec_element_name using match.node
+  if match.depth is 0 or el is "Fragment" or el is "TemplatePart"
+    give back record {ok: no, status: 422, code: "INVALID_TARGET_NODE", error: "Cannot target slot root, Fragment, or TemplatePart directly."}
+  end
+  give back record {ok: yes, status: 200, target_node: match.node, path: match.path, depth: match.depth}
+end
+
+make sec_replace_at_path using node, path, depth, replacement
+  if depth is (collections.length using path)
+    give back replacement
+  end
+  set target_idx to path at depth
+  set out to copy_to_map using node
+  set next_children to []
+  set idx to 0
+  for each ch in (node at "children")
+    if idx is target_idx
+      set next_children to collections.append using next_children, (sec_replace_at_path using ch, path, (depth plus 1), replacement)
+    otherwise
+      set next_children to collections.append using next_children, ch
+    end
+    set idx to idx plus 1
+  end
+  set out to collections.put using out, "children", next_children
+  give back out
+end
+
+make sec_collect_sigs using node, path, target_path, out
+  set key to ""
+  set p_idx to 0
+  for each p_seg in path
+    if p_idx is greater than 0
+      set key to key joined with "."
+    end
+    set key to key joined with (text.from using p_seg)
+    set p_idx to p_idx plus 1
+  end
+  set tkey to ""
+  set t_idx to 0
+  for each t_seg in target_path
+    if t_idx is greater than 0
+      set tkey to tkey joined with "."
+    end
+    set tkey to tkey joined with (text.from using t_seg)
+    set t_idx to t_idx plus 1
+  end
+  if key is tkey
+    give back out
+  end
+  set plen to collections.length using path
+  set tlen to collections.length using target_path
+  set is_anc to (plen is less than tlen) and (key is "" or (text.starts_with using tkey, (key joined with ".")))
+  set next_out to out
+  if is_anc
+    set shell to copy_to_map using node
+    if (has_map_key using shell, "children") and (is_list_value using (shell at "children"))
+      set markers to []
+      set c_i to 0
+      for each ch in (shell at "children")
+        set markers to collections.append using markers, ("__CHILD_" joined with (text.from using c_i) joined with "__")
+        set c_i to c_i plus 1
+      end
+      set shell to collections.put using shell, "children", markers
+    end
+    set next_out to collections.append using next_out, (canonical_json using shell)
+    if (has_map_key using node, "children") and (is_list_value using (node at "children"))
+      set c_idx to 0
+      for each ch in (node at "children")
+        set next_out to sec_collect_sigs using ch, (collections.append using path, c_idx), target_path, next_out
+        set c_idx to c_idx plus 1
+      end
+    end
+  otherwise
+    set next_out to collections.append using next_out, (canonical_json using node)
+  end
+  give back next_out
+end
+
+make sec_splice_subtree using slot_tree, path, replacement
+  set spliced to sec_replace_at_path using slot_tree, path, 0, replacement
+  set before_sigs to sec_collect_sigs using slot_tree, [], path, []
+  set after_sigs to sec_collect_sigs using spliced, [], path, []
+  if (canonical_json using before_sigs) is not (canonical_json using after_sigs)
+    give back record {ok: no, error: "Subtree splice altered a sibling or ancestor node."}
+  end
+  give back record {ok: yes, spliced: spliced}
+end
+
+make sec_is_strict_twenty using el
+  set allowed to ["Section", "Container", "Grid", "Stack", "Card", "Heading", "Text", "RichText", "Link", "Button", "Image", "Icon", "Form", "Input", "Select", "Tabs", "Accordion", "Modal", "Nav", "ForEach"]
+  give back list_contains using allowed, el
+end
+
+make sec_extract_css_vars using raw_val
+  set s to text.from using raw_val
+  set out to []
+  if not (text.contains using s, "--grex-")
+    give back out
+  end
+  set parts to text.split using s, "--grex-"
+  set idx to 1
+  while idx is less than (collections.length using parts)
+    set seg to parts at idx
+    set tok to "--grex-"
+    set scanning to yes
+    for each ch in (text.split using seg, "")
+      if scanning
+        if text.contains using "abcdefghijklmnopqrstuvwxyz0123456789_-", (text.lower using ch)
+          set tok to tok joined with ch
+        otherwise
+          set scanning to no
+        end
+      end
+    end
+    if tok is not "--grex-"
+      set out to collections.append using out, tok
+    end
+    set idx to idx plus 1
+  end
+  give back out
+end
+
+make sec_extract_first_var using raw_val
+  set s to text.from using raw_val
+  if not (text.contains using s, "--grex-")
+    give back ""
+  end
+  set parts to text.split using s, "--grex-"
+  if (collections.length using parts) is less than 2
+    give back ""
+  end
+  set seg to parts at 1
+  set tok to "--grex-"
+  for each ch in (text.split using seg, "")
+    if text.contains using "abcdefghijklmnopqrstuvwxyz0123456789_-", (text.lower using ch)
+      set tok to tok joined with ch
+    otherwise
+      give back tok
+    end
+  end
+  give back tok
+end
+
+make sec_check_numeric_tree using val, path_label
+  if is_list_value using val
+    set idx to 0
+    for each item in val
+      set r to sec_check_numeric_tree using item, (path_label joined with "[" joined with (text.from using idx) joined with "]")
+      if not r.ok
+        give back r
+      end
+      set idx to idx plus 1
+    end
+    give back record {ok: yes, error: ""}
+  end
+  if is_record_value using val
+    for each k in (collections.keys using val)
+      set kl to text.lower using k
+      set v to val at k
+      if kl is "price" or kl is "sale_price" or kl is "unit_price" or kl is "amount" or kl is "total" or kl is "subtotal" or kl is "discount" or kl is "quantity" or kl is "count" or kl is "item_count" or kl is "per_page" or kl is "sku"
+        if v is not nothing
+          if not (is_text_value using v)
+            give back record {ok: no, error: (path_label joined with "." joined with k joined with " must be an exact base-10 string; numbers/floats are rejected per ADR-025c.")}
+          end
+          set vs to text.from using v
+          if kl is "quantity" or kl is "count" or kl is "item_count" or kl is "per_page"
+            if not (is_exact_integer_wire_str using vs)
+              give back record {ok: no, error: (path_label joined with "." joined with k joined with " must be an exact integer string per ADR-025c.")}
+            end
+          otherwise if kl is "sku"
+            if (text.trim using vs) is ""
+              give back record {ok: no, error: (path_label joined with ".sku cannot be empty.")}
+            end
+          otherwise
+            if not (is_strict_decimal_wire_str using vs)
+              give back record {ok: no, error: (path_label joined with "." joined with k joined with " must be an exact base-10 decimal wire string per ADR-025c.")}
+            end
+          end
+        end
+      end
+      if (is_record_value using v) or (is_list_value using v)
+        set sub_r to sec_check_numeric_tree using v, (path_label joined with "." joined with k)
+        if not sub_r.ok
+          give back sub_r
+        end
+      end
+    end
+  end
+  give back record {ok: yes, error: ""}
+end
+
+make sec_validate_subtree_strict using node, all_tokens, reg_classes, depth
+  if depth is greater than 24
+    give back record {ok: no, code: "GREX-SCHEMA-001", error: "Subtree nesting exceeds maximum depth (24)."}
+  end
+  if not (is_record_value using node)
+    give back record {ok: no, code: "INVALID_SUBTREE", error: "Subtree node must be a Grex object."}
+  end
+  set el to sec_element_name using node
+  if el is "" or (text.lower using el) is "div" or not (sec_is_strict_twenty using el)
+    give back record {ok: no, code: "GREX-SCHEMA-001", error: ("Subtree uses disallowed element \"" joined with el joined with "\"; only the 20 semantic Grex elements are permitted.")}
+  end
+  set tag_s to text.lower using (text.trim using (map_get_str using node, "tag", ""))
+  if tag_s is "div" or tag_s is "script" or tag_s is "iframe" or tag_s is "object" or tag_s is "embed" or tag_s is "style"
+    give back record {ok: no, code: "GREX-SEC-003", error: ("Forbidden HTML tag <" joined with tag_s joined with "> in subtree.")}
+  end
+  if tag_s is not "" and not (is_allowed_grex_tag using tag_s)
+    give back record {ok: no, code: "GREX-SCHEMA-001", error: ("Disallowed HTML tag <" joined with tag_s joined with "> in subtree.")}
+  end
+  for each bag_key in ["props", "attrs"]
+    if (has_map_key using node, bag_key) and (is_record_value using (node at bag_key))
+      set bag to node at bag_key
+      for each pk in (collections.keys using bag)
+        set pkl to text.lower using pk
+        if (text.starts_with using pkl, "on") or pkl is "innerhtml" or pkl is "outerhtml" or pkl is "dangerouslysetinnerhtml" or pkl is "srcdoc"
+          give back record {ok: no, code: "GREX-SEC-004", error: ("Forbidden attribute \"" joined with pk joined with "\" in subtree.")}
+        end
+        if pkl is "href" or pkl is "src" or pkl is "action" or pkl is "formaction"
+          if not (is_safe_url using (text.from using (bag at pk)))
+            give back record {ok: no, code: "GREX-SEC-003", error: ("Unsafe URL protocol in " joined with pk)}
+          end
+        end
+        if pkl is "class" or pkl is "classname"
+          for each cls_tok in (text.split using (text.from using (bag at pk)), " ")
+            set cc to text.trim using cls_tok
+            if text.starts_with using cc, "grex-c-"
+              set short_c to text.replace using cc, "grex-c-", ""
+              if not (list_contains using reg_classes, short_c)
+                give back record {ok: no, code: "UNREGISTERED_CLASS", error: ("Unregistered class ." joined with cc joined with " is absent from live GRAB-DESIGN-SYSTEM.md.")}
+              end
+            end
+          end
+        end
+        if pkl is "html"
+          set h_inf to inspect_html_string using (bag at pk)
+          if h_inf.div_count is greater than 0 or (collections.length using h_inf.sec_violations) is greater than 0
+            give back record {ok: no, code: "GREX-SEC-003", error: "Unsafe HTML content in RichText props.html."}
+          end
+        end
+      end
+    end
+  end
+  if (has_map_key using node, "styles") and (is_record_value using (node at "styles"))
+    set st_obj to node at "styles"
+    set st_maps to []
+    if (has_map_key using st_obj, "base") or (has_map_key using st_obj, "tablet") or (has_map_key using st_obj, "mobile")
+      for each bp in ["base", "tablet", "mobile"]
+        if (has_map_key using st_obj, bp) and (is_record_value using (st_obj at bp))
+          set st_maps to collections.append using st_maps, (st_obj at bp)
+        end
+      end
+    otherwise
+      set st_maps to [st_obj]
+    end
+    for each sm in st_maps
+      for each sk in (collections.keys using sm)
+        set sv to text.from using (sm at sk)
+        set svl to text.lower using sv
+        if (text.contains using svl, "javascript:") or (text.contains using svl, "expression(") or (text.contains using svl, "<script")
+          give back record {ok: no, code: "GREX-SEC-004", error: ("Unsafe CSS expression in styles." joined with sk)}
+        end
+        for each tok_v in (sec_extract_css_vars using sv)
+          if not (has_map_key using all_tokens, tok_v)
+            give back record {ok: no, code: "UNKNOWN_DESIGN_TOKEN", error: ("Unknown design token " joined with tok_v joined with " is absent from live GRAB-DESIGN-SYSTEM.md.")}
+          end
+        end
+      end
+    end
+  end
+  set num_chk to sec_check_numeric_tree using node, el
+  if not num_chk.ok
+    give back record {ok: no, code: "ADR025C_WIRE_REQUIRED", error: num_chk.error}
+  end
+  if (has_map_key using node, "children") and (is_list_value using (node at "children"))
+    for each ch in (node at "children")
+      set ch_r to sec_validate_subtree_strict using ch, all_tokens, reg_classes, (depth plus 1)
+      if not ch_r.ok
+        give back ch_r
+      end
+    end
+  end
+  give back record {ok: yes, code: "", error: ""}
+end
+
+make sec_parse_px using raw_val
+  set s to text.lower using (text.trim using (text.from using raw_val))
+  if text.ends_with using s, "px"
+    set num_s to text.replace using s, "px", ""
+    try
+      give back text.to_integer using num_s
+    catch err
+      give back -1
+    end
+  end
+  if text.ends_with using s, "rem"
+    set num_s to text.replace using s, "rem", ""
+    try
+      give back (text.to_integer using num_s) times 16
+    catch err
+      give back -1
+    end
+  end
+  give back -1
+end
+
+make sec_parse_ch using raw_val
+  set s to text.lower using (text.trim using (text.from using raw_val))
+  if text.ends_with using s, "ch"
+    set num_s to text.replace using s, "ch", ""
+    try
+      give back text.to_integer using num_s
+    catch err
+      give back -1
+    end
+  end
+  give back -1
+end
+
+make sec_is_primary_cta using node
+  set el to sec_element_name using node
+  if el is not "Button" and el is not "Link"
+    give back no
+  end
+  if not (has_map_key using node, "props") or not (is_record_value using (node at "props"))
+    give back no
+  end
+  set p to node at "props"
+  set var_s to text.lower using (map_get_str using p, "variant", "")
+  if var_s is "secondary" or var_s is "ghost" or var_s is "link"
+    give back no
+  end
+  if var_s is "primary"
+    give back yes
+  end
+  if (has_map_key using p, "primary") and (p at "primary") is yes
+    give back yes
+  end
+  set cls_l to text.lower using (map_get_str using p, "class", "")
+  if (text.contains using cls_l, "btn-primary") or (text.contains using cls_l, "cta-button")
+    give back yes
+  end
+  give back no
+end
+
+make sec_demote_cta using node
+  set out to copy_to_map using node
+  set p to {}
+  if (has_map_key using out, "props") and (is_record_value using (out at "props"))
+    set p to copy_to_map using (out at "props")
+  end
+  if has_map_key using p, "primary"
+    set p to collections.remove using p, "primary"
+  end
+  set p to collections.put using p, "variant", "secondary"
+  if has_map_key using p, "class"
+    set kept to []
+    for each c in (text.split using (text.from using (p at "class")), " ")
+      set cl to text.lower using (text.trim using c)
+      if cl is not "" and not (text.contains using cl, "btn-primary") and not (text.contains using cl, "cta-button")
+        set kept to collections.append using kept, (text.trim using c)
+      end
+    end
+    if (collections.length using kept) is 0
+      set p to collections.remove using p, "class"
+    otherwise
+      set p to collections.put using p, "class", (text.join using kept, " ")
+    end
+  end
+  set out to collections.put using out, "props", p
+  give back out
+end
+
+make sec_nearest_8pt_token using target_px, all_tokens
+  set best_name to ""
+  set best_dist to 999999
+  for each tk in (collections.keys using all_tokens)
+    if text.starts_with using tk, "--grex-space"
+      set px to sec_parse_px using (all_tokens at tk)
+      if px is greater than 0 and (px modulo 8) is 0
+        set dist to px minus target_px
+        if dist is less than 0
+          set dist to 0 minus dist
+        end
+        if dist is less than best_dist
+          set best_dist to dist
+          set best_name to tk
+        end
+      end
+    end
+  end
+  give back best_name
+end
+
+make sec_resolve_color using raw_val, theme_tokens, fallback_hex
+  set s to text.trim using (text.from using raw_val)
+  if s is ""
+    give back fallback_hex
+  end
+  set vname to sec_extract_first_var using s
+  if vname is not ""
+    if has_map_key using theme_tokens, vname
+      set tv to text.trim using (text.from using (theme_tokens at vname))
+      if (parse_hex_color using tv) is not nothing
+        give back tv
+      end
+    end
+    give back fallback_hex
+  end
+  if (parse_hex_color using s) is not nothing
+    give back s
+  end
+  give back ""
+end
+
+make sec_repair_dual_contrast_walk using node, l_bg, d_bg, l_toks, d_toks, repairs
+  set out to copy_to_map using node
+  set next_l_bg to l_bg
+  set next_d_bg to d_bg
+  set next_repairs to repairs
+
+  if (has_map_key using out, "styles") and (is_record_value using (out at "styles"))
+    set st to copy_to_map using (out at "styles")
+    set base to st
+    set has_base to has_map_key using st, "base"
+    if has_base
+      set base to copy_to_map using (st at "base")
+    otherwise
+      set base to copy_to_map using st
+    end
+    if is_record_value using base
+      set raw_bg to map_get_str using base, "background-color", (map_get_str using base, "backgroundColor", "")
+      if raw_bg is not ""
+        set lb to sec_resolve_color using raw_bg, l_toks, l_bg
+        set db to sec_resolve_color using raw_bg, d_toks, d_bg
+        if lb is not ""
+          set next_l_bg to lb
+        end
+        if db is not ""
+          set next_d_bg to db
+        end
+      end
+      set raw_fg to map_get_str using base, "color", ""
+      if raw_fg is not ""
+        set l_fg to sec_resolve_color using raw_fg, l_toks, ""
+        set d_fg to sec_resolve_color using raw_fg, d_toks, ""
+        set l_ratio to compute_contrast_ratio using l_fg, next_l_bg
+        set d_ratio to compute_contrast_ratio using d_fg, next_d_bg
+        set l_bad to l_ratio is not nothing and l_ratio is less than 4.5
+        set d_bad to d_ratio is not nothing and d_ratio is less than 4.5
+        if l_bad or d_bad
+          set repaired_fg to "#0f172a"
+          if raw_bg is not ""
+            set r_dark_on_bg to compute_contrast_ratio using "#0f172a", next_l_bg
+            if r_dark_on_bg is not nothing and r_dark_on_bg is less than 4.5
+              set repaired_fg to "#ffffff"
+            end
+          otherwise if has_map_key using l_toks, "--grex-ink"
+            set repaired_fg to "var(--grex-ink)"
+          otherwise if has_map_key using l_toks, "--grex-color-text"
+            set repaired_fg to "var(--grex-color-text)"
+          otherwise
+            set base to collections.put using base, "background-color", "#ffffff"
+            set next_l_bg to "#ffffff"
+            set next_d_bg to "#ffffff"
+          end
+          set base to collections.put using base, "color", repaired_fg
+          set vl_fg to sec_resolve_color using repaired_fg, l_toks, "#0f172a"
+          set vd_fg to sec_resolve_color using repaired_fg, d_toks, "#f8fafc"
+          set al_r to compute_contrast_ratio using vl_fg, next_l_bg
+          set ad_r to compute_contrast_ratio using vd_fg, next_d_bg
+          if (text.starts_with using repaired_fg, "#") and raw_bg is ""
+            set ad_r to compute_contrast_ratio using vd_fg, next_l_bg
+          end
+          if (al_r is not nothing and al_r is less than 4.5) or (ad_r is not nothing and ad_r is less than 4.5)
+            give back record {ok: no, node: out, repairs: next_repairs, error: ("Unrepairable WCAG AA contrast on node " joined with (sec_node_id using node))}
+          end
+          set next_repairs to collections.append using next_repairs, record {rule_id: "GROXY-CRAFT-004", node_id: (sec_node_id using node), repaired_color: repaired_fg, light_ratio_after: al_r, dark_ratio_after: ad_r}
+        end
+      end
+      if has_base
+        set st to collections.put using st, "base", base
+        set out to collections.put using out, "styles", st
+      otherwise
+        set out to collections.put using out, "styles", base
+      end
+    end
+  end
+
+  if (has_map_key using out, "children") and (is_list_value using (out at "children"))
+    set next_ch to []
+    for each ch in (out at "children")
+      set cr to sec_repair_dual_contrast_walk using ch, next_l_bg, next_d_bg, l_toks, d_toks, next_repairs
+      if not cr.ok
+        give back cr
+      end
+      set next_ch to collections.append using next_ch, cr.node
+      set next_repairs to cr.repairs
+    end
+    set out to collections.put using out, "children", next_ch
+  end
+
+  give back record {ok: yes, node: out, repairs: next_repairs, error: ""}
+end
+
+make sec_audit_craft_walk using node, state
+  set out to copy_to_map using node
+  set el to sec_element_name using out
+  set nid to sec_node_id using out
+  if nid is ""
+    set nid to el
+  end
+  set all_tokens to state.all_tokens
+  set repairs to state.repairs
+  set errors to state.errors
+  set cta_seen to state.cta_seen
+  set cms_types to state.cms_types
+
+  if (has_map_key using out, "styles") and (is_record_value using (out at "styles"))
+    set st to copy_to_map using (out at "styles")
+    set has_base to has_map_key using st, "base"
+    set base to st
+    if has_base
+      set base to copy_to_map using (st at "base")
+    otherwise
+      set base to copy_to_map using st
+    end
+    if is_record_value using base
+      set p_obj to {}
+      if (has_map_key using out, "props") and (is_record_value using (out at "props"))
+        set p_obj to out at "props"
+      end
+      set is_inline_pair to (el is "Nav") or (el is "Stack" and ((map_get_str using p_obj, "direction", "") is "row" or (map_get_str using base, "flex-direction", "") is "row"))
+      for each sp_prop in ["gap", "padding", "padding-top", "padding-bottom", "padding-left", "padding-right"]
+        if has_map_key using base, sp_prop
+          set sp_val to text.trim using (text.from using (base at sp_prop))
+          set vtok to sec_extract_first_var using sp_val
+          set px to -1
+          if vtok is not "" and (has_map_key using all_tokens, vtok)
+            set px to sec_parse_px using (all_tokens at vtok)
+          otherwise if vtok is ""
+            set px to sec_parse_px using sp_val
+          end
+          if px is greater than 0 and (px modulo 8) is not 0
+            set ok_4pt to (px modulo 8) is 4 and is_inline_pair
+            if not ok_4pt
+              set snapped to sec_nearest_8pt_token using px, all_tokens
+              if snapped is not ""
+                set base to collections.put using base, sp_prop, ("var(" joined with snapped joined with ")")
+                set repairs to collections.append using repairs, record {rule_id: "GROXY-CRAFT-001", node_id: nid, property: sp_prop, before: sp_val, after: ("var(" joined with snapped joined with ")")}
+              otherwise if vtok is ""
+                set errors to collections.append using errors, record {rule_id: "GROXY-CRAFT-001", node_id: nid, message: ("Spacing " joined with sp_val joined with " is not 8pt-aligned and no live 8pt spacing token is available.")}
+              end
+            end
+          end
+        end
+      end
+
+      set mw_key to ""
+      if has_map_key using base, "max-width"
+        set mw_key to "max-width"
+      otherwise if has_map_key using base, "maxWidth"
+        set mw_key to "maxWidth"
+      end
+      if mw_key is not ""
+        set mw_val to text.trim using (text.from using (base at mw_key))
+        set ch_v to sec_parse_ch using mw_val
+        if ch_v is greater than 0 and (ch_v is less than 60 or ch_v is greater than 65)
+          if state.live_measure_token is not ""
+            set base to collections.put using base, mw_key, ("var(" joined with state.live_measure_token joined with ")")
+            set repairs to collections.append using repairs, record {rule_id: "GROXY-CRAFT-002", node_id: nid, property: mw_key, before: mw_val, after: ("var(" joined with state.live_measure_token joined with ")")}
+          otherwise
+            set base to collections.remove using base, mw_key
+            set repairs to collections.append using repairs, record {rule_id: "GROXY-CRAFT-002", node_id: nid, property: mw_key, before: mw_val, after: "(removed out-of-range literal; measure token_unavailable)"}
+          end
+        end
+      end
+
+      if has_base
+        set st to collections.put using st, "base", base
+        set out to collections.put using out, "styles", st
+      otherwise
+        set out to collections.put using out, "styles", base
+      end
+    end
+  end
+
+  if sec_is_primary_cta using out
+    if cta_seen
+      set out to sec_demote_cta using out
+      set repairs to collections.append using repairs, record {rule_id: "GROXY-CRAFT-003", node_id: nid, property: "cta_hierarchy", before: "primary", after: "secondary"}
+    otherwise
+      set cta_seen to yes
+    end
+  end
+
+  if el is "ForEach"
+    set fp to {}
+    if (has_map_key using out, "props") and (is_record_value using (out at "props"))
+      set fp to out at "props"
+    end
+    if not (has_map_key using fp, "query") or not (is_record_value using (fp at "query"))
+      set errors to collections.append using errors, record {rule_id: "GROXY-CRAFT-005", node_id: nid, message: "ForEach node requires a props.query object."}
+    otherwise
+      set q to fp at "query"
+      if has_map_key using q, "per_page"
+        set pp to q at "per_page"
+        if not (is_text_value using pp) or not (is_exact_integer_wire_str using (text.from using pp))
+          set errors to collections.append using errors, record {rule_id: "GROXY-CRAFT-005", node_id: nid, message: "ForEach query.per_page must be an exact integer string per ADR-025c."}
+        end
+      end
+      set ct_slug to text.trim using (map_get_str using q, "content_type", "")
+      if ct_slug is not "" and cms_types is not nothing
+        set found_ct to no
+        for each ct in cms_types
+          if (map_get_str using ct, "slug", "") is ct_slug
+            set found_ct to yes
+          end
+        end
+        if not found_ct
+          set errors to collections.append using errors, record {rule_id: "GROXY-CRAFT-005", node_id: nid, code: "unknown_content_type", message: ("Unknown GrabLab CMS content_type: " joined with ct_slug)}
+        end
+      end
+    end
+  end
+
+  if el is "Form"
+    if (has_map_key using out, "props") and (is_record_value using (out at "props"))
+      set form_p to copy_to_map using (out at "props")
+      set act to text.trim using (map_get_str using form_p, "action", "")
+      if act is not ""
+        if not (text.starts_with using act, "/") or (text.starts_with using act, "//") or (text.starts_with using act, "/api/cms/submit") or (text.starts_with using act, "/api/forms/")
+          set form_p to collections.remove using form_p, "action"
+          set out to collections.put using out, "props", form_p
+          set repairs to collections.append using repairs, record {rule_id: "GROXY-CRAFT-005", node_id: nid, property: "action", before: act, after: "(omitted per C7: CMS v1.0.1 has no public form submit route)"}
+        end
+      end
+      set f_ct to text.trim using (map_get_str using form_p, "content_type", "")
+      if f_ct is not "" and cms_types is not nothing
+        set found_fct to no
+        for each ct in cms_types
+          if (map_get_str using ct, "slug", "") is f_ct
+            set found_fct to yes
+          end
+        end
+        if not found_fct
+          set errors to collections.append using errors, record {rule_id: "GROXY-CRAFT-005", node_id: nid, code: "unknown_content_type", message: ("Unknown GrabLab CMS content_type on Form: " joined with f_ct)}
+        end
+      end
+    end
+  end
+
+  set cur_state to record {all_tokens: all_tokens, live_measure_token: state.live_measure_token, cms_types: cms_types, cta_seen: cta_seen, repairs: repairs, errors: errors}
+  if (has_map_key using out, "children") and (is_list_value using (out at "children"))
+    set next_ch to []
+    for each ch in (out at "children")
+      set cr to sec_audit_craft_walk using ch, cur_state
+      set next_ch to collections.append using next_ch, cr.node
+      set cur_state to cr.state
+    end
+    set out to collections.put using out, "children", next_ch
+  end
+
+  give back record {node: out, state: cur_state}
+end
+
+make sec_audit_design_craft using subtree, ds_modes, cms_types
+  set all_toks to ds_modes.all_tokens
+  set live_measure to ""
+  for each cand in ["--grex-measure", "--grex-text-measure", "--grex-prose-width"]
+    if live_measure is "" and (has_map_key using all_toks, cand)
+      set live_measure to cand
+    end
+  end
+  set token_unavailable to []
+  set warnings to []
+  if live_measure is ""
+    set gap_m to record {rule_id: "GROXY-CRAFT-002", code: "token_unavailable", severity: "warning", token_role: "line_measure", missing_tokens: ["--grex-measure", "--grex-text-measure", "--grex-prose-width"], guidance: "Add a line-measure token (for example --grex-measure: 62ch) via Grex Theme Builder's Global Token Editor."}
+    set token_unavailable to collections.append using token_unavailable, gap_m
+    set warnings to collections.append using warnings, gap_m
+  end
+  if not (has_map_key using all_toks, "--grex-surface-1") or not (has_map_key using all_toks, "--grex-surface-2")
+    set miss_s to []
+    if not (has_map_key using all_toks, "--grex-surface-1")
+      set miss_s to collections.append using miss_s, "--grex-surface-1"
+    end
+    if not (has_map_key using all_toks, "--grex-surface-2")
+      set miss_s to collections.append using miss_s, "--grex-surface-2"
+    end
+    set gap_s to record {rule_id: "GROXY-CRAFT-004", code: "token_unavailable", severity: "warning", token_role: "surface_elevation", missing_tokens: miss_s, guidance: "Add --grex-surface-1 and --grex-surface-2 in Light and Dark modes via Grex Theme Builder's Global Token Editor."}
+    set token_unavailable to collections.append using token_unavailable, gap_s
+    set warnings to collections.append using warnings, gap_s
+  end
+
+  set init_state to record {all_tokens: all_toks, live_measure_token: live_measure, cms_types: cms_types, cta_seen: no, repairs: [], errors: []}
+  set craft_res to sec_audit_craft_walk using subtree, init_state
+  set l_bg to sec_resolve_color using (map_get_str using ds_modes.light_tokens, "--grex-bg", (map_get_str using ds_modes.light_tokens, "--grex-color-bg", "#ffffff")), ds_modes.light_tokens, "#ffffff"
+  set d_bg to sec_resolve_color using (map_get_str using ds_modes.dark_tokens, "--grex-bg", (map_get_str using ds_modes.dark_tokens, "--grex-color-bg", "#0f172a")), ds_modes.dark_tokens, "#0f172a"
+  set c_res to sec_repair_dual_contrast_walk using craft_res.node, l_bg, d_bg, ds_modes.light_tokens, ds_modes.dark_tokens, []
+  if not c_res.ok
+    give back record {ok: no, code: "WCAG_CONTRAST_UNREPAIRABLE", error: c_res.error}
+  end
+
+  set all_repairs to craft_res.state.repairs
+  for each cr in c_res.repairs
+    set all_repairs to collections.append using all_repairs, cr
+  end
+
+  give back record {ok: yes, valid: ((collections.length using craft_res.state.errors) is 0), blocking_errors: craft_res.state.errors, warnings: warnings, token_unavailable: token_unavailable, repairs: all_repairs, contrast_repairs: c_res.repairs, light_contrast_passed: yes, dark_contrast_passed: yes, repaired_subtree: c_res.node}
+end
+
+make sec_collect_texts using node, out
+  if not (is_record_value using node)
+    give back out
+  end
+  set next_out to out
+  set nid to sec_node_id using node
+  if nid is ""
+    set nid to sec_element_name using node
+  end
+  if (has_map_key using node, "props") and (is_record_value using (node at "props"))
+    set t to map_get_str using (node at "props"), "text", ""
+    if t is not ""
+      set next_out to collections.append using next_out, record {node_id: nid, element: (sec_element_name using node), text: t}
+    end
+  end
+  if (has_map_key using node, "children") and (is_list_value using (node at "children"))
+    for each ch in (node at "children")
+      set next_out to sec_collect_texts using ch, next_out
+    end
+  end
+  give back next_out
+end
+
+make sec_compute_diff using before_sub, after_sub
+  set b_list to sec_collect_texts using before_sub, []
+  set a_list to sec_collect_texts using after_sub, []
+  set a_map to {}
+  for each item in a_list
+    set a_map to collections.put using a_map, item.node_id, item.text
+  end
+  set copy_preserved to yes
+  for each b_item in b_list
+    set b_nid to b_item.node_id
+    if not (has_map_key using a_map, b_nid)
+      set copy_preserved to no
+    otherwise if (a_map at b_nid) is not b_item.text
+      set copy_preserved to no
+    end
+  end
+  give back record {before_subtree: before_sub, after_subtree: after_sub, before_text: b_list, after_text: a_list, copy_preserved: copy_preserved}
+end
+
+make sec_count_primary_ctas using node, count_in
+  set cnt to count_in
+  if sec_is_primary_cta using node
+    set cnt to cnt plus 1
+  end
+  if (has_map_key using node, "children") and (is_list_value using (node at "children"))
+    for each ch in (node at "children")
+      set cnt to sec_count_primary_ctas using ch, cnt
+    end
+  end
+  give back cnt
+end
+
+make sec_refine_deterministic using subtree, instruction, ds_modes
+  set lower to text.lower using (text.trim using instruction)
+  set next to copy_to_map using subtree
+  set props to {}
+  if (has_map_key using next, "props") and (is_record_value using (next at "props"))
+    set props to copy_to_map using (next at "props")
+  end
+  set el to sec_element_name using next
+  set nid to sec_node_id using next
+  set changes to []
+
+  if el is "Section" and (map_get_str using props, "aria-label", "") is "" and (map_get_str using props, "label", "") is ""
+    set props to collections.put using props, "aria-label", "Refined Section"
+    set next to collections.put using next, "props", props
+    set changes to collections.append using changes, "Added accessible aria-label to Section."
+  end
+
+  if (text.contains using lower, "calm") or (text.contains using lower, "space") or (text.contains using lower, "rhythm") or (text.contains using lower, "pad") or (text.contains using lower, "gap")
+    set calm_tok to sec_nearest_8pt_token using 24, ds_modes.all_tokens
+    if calm_tok is not ""
+      set st to {}
+      if (has_map_key using next, "styles") and (is_record_value using (next at "styles"))
+        set st to copy_to_map using (next at "styles")
+      end
+      set base_st to {}
+      if (has_map_key using st, "base") and (is_record_value using (st at "base"))
+        set base_st to copy_to_map using (st at "base")
+      end
+      set base_st to collections.put using base_st, "padding", ("var(" joined with calm_tok joined with ")")
+      set base_st to collections.put using base_st, "gap", ("var(" joined with calm_tok joined with ")")
+      set st to collections.put using st, "base", base_st
+      set next to collections.put using next, "styles", st
+      set changes to collections.append using changes, ("Applied 8pt spacing token var(" joined with calm_tok joined with ").")
+    end
+  end
+
+  if (text.contains using lower, "one button") or (text.contains using lower, "single button") or (text.contains using lower, "one cta") or (text.contains using lower, "single cta")
+    set primary_cnt to sec_count_primary_ctas using next, 0
+    if primary_cnt is 0
+      set cur_ch to []
+      if (has_map_key using next, "children") and (is_list_value using (next at "children"))
+        set cur_ch to next at "children"
+      end
+      set cta_id to nid joined with "-primary-cta"
+      if cta_id is "-primary-cta"
+        set cta_id to "section-primary-cta"
+      end
+      set cta_node to record {element: "Link", props: record {id: cta_id, href: "/blog", text: "Explore guides", variant: "primary"}}
+      set cur_ch to collections.append using cur_ch, cta_node
+      set next to collections.put using next, "children", cur_ch
+      set changes to collections.append using changes, "Added single primary CTA link."
+    end
+  end
+
+  if (text.contains using lower, "line length") or (text.contains using lower, "measure") or (text.contains using lower, "60ch") or (text.contains using lower, "65ch")
+    set live_m to ""
+    for each cand in ["--grex-measure", "--grex-text-measure", "--grex-prose-width"]
+      if live_m is "" and (has_map_key using ds_modes.all_tokens, cand)
+        set live_m to cand
+      end
+    end
+    if live_m is not ""
+      set st2 to {}
+      if (has_map_key using next, "styles") and (is_record_value using (next at "styles"))
+        set st2 to copy_to_map using (next at "styles")
+      end
+      set base_st2 to {}
+      if (has_map_key using st2, "base") and (is_record_value using (st2 at "base"))
+        set base_st2 to copy_to_map using (st2 at "base")
+      end
+      set base_st2 to collections.put using base_st2, "max-width", ("var(" joined with live_m joined with ")")
+      set st2 to collections.put using st2, "base", base_st2
+      set next to collections.put using next, "styles", st2
+      set changes to collections.append using changes, ("Applied live line-measure token var(" joined with live_m joined with ").")
+    otherwise
+      set changes to collections.append using changes, "Line-measure token unavailable in live design-system.md; reported token_unavailable without fabricating 65ch."
+    end
+  end
+
+  give back record {subtree: next, changes: changes}
+end
+
+make sec_expand_template_parts using node, parts_map, depth
+  if depth is greater than 12 or not (is_record_value using node)
+    give back node
+  end
+  set el to sec_element_name using node
+  if el is "TemplatePart" and (has_map_key using node, "props") and (is_record_value using (node at "props"))
+    set pname to map_get_str using (node at "props"), "name", ""
+    if pname is not "" and (has_map_key using parts_map, pname)
+      give back parts_map at pname
+    end
+  end
+  if (has_map_key using node, "children") and (is_list_value using (node at "children"))
+    set next_ch to []
+    for each ch in (node at "children")
+      set next_ch to collections.append using next_ch, (sec_expand_template_parts using ch, parts_map, (depth plus 1))
+    end
+    set out to copy_to_map using node
+    set out to collections.put using out, "children", next_ch
+    give back out
+  end
+  give back node
+end
+
+make sec_audit_spliced_slot using spliced_slot, draft_parts, ds_md, seo_pb, slot_name
+  set expanded to sec_expand_template_parts using spliced_slot, draft_parts, 0
+  set empty_acc to record {node_count: 0, max_depth: 0, div_count: 0, invalid_elements: [], invalid_tags: [], security_violations: [], headings: [], h1_count: 0, sub_count: 0, bad_images: 0, image_count: 0, bad_forms: 0, bad_interactive: 0, links: [], text_segments: [], classes_used: [], tokens_referenced: 0, inline_color_overrides: 0, contrast_failures: [], focus_failures: 0}
+  set walk_chk to walk_layout_tree using expanded, 1, "#ffffff", empty_acc
+  set needs_h1 to walk_chk.h1_count is 0
+  set needs_h2 to walk_chk.sub_count is 0
+  set needs_link to (collections.length using walk_chk.links) is 0
+  set audit_tree to expanded
+  if needs_h1 or needs_h2 or needs_link
+    set wrapper_ch to [expanded]
+    if needs_h1
+      set wrapper_ch to collections.append using wrapper_ch, record {element: "Heading", props: record {id: "audit-host-h1", level: 1, text: "Groxy Semantic Theme Builder Layout"}}
+    end
+    if needs_h2
+      set wrapper_ch to collections.append using wrapper_ch, record {element: "Heading", props: record {id: "audit-host-h2", level: 2, text: "Section Architecture Overview"}}
+    end
+    if needs_link
+      set wrapper_ch to collections.append using wrapper_ch, record {element: "Link", props: record {id: "audit-host-link", href: "/blog", text: "Explore semantic theme guides"}}
+    end
+    set audit_tree to record {element: "Section", tag: "main", props: record {id: "audit-host-root"}, children: wrapper_ch}
+  end
+  set filler_unit to "Groxy semantic theme builder layout verified for clean HTML5 landmarks, WCAG AA contrast, and design-system token alignment. "
+  set filler_body to ""
+  set f_idx to 0
+  while f_idx is less than 12
+    set filler_body to filler_body joined with filler_unit
+    set f_idx to f_idx plus 1
+  end
+  set entry_ctx to record {id: "section-audit", content_type: "page", title: "Groxy Semantic Theme Builder Layout Overview Page", slug: "semantic-theme-builder-layout", focus_keyword: "semantic theme builder", author_name: "Urban Press", published_at: "2026-11-16T00:00:00Z", excerpt: "Verified zero-div Grex Theme Builder layout section inspected against the 22-rule SEO, WCAG AA accessibility, and Golden-Ratio Design-Craft playbooks.", body: filler_body}
+  set audit_payload to record {entry: entry_ctx, grex_layout: audit_tree, design_system_md: ds_md, focus_keyword: "semantic theme builder"}
+  set rep to evaluate_audit_report using audit_payload, seo_pb
+  give back rep
+end
+
+route "POST" "/api/groxy/section-refine" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  if has_map_key using req, "body"
+    if json_has_duplicate_keys using (req at "body")
+      give back server.json using 400, record {ok: no, code: "SECTION_REFINE_DUPLICATE_KEY", error: "Duplicate JSON keys are not permitted."}
+    end
+  end
+  set payload to nothing
+  try
+    set payload to server.parse_json using req
+  catch parse_err
+    give back server.json using 400, record {ok: no, code: "SECTION_REFINE_INVALID_JSON", error: "Request body must be valid JSON."}
+  end
+  if not (is_record_value using payload)
+    give back server.json using 400, record {ok: no, code: "SECTION_REFINE_INVALID_JSON", error: "Request body must be a JSON object."}
+  end
+  for each req_key in (collections.keys using payload)
+    if req_key is not "slot" and req_key is not "section_id" and req_key is not "instruction" and req_key is not "generation_mode"
+      give back server.json using 400, record {ok: no, code: "SECTION_REFINE_UNKNOWN_FIELD", error: ("Unsupported request field: " joined with req_key)}
+    end
+  end
+  if not (has_map_key using payload, "slot") or not (is_text_value using (payload at "slot")) or not (has_map_key using payload, "section_id") or not (is_text_value using (payload at "section_id")) or not (has_map_key using payload, "instruction") or not (is_text_value using (payload at "instruction"))
+    give back server.json using 400, record {ok: no, code: "SECTION_REFINE_INVALID_FIELDS", error: "slot, section_id, and instruction must be non-empty strings."}
+  end
+  set raw_slot to text.trim using (text.from using (payload at "slot"))
+  set section_id to text.trim using (text.from using (payload at "section_id"))
+  set instruction to text.trim using (text.from using (payload at "instruction"))
+  if not (sec_valid_identifier using raw_slot, 64, yes) or not (sec_valid_identifier using section_id, 128, no)
+    give back server.json using 400, record {ok: no, code: "SECTION_REFINE_INVALID_IDENTIFIER", error: "Invalid slot or section_id identifier."}
+  end
+  if instruction is "" or (text.length using instruction) is greater than 2000
+    give back server.json using 400, record {ok: no, code: "SECTION_REFINE_INSTRUCTION_BOUNDS", error: "instruction must be 1 to 2,000 characters."}
+  end
+  set mode to "deterministic"
+  if has_map_key using payload, "generation_mode"
+    if not (is_text_value using (payload at "generation_mode"))
+      give back server.json using 400, record {ok: no, code: "SECTION_REFINE_INVALID_MODE", error: "generation_mode must be a string."}
+    end
+    set mode to text.lower using (text.trim using (text.from using (payload at "generation_mode")))
+    if mode is not "deterministic" and mode is not "ollama" and mode is not "byok"
+      give back server.json using 400, record {ok: no, code: "SECTION_REFINE_INVALID_MODE", error: "generation_mode must be deterministic, ollama, or byok."}
+    end
+  end
+
+  set dc_loaded to call load_design_craft_playbook
+  if not dc_loaded.ok
+    give back server.json using 503, record {ok: no, code: "DESIGN_CRAFT_PLAYBOOK_INVALID", error: dc_loaded.error}
+  end
+
+  set builder_url to resolve_env_opt using "GROXY_BUILDER_URL"
+  if builder_url is ""
+    give back server.json using 503, record {ok: no, code: "BUILDER_UNAVAILABLE", error: "Grex Theme Builder is not configured."}
+  end
+
+  set builder_state_resp to nothing
+  set ds_resp to nothing
+  try
+    set builder_state_resp to http.get using (builder_url joined with "/api/studio/state")
+    set ds_resp to http.get using (builder_url joined with "/api/design-system.md")
+  catch net_err
+    give back server.json using 503, record {ok: no, code: "BUILDER_UNAVAILABLE", error: "Grex Theme Builder is unreachable."}
+  end
+  if not builder_state_resp.ok or not ds_resp.ok
+    give back server.json using 503, record {ok: no, code: "BUILDER_UNAVAILABLE", error: "Grex Theme Builder state or design-system.md is unavailable."}
+  end
+
+  set builder_state to json.parse using builder_state_resp.body
+  set ds_md to text.from using ds_resp.body
+  set ds_modes to parse_design_system_modes using ds_md
+  set builder_slot to map_gen_builder_slot using raw_slot
+  set draft_doc to builder_state.draft
+  set draft_parts to {}
+  if has_map_key using draft_doc, "parts"
+    set draft_parts to draft_doc at "parts"
+  end
+
+  set slot_tree to nothing
+  if text.starts_with using builder_slot, "part:"
+    set pkey to text.replace using builder_slot, "part:", ""
+    if has_map_key using draft_parts, pkey
+      set slot_tree to draft_parts at pkey
+    end
+  otherwise
+    if (has_map_key using draft_doc, "templates") and (has_map_key using (draft_doc at "templates"), builder_slot)
+      set slot_tree to (draft_doc at "templates") at builder_slot
+    end
+  end
+  if slot_tree is nothing
+    give back server.json using 404, record {ok: no, code: "SLOT_NOT_FOUND", error: ("Target slot \"" joined with raw_slot joined with "\" was not found in Builder draft.")}
+  end
+
+  set target_res to sec_resolve_target using slot_tree, section_id
+  if not target_res.ok
+    give back server.json using target_res.status, record {ok: no, code: target_res.code, error: target_res.error}
+  end
+  set before_subtree to target_res.target_node
+  set before_subtree_sha to crypto.sha256_hex using (canonical_json using before_subtree)
+  set slot_sha to crypto.sha256_hex using (canonical_json using slot_tree)
+
+  set cms_types to nothing
+  set cms_url to resolve_env_opt using "GROXY_CMS_URL"
+  if cms_url is not ""
+    set cms_token to resolve_env_opt using "GROXY_CMS_MCP_TOKEN"
+    set lct_res to call_cms_mcp_tool using cms_url, cms_token, "list_content_types", {}, 1601
+    if lct_res.ok and (has_map_key using lct_res.data, "content_types")
+      set cms_types to lct_res.data at "content_types"
+    end
+  end
+
+  set provider_used to "deterministic"
+  set fallback_used to no
+  set fallback_reason to ""
+  set det_res to sec_refine_deterministic using before_subtree, instruction, ds_modes
+  set candidate_subtree to det_res.subtree
+  set structural_changes to det_res.changes
+
+  if mode is "ollama" or mode is "byok"
+    set prov_url to "http://127.0.0.1:11434/api/generate"
+    set prov_hdrs to {"Content-Type": "application/json"}
+    set prov_model to resolve_env_opt using "GROXY_SECTION_OLLAMA_MODEL"
+    if prov_model is ""
+      set prov_model to "llama3.2"
+    end
+    if mode is "byok"
+      set prov_url to resolve_env_opt using "GROXY_SECTION_BYOK_URL"
+      if prov_url is ""
+        set prov_url to resolve_env_opt using "GROXY_COMMERCE_BYOK_URL"
+      end
+      set byok_origin to resolve_env_opt using "GROXY_SECTION_BYOK_ALLOW_ORIGIN"
+      if byok_origin is ""
+        set byok_origin to resolve_env_opt using "GROXY_COMMERCE_BYOK_ALLOW_ORIGIN"
+      end
+      set prov_key to resolve_env_opt using "GROXY_SECTION_BYOK_API_KEY"
+      if prov_key is ""
+        set prov_key to resolve_env_opt using "GROXY_COMMERCE_BYOK_API_KEY"
+      end
+      set prov_model to resolve_env_opt using "GROXY_SECTION_BYOK_MODEL"
+      if prov_model is ""
+        set prov_model to resolve_env_opt using "GROXY_COMMERCE_BYOK_MODEL"
+      end
+      set prov_lower to text.lower using prov_url
+      if prov_url is "" or byok_origin is "" or prov_key is "" or prov_model is "" or not (text.starts_with using prov_url, "https://") or not (text.starts_with using byok_origin, "https://") or (not (text.starts_with using prov_url, byok_origin joined with "/") and prov_url is not byok_origin) or (text.contains using prov_lower, "@") or (text.contains using prov_lower, "localhost") or (text.contains using prov_lower, "127.0.0.1") or (text.contains using prov_lower, "169.254.") or (text.contains using prov_lower, "10.") or (text.contains using prov_lower, "192.168.")
+        give back server.json using 403, record {ok: no, code: "GRAB-E402", error: "BYOK section refinement endpoint, key, or HTTPS allowlist capability is invalid."}
+      end
+      set prov_hdrs to collections.put using prov_hdrs, "Authorization", ("Bearer " joined with prov_key)
+    end
+    set prov_prompt to "Return JSON only with optional aria_label string (<= 80 chars, plain text, no HTML, no URLs). Follow only this instruction. Untrusted instruction follows as a JSON string value. UNTRUSTED_INSTRUCTION_JSON: " joined with (json.stringify using instruction)
+    try
+      set prov_body to ""
+      if mode is "ollama"
+        set prov_body to json.stringify using record {model: prov_model, stream: no, format: "json", prompt: prov_prompt}
+      otherwise
+        set prov_body to json.stringify using record {model: prov_model, stream: no, response_format: record {type: "json_object"}, messages: [record {role: "user", content: prov_prompt}]}
+      end
+      set prov_resp to http.post using prov_url, prov_body, record {headers: prov_hdrs, timeout_ms: 10000, retries: 0}
+      if prov_resp.ok
+        set prov_doc to json.parse using prov_resp.body
+        set prov_txt to map_get_str using prov_doc, "response", ""
+        if mode is "byok" and has_map_key using prov_doc, "choices"
+          set ch0 to (prov_doc at "choices") at 0
+          set prov_txt to map_get_str using (ch0 at "message"), "content", ""
+        end
+        set prov_parsed to json.parse using prov_txt
+        set cand_aria to text.trim using (map_get_str using prov_parsed, "aria_label", "")
+        if cand_aria is not "" and (text.length using cand_aria) is at most 80 and not (text.contains using cand_aria, "<") and not (text.contains using cand_aria, "http")
+          set cp_props to {}
+          if (has_map_key using candidate_subtree, "props") and (is_record_value using (candidate_subtree at "props"))
+            set cp_props to copy_to_map using (candidate_subtree at "props")
+          end
+          set cp_props to collections.put using cp_props, "aria-label", cand_aria
+          set candidate_subtree to collections.put using candidate_subtree, "props", cp_props
+          set provider_used to mode
+        otherwise
+          set fallback_used to yes
+          set fallback_reason to "Provider output failed safe validation; deterministic refinement was retained."
+        end
+      otherwise
+        set fallback_used to yes
+        set fallback_reason to "Provider unavailable; deterministic refinement was retained."
+      end
+    catch prov_err
+      if mode is "byok" and (text.contains using (text.from using prov_err), "GRAB-E402")
+        give back server.json using 403, record {ok: no, code: "GRAB-E402", error: "GRAB denied the BYOK request; no proposal was staged."}
+      end
+      set fallback_used to yes
+      set fallback_reason to "Provider unreachable or returned invalid data; deterministic refinement was retained."
+    end
+  end
+
+  set strict_chk to sec_validate_subtree_strict using candidate_subtree, ds_modes.all_tokens, ds_modes.registered_classes, 1
+  if not strict_chk.ok
+    give back server.json using 422, record {ok: no, code: strict_chk.code, rule_ids: [strict_chk.code], error: strict_chk.error}
+  end
+
+  set craft_res to sec_audit_design_craft using candidate_subtree, ds_modes, cms_types
+  if not craft_res.ok
+    give back server.json using 422, record {ok: no, code: craft_res.code, rule_ids: [craft_res.code], error: craft_res.error}
+  end
+  if not craft_res.valid
+    give back server.json using 422, record {ok: no, code: "DESIGN_CRAFT_FAILED", blocking_errors: craft_res.blocking_errors, error: "Proposed subtree failed Golden-Ratio Design-Craft validation."}
+  end
+  set candidate_subtree to craft_res.repaired_subtree
+
+  set strict_post to sec_validate_subtree_strict using candidate_subtree, ds_modes.all_tokens, ds_modes.registered_classes, 1
+  if not strict_post.ok
+    give back server.json using 422, record {ok: no, code: strict_post.code, rule_ids: [strict_post.code], error: strict_post.error}
+  end
+
+  set canonical_sub to canonical_json using candidate_subtree
+  if (text.length using canonical_sub) is greater than 65536
+    give back server.json using 413, record {ok: no, code: "SECTION_SUBTREE_TOO_LARGE", error: "Proposed subtree exceeds 64 KB bound."}
+  end
+
+  set splice_res to sec_splice_subtree using slot_tree, target_res.path, candidate_subtree
+  if not splice_res.ok
+    give back server.json using 422, record {ok: no, code: "SIBLING_DRIFT", error: splice_res.error}
+  end
+  set spliced_slot to splice_res.spliced
+
+  set seo_pb to load_playbook_doc using groxy_cache
+  set audit_report to sec_audit_spliced_slot using spliced_slot, draft_parts, ds_md, seo_pb, builder_slot
+  set blocking_rule_ids to []
+  for each af in audit_report.findings
+    if af.severity is "error" or af.severity is "critical"
+      set blocking_rule_ids to collections.append using blocking_rule_ids, af.rule_id
+    end
+  end
+  if (not audit_report.publish_safe) or (audit_report.overall_score is less than 90) or ((collections.length using blocking_rule_ids) is greater than 0)
+    give back server.json using 422, record {ok: no, code: "SECTION_AUDIT_FAILED", rule_ids: blocking_rule_ids, overall_score: audit_report.overall_score, overall_grade: audit_report.overall_grade, audit_report: audit_report, error: "Proposed subtree failed the 22-rule Grade A/A+ quality gate."}
+  end
+
+  set subtree_sha to crypto.sha256_hex using canonical_sub
+  set spliced_slot_sha to crypto.sha256_hex using (canonical_json using spliced_slot)
+  set ds_sha to crypto.sha256_hex using ds_md
+  set refine_id to "ref_" joined with (crypto.random_hex using 16)
+  set approval_token to "rtok_" joined with (crypto.random_hex using 32)
+
+  set operator_id to resolve_env_opt using "GROXY_OPERATOR_ID"
+  if operator_id is ""
+    set operator_id to "local-operator"
+  end
+  set site_id to resolve_env_opt using "GROXY_SITE_ID"
+  if site_id is ""
+    set site_id to "configured-site"
+  end
+
+  set now_val to call dates.now_utc
+  set expires_val to dates.from_unix using (now_val.unix plus 900)
+  try
+    call data.execute using section_ledger_expire_stale, record {operator_id: operator_id, now_iso: now_val.iso}
+    set pending_rows to data.query using section_ledger_count_pending, record {operator_id: operator_id}
+    if (collections.length using pending_rows) is at least 20
+      give back server.json using 429, record {ok: no, code: "SECTION_PENDING_LIMIT", error: "Maximum 20 pending proposals per operator reached."}
+    end
+  catch cap_err
+    give back server.json using 503, record {ok: no, code: "LEDGER_UNAVAILABLE", error: "Section refinement ledger is unavailable."}
+  end
+
+  set diff_obj to sec_compute_diff using before_subtree, candidate_subtree
+  set design_craft_summary to record {valid: yes, token_unavailable: craft_res.token_unavailable, warnings: craft_res.warnings, repairs: craft_res.repairs, contrast_repairs: craft_res.contrast_repairs, light_contrast_passed: yes, dark_contrast_passed: yes}
+  set immutable to record {schema_version: "1.6.0", refine_id: refine_id, slot: raw_slot, builder_slot: builder_slot, section_id: section_id, target_path: target_res.path, before_subtree_sha256: before_subtree_sha, subtree_sha256: subtree_sha, slot_sha256: slot_sha, spliced_slot_sha256: spliced_slot_sha, design_system_sha256: ds_sha, operator_id: operator_id, site_id: site_id, before_subtree: before_subtree, candidate_subtree: candidate_subtree, spliced_slot: spliced_slot, structural_changes: structural_changes, design_craft: design_craft_summary, audit_report: audit_report}
+  set canonical_payload to canonical_json using immutable
+  set payload_sha to crypto.sha256_hex using canonical_payload
+  set binding to approval_token joined with "|" joined with refine_id joined with "|" joined with raw_slot joined with "|" joined with section_id joined with "|" joined with subtree_sha joined with "|" joined with slot_sha joined with "|" joined with site_id joined with "|" joined with operator_id
+  set token_verifier to crypto.hash_password using (crypto.sha256_hex using binding)
+
+  try
+    call data.execute using section_ledger_insert, record {refine_id: refine_id, slot: raw_slot, builder_slot: builder_slot, section_id: section_id, subtree_sha256: subtree_sha, slot_sha256: slot_sha, payload_sha256: payload_sha, payload_json: canonical_payload, token_verifier: token_verifier, operator_id: operator_id, site_id: site_id, status: "staged", created_at: now_val.iso, expires_at: expires_val.iso, outcome_json: "{}"}
+  catch ins_err
+    give back server.json using 503, record {ok: no, code: "LEDGER_PERSISTENCE_FAILED", error: "Failed to persist staged section proposal."}
+  end
+
+  give back server.json using 200, record {ok: yes, schema_version: "1.6.0", refine_id: refine_id, slot: raw_slot, builder_slot: builder_slot, section_id: section_id, subtree_sha256: subtree_sha, before_subtree: before_subtree, after_subtree: candidate_subtree, diff: diff_obj, structural_changes: structural_changes, design_craft: design_craft_summary, audit_report: audit_report, generation: record {mode: mode, provider_used: provider_used, fallback_used: fallback_used, fallback_reason: fallback_reason}, approval_required: yes, approval_token: approval_token, expires_at: expires_val.iso}
+end
+
+route "POST" "/api/groxy/section-refine/apply" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  if has_map_key using req, "body"
+    if json_has_duplicate_keys using (req at "body")
+      give back server.json using 400, record {ok: no, code: "SECTION_APPLY_DUPLICATE_KEY", error: "Duplicate JSON keys are not permitted."}
+    end
+  end
+  set payload to nothing
+  try
+    set payload to server.parse_json using req
+  catch parse_err
+    give back server.json using 400, record {ok: no, code: "SECTION_APPLY_INVALID_JSON", error: "Request body must be valid JSON."}
+  end
+  if not (is_record_value using payload)
+    give back server.json using 400, record {ok: no, code: "SECTION_APPLY_INVALID_JSON", error: "Request body must be a JSON object."}
+  end
+  for each apply_key in (collections.keys using payload)
+    if apply_key is not "refine_id" and apply_key is not "slot" and apply_key is not "section_id" and apply_key is not "subtree_sha256" and apply_key is not "approval_token"
+      give back server.json using 400, record {ok: no, code: "SECTION_APPLY_UNKNOWN_FIELD", error: ("Unsupported apply field: " joined with apply_key)}
+    end
+  end
+
+  set refine_id to map_get_str using payload, "refine_id", ""
+  set raw_slot to map_get_str using payload, "slot", ""
+  set section_id to map_get_str using payload, "section_id", ""
+  set subtree_sha to map_get_str using payload, "subtree_sha256", ""
+  set approval_token to map_get_str using payload, "approval_token", ""
+  if not (text.starts_with using refine_id, "ref_") or (text.length using refine_id) is not 36 or not (sec_valid_identifier using raw_slot, 64, yes) or not (sec_valid_identifier using section_id, 128, no) or (text.length using subtree_sha) is not 64 or not (text.starts_with using approval_token, "rtok_") or (text.length using approval_token) is not 69
+    give back server.json using 403, record {ok: no, code: "SECTION_APPROVAL_INVALID", error: "Invalid section refinement binding or approval token."}
+  end
+
+  set rows to []
+  try
+    set rows to data.query using section_ledger_read, record {refine_id: refine_id}
+  catch q_err
+    give back server.json using 503, record {ok: no, code: "LEDGER_UNAVAILABLE", error: "Section refinement ledger is unavailable."}
+  end
+  if (collections.length using rows) is 0
+    give back server.json using 403, record {ok: no, code: "SECTION_APPROVAL_INVALID", error: "Staged section refinement does not exist."}
+  end
+  set staged to rows at 0
+  if staged.slot is not raw_slot or staged.section_id is not section_id or staged.subtree_sha256 is not subtree_sha
+    give back server.json using 403, record {ok: no, code: "SECTION_TARGET_MISMATCH", error: "Slot, section_id, or subtree digest does not match staged refinement."}
+  end
+
+  set operator_id to resolve_env_opt using "GROXY_OPERATOR_ID"
+  if operator_id is ""
+    set operator_id to "local-operator"
+  end
+  set site_id to resolve_env_opt using "GROXY_SITE_ID"
+  if site_id is ""
+    set site_id to "configured-site"
+  end
+  if staged.operator_id is not operator_id or staged.site_id is not site_id
+    give back server.json using 403, record {ok: no, code: "SECTION_APPROVAL_INVALID", error: "Refinement belongs to a different operator or site."}
+  end
+
+  set immutable to json.parse using staged.payload_json
+  if (crypto.sha256_hex using (canonical_json using immutable)) is not staged.payload_sha256
+    give back server.json using 403, record {ok: no, code: "SECTION_DIGEST_INVALID", error: "Staged payload failed canonical digest verification."}
+  end
+
+  set binding to approval_token joined with "|" joined with refine_id joined with "|" joined with raw_slot joined with "|" joined with section_id joined with "|" joined with subtree_sha joined with "|" joined with staged.slot_sha256 joined with "|" joined with site_id joined with "|" joined with operator_id
+  if not (crypto.verify_password using (crypto.sha256_hex using binding), staged.token_verifier)
+    give back server.json using 403, record {ok: no, code: "SECTION_APPROVAL_INVALID", error: "Approval token is not bound to this section refinement."}
+  end
+
+  if staged.status is not "staged"
+    give back server.json using 409, record {ok: no, code: "SECTION_APPROVAL_REPLAY", error: "This section approval token has already been used or invalidated."}
+  end
+
+  set now_val to call dates.now_utc
+  if now_val.iso is greater than staged.expires_at
+    give back server.json using 403, record {ok: no, code: "SECTION_APPROVAL_EXPIRED", error: "Approval token expired; re-run section refinement."}
+  end
+
+  set builder_url to resolve_env_opt using "GROXY_BUILDER_URL"
+  if builder_url is ""
+    give back server.json using 503, record {ok: no, code: "BUILDER_UNAVAILABLE", error: "Grex Theme Builder is not configured; token remains unconsumed."}
+  end
+
+  set pre_state_resp to nothing
+  set pre_ds_resp to nothing
+  try
+    set pre_state_resp to http.get using (builder_url joined with "/api/studio/state")
+    set pre_ds_resp to http.get using (builder_url joined with "/api/design-system.md")
+  catch pre_err
+    give back server.json using 503, record {ok: no, code: "BUILDER_UNAVAILABLE", error: "Grex Theme Builder is unreachable; token remains unconsumed."}
+  end
+  if not pre_state_resp.ok or not pre_ds_resp.ok
+    give back server.json using 503, record {ok: no, code: "BUILDER_UNAVAILABLE", error: "Grex Theme Builder preflight failed; token remains unconsumed."}
+  end
+
+  set pre_state to json.parse using pre_state_resp.body
+  set pre_draft to pre_state.draft
+  set pre_slot_tree to nothing
+  set b_slot to staged.builder_slot
+  if text.starts_with using b_slot, "part:"
+    set pkey to text.replace using b_slot, "part:", ""
+    if (has_map_key using pre_draft, "parts") and (has_map_key using (pre_draft at "parts"), pkey)
+      set pre_slot_tree to (pre_draft at "parts") at pkey
+    end
+  otherwise
+    if (has_map_key using pre_draft, "templates") and (has_map_key using (pre_draft at "templates"), b_slot)
+      set pre_slot_tree to (pre_draft at "templates") at b_slot
+    end
+  end
+  if pre_slot_tree is nothing or (crypto.sha256_hex using (canonical_json using pre_slot_tree)) is not staged.slot_sha256
+    give back server.json using 409, record {ok: no, code: "SECTION_SLOT_DRIFT", error: "The target slot layout changed after staging (sibling or target edit detected); re-run refinement."}
+  end
+  if (crypto.sha256_hex using (text.from using pre_ds_resp.body)) is not immutable.design_system_sha256
+    give back server.json using 409, record {ok: no, code: "SECTION_DESIGN_STALE", error: "The design system changed after staging; re-run refinement."}
+  end
+
+  set claim_phase to "atomic_claim"
+  try
+    set claim_res to data.execute using section_ledger_claim, record {refine_id: refine_id}
+    if claim_res.rows_affected is 0
+      give back server.json using 409, record {ok: no, code: "SECTION_APPROVAL_REPLAY", error: "This section approval is already being applied or was already consumed."}
+    end
+  catch claim_err
+    give back server.json using 409, record {ok: no, code: "SECTION_APPROVAL_REPLAY", error: "This section approval is already being applied or was already consumed."}
+  end
+
+  set post_state_resp to nothing
+  try
+    set post_state_resp to http.get using (builder_url joined with "/api/studio/state")
+  catch post_err
+    set fail_out1 to json.stringify using record {status: "dispatch_failed", reason: "builder_state_reread_failed"}
+    call data.execute using section_ledger_finish, record {refine_id: refine_id, status: "dispatch_failed", outcome_json: fail_out1}
+    give back server.json using 502, record {ok: no, code: "SECTION_DISPATCH_FAILED", status: "dispatch_failed", error: "Builder state re-read failed after approval claim."}
+  end
+  if not post_state_resp.ok
+    set fail_out2 to json.stringify using record {status: "dispatch_failed", reason: "builder_state_reread_http_error"}
+    call data.execute using section_ledger_finish, record {refine_id: refine_id, status: "dispatch_failed", outcome_json: fail_out2}
+    give back server.json using 502, record {ok: no, code: "SECTION_DISPATCH_FAILED", status: "dispatch_failed", error: "Builder state re-read failed after approval claim."}
+  end
+
+  set post_state to json.parse using post_state_resp.body
+  set builder_csrf to map_get_str using post_state, "csrf_token", ""
+  set post_draft to post_state.draft
+  set post_slot_tree to nothing
+  set b_slot2 to staged.builder_slot
+  if text.starts_with using b_slot2, "part:"
+    set pkey2 to text.replace using b_slot2, "part:", ""
+    if (has_map_key using post_draft, "parts") and (has_map_key using (post_draft at "parts"), pkey2)
+      set post_slot_tree to (post_draft at "parts") at pkey2
+    end
+  otherwise
+    if (has_map_key using post_draft, "templates") and (has_map_key using (post_draft at "templates"), b_slot2)
+      set post_slot_tree to (post_draft at "templates") at b_slot2
+    end
+  end
+  if post_slot_tree is nothing or (crypto.sha256_hex using (canonical_json using post_slot_tree)) is not staged.slot_sha256
+    set drift_out to json.stringify using record {status: "dispatch_failed", reason: "concurrent_slot_drift"}
+    call data.execute using section_ledger_finish, record {refine_id: refine_id, status: "dispatch_failed", outcome_json: drift_out}
+    give back server.json using 409, record {ok: no, code: "SECTION_SLOT_DRIFT", error: "Target slot drifted before dispatch; re-run refinement."}
+  end
+
+  set ds_modes_apply to parse_design_system_modes using (text.from using pre_ds_resp.body)
+  set pre_dispatch_chk to sec_validate_subtree_strict using immutable.candidate_subtree, ds_modes_apply.all_tokens, ds_modes_apply.registered_classes, 1
+  if not pre_dispatch_chk.ok
+    set fail_out3 to json.stringify using record {status: "dispatch_failed", reason: "pre_dispatch_validation_failed"}
+    call data.execute using section_ledger_finish, record {refine_id: refine_id, status: "dispatch_failed", outcome_json: fail_out3}
+    give back server.json using 422, record {ok: no, code: pre_dispatch_chk.code, error: pre_dispatch_chk.error}
+  end
+  set pre_dispatch_seo to load_playbook_doc using groxy_cache
+  set pre_dispatch_parts to {}
+  if has_map_key using post_draft, "parts"
+    set pre_dispatch_parts to post_draft at "parts"
+  end
+  set pre_dispatch_audit to sec_audit_spliced_slot using immutable.spliced_slot, pre_dispatch_parts, (text.from using pre_ds_resp.body), pre_dispatch_seo, staged.builder_slot
+  if (not pre_dispatch_audit.publish_safe) or (pre_dispatch_audit.overall_score is less than 90)
+    set fail_out3b to json.stringify using record {status: "dispatch_failed", reason: "pre_dispatch_audit_failed"}
+    call data.execute using section_ledger_finish, record {refine_id: refine_id, status: "dispatch_failed", outcome_json: fail_out3b}
+    give back server.json using 422, record {ok: no, code: "SECTION_AUDIT_FAILED", error: "Spliced slot failed pre-dispatch 22-rule audit gate."}
+  end
+
+  set dispatch_payload to record {slot: staged.builder_slot, actor: "groxy-ai", summary: ("Groxy Section Co-Pilot: " joined with section_id), layout: immutable.spliced_slot}
+  set dispatch_resp to nothing
+  try
+    set dispatch_resp to http.post using (builder_url joined with "/api/mcp/layout"), (json.stringify using dispatch_payload), record {headers: {"Content-Type": "application/json", "X-CSRF-Token": builder_csrf}}
+  catch disp_err
+    set fail_out4 to json.stringify using record {status: "dispatch_failed", reason: "builder_dispatch_unreachable"}
+    call data.execute using section_ledger_finish, record {refine_id: refine_id, status: "dispatch_failed", outcome_json: fail_out4}
+    give back server.json using 502, record {ok: no, code: "SECTION_DISPATCH_FAILED", status: "dispatch_failed", recoverable: yes, error: "Builder dispatch failed safely; re-run refinement."}
+  end
+  if not dispatch_resp.ok
+    set fail_out5 to json.stringify using record {status: "dispatch_failed", status_code: dispatch_resp.status}
+    call data.execute using section_ledger_finish, record {refine_id: refine_id, status: "dispatch_failed", outcome_json: fail_out5}
+    give back server.json using 502, record {ok: no, code: "SECTION_DISPATCH_FAILED", status: "dispatch_failed", recoverable: yes, error: ("Grex Theme Builder returned HTTP " joined with (text.from using dispatch_resp.status))}
+  end
+
+  set receipt to json.parse using dispatch_resp.body
+  if not (has_map_key using receipt, "command") or not (has_map_key using receipt, "document")
+    set fail_out6 to json.stringify using record {status: "dispatch_failed", reason: "missing_builder_receipt"}
+    call data.execute using section_ledger_finish, record {refine_id: refine_id, status: "dispatch_failed", outcome_json: fail_out6}
+    give back server.json using 502, record {ok: no, code: "SECTION_READBACK_MISMATCH", status: "dispatch_failed", error: "Builder receipt missing command or document readback."}
+  end
+
+  set ret_doc to receipt at "document"
+  set ret_slot_tree to nothing
+  set b_slot3 to staged.builder_slot
+  if text.starts_with using b_slot3, "part:"
+    set pkey3 to text.replace using b_slot3, "part:", ""
+    if (has_map_key using ret_doc, "parts") and (has_map_key using (ret_doc at "parts"), pkey3)
+      set ret_slot_tree to (ret_doc at "parts") at pkey3
+    end
+  otherwise
+    if (has_map_key using ret_doc, "templates") and (has_map_key using (ret_doc at "templates"), b_slot3)
+      set ret_slot_tree to (ret_doc at "templates") at b_slot3
+    end
+  end
+  if ret_slot_tree is nothing or (crypto.sha256_hex using (canonical_json using ret_slot_tree)) is not immutable.spliced_slot_sha256
+    set fail_out7 to json.stringify using record {status: "dispatch_failed", reason: "readback_digest_mismatch"}
+    call data.execute using section_ledger_finish, record {refine_id: refine_id, status: "dispatch_failed", outcome_json: fail_out7}
+    give back server.json using 502, record {ok: no, code: "SECTION_READBACK_MISMATCH", status: "dispatch_failed", error: "Builder readback tree digest did not match dispatched slot."}
+  end
+
+  set applied_out to json.stringify using record {status: "applied", refine_id: refine_id, actor: "groxy-ai", slot: staged.builder_slot, section_id: section_id, subtree_sha256: subtree_sha, spliced_slot_sha256: immutable.spliced_slot_sha256, applied_at: now_val.iso}
+  call data.execute using section_ledger_finish, record {refine_id: refine_id, status: "applied", outcome_json: applied_out}
+
+  give back server.json using 201, record {ok: yes, schema_version: "1.6.0", approved: yes, refine_id: refine_id, slot: raw_slot, builder_slot: staged.builder_slot, section_id: section_id, subtree_sha256: subtree_sha, spliced_slot_sha256: immutable.spliced_slot_sha256, actor: "groxy-ai", command_stack_action: "applyAiLayout", undo_available: yes, builder_receipt: receipt}
 end

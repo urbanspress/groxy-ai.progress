@@ -69,10 +69,16 @@ def collect_release_files():
         "public/groxy/db-consultant.js",
         "tests/unit_db_consultant.test.js",
     }
+    new_v160_modules = {
+        "playbook/design-craft.v1.json",
+        "assets/section-copilot.js",
+        "public/groxy/section-copilot.js",
+        "tests/unit_section_copilot.test.js",
+    }
 
     for fname in include_files:
         p = REPO_ROOT / fname
-        if p.exists() and p.is_file() and (fname in tracked or fname in new_v140_modules or fname in new_v150_modules):
+        if p.exists() and p.is_file() and (fname in tracked or fname in new_v140_modules or fname in new_v150_modules or fname in new_v160_modules):
             files.append(p)
 
     for dname in include_dirs:
@@ -84,7 +90,7 @@ def collect_release_files():
             if (
                 item.is_file()
                 and "__pycache__" not in item.parts
-                and (rel in tracked or rel in new_v120_modules or rel in new_v130_modules or rel in new_v140_modules or rel in new_v150_modules)
+                and (rel in tracked or rel in new_v120_modules or rel in new_v130_modules or rel in new_v140_modules or rel in new_v150_modules or rel in new_v160_modules)
             ):
                 files.append(item)
 

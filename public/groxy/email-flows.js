@@ -1,6 +1,6 @@
 /** Groxy AI v1.3.0 — deterministic, draft-only post-purchase email flows. */
 export const EMAIL_FLOWS_VERSION = "1.3.0";
-export const GROXY_VERSION = "1.5.0";
+export const GROXY_VERSION = "1.6.0";
 const MONEY = /^(?:0|[1-9]\d*)(?:\.\d+)?$/;
 const PURPOSES = ["Order Receipt & Welcome", "Quick-Start / Setup Guide", "Check-In & Review Request", "Targeted Cross-Sell / Reorder"];
 const FOOTER = "Unsubscribe or manage preferences: {{unsubscribe_url}}\n{{sender_name}}\n{{sender_postal_address}}";

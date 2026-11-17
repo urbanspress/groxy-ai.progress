@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.6.0",
+  "playbook_version": "1.0.0",
+  "name": "Groxy AI Golden-Ratio Design-Craft & Visual Rhythm Playbook",
+  "updated_at": "2026-11-16",
+  "token_roles": {
+    "spacing": {
+      "candidates": ["--grex-space-sm", "--grex-space-md", "--grex-space-lg", "--grex-space-xl"],
+      "scale_unit_px": 8,
+      "tight_inline_px": 4,
+      "inline_pair_tokens": ["--grex-space-sm"],
+      "missing_behavior": "token_unavailable"
+    },
+    "line_measure": {
+      "candidates": ["--grex-measure", "--grex-text-measure", "--grex-prose-width"],
+      "min_ch": 60,
+      "max_ch": 65,
+      "missing_behavior": "token_unavailable",
+      "guidance": "Add a line-measure token (for example --grex-measure: 62ch) via Grex Theme Builder's Global Token Editor."
+    },
+    "surface_1": {
+      "candidates": ["--grex-surface-1"],
+      "fallback_candidates": ["--grex-surface", "--grex-bg"],
+      "missing_behavior": "token_unavailable",
+      "guidance": "Add --grex-surface-1 in Light and Dark modes via Grex Theme Builder's Global Token Editor."
+    },
+    "surface_2": {
+      "candidates": ["--grex-surface-2"],
+      "fallback_candidates": ["--grex-surface-elevated", "--grex-surface"],
+      "missing_behavior": "token_unavailable",
+      "guidance": "Add --grex-surface-2 in Light and Dark modes via Grex Theme Builder's Global Token Editor."
+    }
+  },
+  "cms_wiring": {
+    "allow_fabricated_action": false,
+    "require_exact_decimal_strings": true,
+    "foreach_allowed_bindings": ["text", "label", "title", "alt", "href", "src"],
+    "standard_entry_fields": ["id", "title", "slug", "excerpt", "full_path", "published_at", "updated_at", "content_type", "content_type_label", "author_name", "featured_image"]
+  },
+  "rules": [
+    {
+      "id": "GROXY-CRAFT-001",
+      "family": "spacing_rhythm",
+      "title": "8pt Spacing Rhythm via Live --grex-* Tokens",
+      "severity": "error",
+      "checker": "check_8pt_spacing_rhythm",
+      "repair_policy": "snap_to_nearest_live_8pt_token",
+      "scale_unit_px": 8,
+      "tight_inline_px": 4,
+      "description": "All section, container, card, and grid gaps/padding map to the 8pt scale (4pt allowed only for tight inline pairs) using live --grex-* spacing tokens."
+    },
+    {
+      "id": "GROXY-CRAFT-002",
+      "family": "line_measure",
+      "title": "60-65ch Readable Body Copy Measure",
+      "severity": "error",
+      "checker": "check_readable_line_measure",
+      "repair_policy": "attach_live_measure_token_or_report_unavailable",
+      "min_ch": 60,
+      "max_ch": 65,
+      "description": "Body copy measure targets 60-65ch via a live measure token role. Missing measure tokens report token_unavailable rather than inventing tokens or hardcoding 65ch."
+    },
+    {
+      "id": "GROXY-CRAFT-003",
+      "family": "cta_hierarchy",
+      "title": "One Primary CTA Per Fold",
+      "severity": "error",
+      "checker": "check_single_primary_cta_per_fold",
+      "repair_policy": "demote_extra_primaries_to_secondary",
+      "max_primary_ctas": 1,
+      "primary_variants": ["primary"],
+      "primary_classes": ["grex-c-btn-primary", "grex-c-cta-button", "btn-primary", "cta-button"],
+      "description": "Enforce at most one primary CTA per fold/section; extra primary CTAs are deterministically demoted to secondary."
+    },
+    {
+      "id": "GROXY-CRAFT-004",
+      "family": "surface_elevation",
+      "title": "Light/Dark Surface Elevation & Dual-Theme Contrast",
+      "severity": "error",
+      "checker": "check_surface_elevation_and_dual_contrast",
+      "repair_policy": "normalize_elevation_order_and_repair_contrast",
+      "required_tokens": ["--grex-surface-1", "--grex-surface-2"],
+      "min_contrast_ratio": 4.5,
+      "description": "Light and Dark panels/cards order --grex-surface-1 and --grex-surface-2 consistently and maintain WCAG AA >= 4.5:1 contrast in both themes."
+    },
+    {
+      "id": "GROXY-CRAFT-005",
+      "family": "cms_wiring",
+      "title": "Full-Stack GrabLab CMS & ForEach Wiring",
+      "severity": "error",
+      "checker": "check_live_cms_and_foreach_wiring",
+      "repair_policy": "strip_fabricated_actions_and_report_unknown_schema",
+      "allow_fabricated_action": false,
+      "require_exact_decimal_strings": true,
+      "description": "Generated Form inputs and ForEach grids bind strictly to live GrabLab CMS content types and fields with exact ADR-025c base-10 wire strings and never fabricate form action URLs."
+    }
+  ]
+}
