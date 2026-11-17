@@ -1,0 +1,260 @@
+{
+  "schema_version": "groxy-genre-playbook-v1.0",
+  "genre_slug": "thriller",
+  "display_name": "Thriller / Mystery",
+  "target_audience": {
+    "primary_demographics": {
+      "age_range": "21-65",
+      "core_age_bracket": "28-54",
+      "gender_skew": "Balanced broad readership with strong momentum among psychological suspense and procedural series fans",
+      "reading_frequency": "2 to 8 titles per month across Kindle Unlimited, direct storefronts, and audiobook commuters",
+      "preferred_formats": [
+        "Digital Ebook (EPUB / Kindle / Mobile Web Reader)",
+        "Trade Paperback",
+        "Unabridged Suspense Audiobook",
+        "Series Box Set Omnibus"
+      ]
+    },
+    "reading_motivations": [
+      "Intellectual puzzle-solving paired with ticking-clock physical or psychological peril",
+      "Unraveling deceptions, alibis, and institutional cover-ups one clue at a time",
+      "Moral reckoning when hidden predators or conspirators are cornered by persistent investigators"
+    ],
+    "emotional_payoffs": [
+      "Visceral gasp at a fair-play Midpoint or Act 3 twist that recontextualizes earlier clues",
+      "Cathartic justice when the protagonist outmaneuvers an arrogant adversary",
+      "Lingering tension release as the final threat is neutralized or exposed"
+    ],
+    "cover_and_blurb_conversion_hooks": {
+      "cover_design_rules": [
+        "High-contrast silhouette, atmospheric shadow, or stark symbolic object legible at 120px mobile thumbnail",
+        "Bold condensed serif or distressed sans-serif display title with immediate danger or investigation cue",
+        "Cool slate, crimson, or amber accent palette signaling psychological tension or forensic urgency"
+      ],
+      "blurb_structure_rules": [
+        "Paragraph 1 (The Tagline Hook): A razor-sharp 12-to-20-word premise framing the ticking clock or impossible crime",
+        "Paragraph 2 (Protagonist Stakes): Establish the investigator or survivor's expertise, past wound, and immediate deadline",
+        "Paragraph 3 (Antagonist & Escalation): Reveal the escalating pattern, false lead, or personal threat closing in",
+        "Paragraph 4 (The Ultimatum Closer): Pose the fatal dilemma before the clock hits zero, paired with a series read-on CTA"
+      ]
+    }
+  },
+  "pacing_and_structure": {
+    "novel_word_count_targets": {
+      "novella_lead_magnet_min_words": "22000",
+      "novella_lead_magnet_max_words": "35000",
+      "standard_series_installment_min_words": "65000",
+      "standard_series_installment_max_words": "90000",
+      "epic_standalone_or_finale_min_words": "85000",
+      "epic_standalone_or_finale_max_words": "110000",
+      "box_set_omnibus_min_words": "180000"
+    },
+    "chapter_word_count_targets": {
+      "ideal_chapter_min_words": "1800",
+      "ideal_chapter_max_words": "3000",
+      "hard_ceiling_words": "3800",
+      "mobile_scroll_pacing_note": "Keep chapters tight (1800 to 3000 words) with short, rapid-fire scene cuts to sustain relentless page-turn velocity."
+    },
+    "act_structure": {
+      "act_1_the_inciting_hustle": {
+        "percentage_range": "0.00 to 25.00",
+        "structural_beats": [
+          "Open with an active crime scene, vanished witness, or compromised safe house within the first 400 words",
+          "Establish the protagonist's investigative edge and personal blind spot",
+          "Drop the ticking-clock constraint and first red herring by 12.00 percent",
+          "Lock the protagonist into an irreversible hunt at the 25.00 percent mark"
+        ]
+      },
+      "act_2_escalation_and_pressure_cooker": {
+        "percentage_range": "25.00 to 75.00",
+        "structural_beats": [
+          "First Half (25.00 to 50.00 percent): Interrogate witnesses, verify forensic anomalies, and survive an early ambush",
+          "Midpoint Reversal (50.00 percent): Expose the core assumption as false—the hunter becomes the hunted or a key ally is compromised",
+          "Second Half (50.00 to 75.00 percent): Resources strip away, surveillance closes in, and a second victim or betrayal lands at 75.00 percent"
+        ]
+      },
+      "act_3_retribution_and_reckoning": {
+        "percentage_range": "75.00 to 100.00",
+        "structural_beats": [
+          "The Counter-Play (75.00 to 88.00 percent): Synthesize overlooked micro-clues into a decisive trap for the antagonist",
+          "The Climax (88.00 to 95.00 percent): High-tension physical and psychological showdown where the truth surfaces under pressure",
+          "The Resolution or Series Cliffhanger (95.00 to 100.00 percent): Close the immediate case cleanly while planting a dossier hook for Book 2"
+        ]
+      }
+    },
+    "cliffhanger_cadence": {
+      "micro_tension_interval_words": "550",
+      "chapter_ending_cliffhanger_rate_percent": "90.00",
+      "mandatory_chapter_exit_hooks": [
+        "The Forensic Anomaly: A timestamp, fingerprint, or security log that contradicts every witness statement",
+        "The Cut Feed: A surveillance monitor goes dark or a door locks from the outside",
+        "The Unmasked Voice: An encrypted call or note reveals the antagonist is already inside the protagonist's circle",
+        "The Ticking Deadline: A final spoken line cutting the remaining rescue window in half"
+      ],
+      "series_arc_cliffhanger_strategy": "Resolve each book's primary mystery completely while carrying a shadowy overarching conspiracy or cold-case thread across a 3-to-5-book investigative arc."
+    }
+  },
+  "trope_checklist": {
+    "core_tropes_readers_expect": [
+      {
+        "trope_id": "TH-TROPE-001",
+        "name": "Ticking Clock & Narrowing Window",
+        "execution_rule": "Anchor every Act 2 and Act 3 chapter to a visible countdown—hours until flight departure, storm landfall, or evidence destruction."
+      },
+      {
+        "trope_id": "TH-TROPE-002",
+        "name": "Fair-Play Clue Planting",
+        "execution_rule": "Place every clue needed to solve the twist openly in Act 1 or early Act 2 disguised as routine procedural detail."
+      },
+      {
+        "trope_id": "TH-TROPE-003",
+        "name": "Compromised Sanctuary",
+        "execution_rule": "Strip away the protagonist's trusted safe house, partner, or chain of command at the Midpoint so survival depends on wit alone."
+      },
+      {
+        "trope_id": "TH-TROPE-004",
+        "name": "Unreliable Witness / Fractured Memory",
+        "execution_rule": "Force the reader to weigh competing testimonies where every character has something real to hide."
+      }
+    ],
+    "cliches_and_anti_patterns_to_avoid": [
+      {
+        "anti_pattern_id": "TH-AVOID-001",
+        "name": "Too-Stupid-to-Live Investigation Choices",
+        "prevention_rule": "Never make trained professionals walk unarmed into dark basements without calling backup unless communication is credibly severed."
+      },
+      {
+        "anti_pattern_id": "TH-AVOID-002",
+        "name": "Out-of-Nowhere Evil Twin Twist",
+        "prevention_rule": "Every twist must connect cleanly to established timeline evidence, motives, and physical logistics."
+      },
+      {
+        "anti_pattern_id": "TH-AVOID-003",
+        "name": "Static Expository Monologue by Villain",
+        "prevention_rule": "Reveal the antagonist's scheme through active confrontation, evidence discovery, and desperate cover-up mistakes—never a 10-page confession speech."
+      }
+    ]
+  },
+  "character_archetypes": {
+    "protagonist_models": [
+      {
+        "archetype": "The Disgraced Analyst / Relentless Investigator",
+        "core_drive": "Uncovering the truth behind a buried file to clear an innocent name or avenge a botched operation",
+        "strengths": "Pattern recognition, forensic patience, refusal to accept neat official narratives",
+        "fatal_flaw": "Obsessive isolation that pushes loyal allies out until danger reaches them"
+      },
+      {
+        "archetype": "The Cornered Civilian with Hidden Grit",
+        "core_drive": "Protecting family and reclaiming safety when ordinary life collides with a ruthless conspiracy",
+        "strengths": "Adaptability, moral courage, sharp observational instincts under panic",
+        "fatal_flaw": "Underestimating how far institutional actors will go to silence witnesses"
+      }
+    ],
+    "antagonist_models": [
+      {
+        "archetype": "The Respectable Architect",
+        "motivation": "Preserving wealth, public reputation, or political control at any human cost",
+        "tactic": "Delegates dirty work through cutouts, falsifies records, and frames scapegoats"
+      },
+      {
+        "archetype": "The Patient Predator",
+        "motivation": "Intellectual superiority and control over carefully staged hunts",
+        "tactic": "Leaves deliberate breadcrumbs to bait the investigator into predictable traps"
+      }
+    ],
+    "foil_and_ensemble_dynamics": {
+      "the_skeptical_partner": "By-the-book detective, journalist, or tech specialist who challenges wild theories and verifies hard evidence",
+      "the_compromised_insider": "High-ranking official whose loyalties remain ambiguous until the Act 3 reckoning",
+      "spin_off_seeding_rule": "Equip the investigative team with distinct forensic or field specialties ready for standalone spin-off cases."
+    }
+  },
+  "voice_and_dialogue_rules": {
+    "pov_conventions": {
+      "preferred_pov": "Close Third-Person Limited (single investigator POV or tightly alternating Hunter/Hunted chapters)",
+      "secondary_pov_option": "First-Person Present/Past for claustrophobic psychological thrillers",
+      "head_hopping_rule": "Maintain strict single-POV discipline per chapter or explicit scene break; never leak antagonist twists prematurely."
+    },
+    "dialogue_cadence": {
+      "dialogue_to_narration_ratio_percent": "45.00 to 55.00",
+      "rhythm_and_vernacular_rules": [
+        "Write crisp, subtext-heavy interrogations where characters dodge direct questions",
+        "Use physical micro-beats (glancing at exits, checking watches, sliding folders) instead of melodramatic tags",
+        "Keep urgent action exchanges short, clipped, and free of exposition"
+      ]
+    },
+    "sensory_grounding": {
+      "required_sensory_layers_per_scene": "3",
+      "signature_urban_textures": [
+        "Auditory: Rain tapping warehouse glass, server rack hum, footsteps echoing in concrete stairwells",
+        "Visual: Flickering sodium streetlamps, timestamped CCTV grain, redactions on paper dossiers",
+        "Olfactory and Tactile: Cold brass door handles, ozone, stale precinct coffee, damp wool"
+      ]
+    },
+    "hemingway_clarity_checks": {
+      "target_reading_grade_level": "7.00",
+      "max_reading_grade_level": "8.50",
+      "average_sentence_length_words": "13",
+      "hard_sentence_length_ceiling_words": "26",
+      "passive_voice_max_percent": "4.00",
+      "adverb_density_max_percent": "1.50",
+      "clarity_directives": [
+        "Accelerate action sequences with short active-voice sentences and concrete verbs",
+        "Eliminate filter verbs ('she noticed', 'he saw', 'it felt like') during suspense beats",
+        "Limit paragraphs to 2 to 4 sentences during chases or interrogations"
+      ]
+    }
+  },
+  "publishing_and_pricing_tiers": {
+    "series_launch_strategy": {
+      "rapid_release_cadence_days": "45",
+      "optimal_series_length_books": "4",
+      "extended_universe_model": "Launch Book 1 at an accessible entry price alongside a prequel case-file lead magnet, followed by quarterly or 45-day series drops."
+    },
+    "pricing_tiers_usd": {
+      "reader_magnet_prequel_price": "0.00",
+      "book_1_standard_price": "2.99",
+      "book_2_standard_price": "4.99",
+      "book_3_finale_standard_price": "4.99",
+      "trilogy_box_set_bundle_price": "9.99",
+      "trade_paperback_print_price": "14.99"
+    },
+    "royalty_and_unit_economics": {
+      "kdp_70_percent_tier_min_price": "2.99",
+      "kdp_70_percent_tier_max_price": "9.99",
+      "kdp_standard_royalty_rate_percent": "70.00",
+      "direct_to_reader_grablab_net_margin_percent": "94.50",
+      "target_book_1_to_book_2_read_through_percent": "65.00"
+    },
+    "direct_to_reader_and_kdp_hybrid_windowing": [
+      "Direct Storefront Window: Offer signed paperback bundles (14.99) and digital case-file editions (4.99 / 9.99) on GrabLab CMS with ADR-025c exact pricing.",
+      "Wide & KU Strategy: Price Book 1 at 2.99 or 0.00 prequel magnet to maximize Book 2+ read-through at 4.99."
+    ]
+  },
+  "schema_org_book_defaults": {
+    "@context": "https://schema.org",
+    "@type": "Book",
+    "genre": [
+      "Thriller",
+      "Mystery",
+      "Suspense",
+      "Crime Fiction"
+    ],
+    "keywords": [
+      "psychological thriller",
+      "mystery series",
+      "investigative suspense",
+      "crime thriller",
+      "page turner"
+    ],
+    "inLanguage": "en-US",
+    "bookFormat": "https://schema.org/EBook",
+    "typicalAgeRange": "18-",
+    "isAccessibleForFree": false,
+    "offers_defaults": {
+      "@type": "Offer",
+      "priceCurrency": "USD",
+      "price": "4.99",
+      "availability": "https://schema.org/InStock"
+    }
+  }
+}

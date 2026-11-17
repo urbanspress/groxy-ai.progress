@@ -1,0 +1,242 @@
+{
+  "schema_version": "groxy-genre-playbook-v1.0",
+  "genre_slug": "true-crime",
+  "display_name": "True Crime",
+  "target_audience": {
+    "primary_demographics": {
+      "age_range": "21-65",
+      "core_age_bracket": "25-52",
+      "gender_skew": "Heavily engaged female and podcast-crossover audience drawn to investigative rigor, victim advocacy, and timeline reconstruction",
+      "reading_frequency": "2 to 7 investigative nonfiction titles per month across ebooks, audiobooks, and print",
+      "preferred_formats": [
+        "Narrative Nonfiction Audiobook",
+        "Digital Ebook (EPUB / Kindle / Mobile Web Reader)",
+        "Trade Paperback with Timeline & Source Notes",
+        "Regional Cold-Case Anthology Bundle"
+      ]
+    },
+    "reading_motivations": [
+      "Reconstructing complex timelines, forensic breakthroughs, and trial turning points accurately",
+      "Understanding behavioral red flags, investigative failures, and systemic blind spots",
+      "Honoring victims with dignity and factual precision rather than sensationalism"
+    ],
+    "emotional_payoffs": [
+      "Clarity as scattered court transcripts, witness reports, and forensic records snap into a coherent timeline",
+      "Respectful vindication when overlooked evidence finally brings accountability or closure",
+      "Actionable awareness of real-world patterns and investigative persistence"
+    ],
+    "cover_and_blurb_conversion_hooks": {
+      "cover_design_rules": [
+        "Documentary-grade archival texture, atmospheric location photography, or clean evidence-file typography legible at 120px",
+        "High-contrast editorial palette (charcoal, bone white, crimson, or muted brass) signaling factual rigor",
+        "Clear factual subtitle specifying location, year/era, or central investigative question"
+      ],
+      "blurb_structure_rules": [
+        "Paragraph 1 (The Tagline Hook): Factual 12-to-20-word premise anchoring the real date, place, and central mystery",
+        "Paragraph 2 (The Case & Victim Humanity): Ground the people affected and the unsettling discrepancy that defied easy answers",
+        "Paragraph 3 (The Investigation & Turning Point): Highlight the overlooked records, forensic shift, or dogged investigator who refused to close the file",
+        "Paragraph 4 (The Ultimatum Closer): Frame what the public record finally revealed—and what questions linger—with a clear series CTA"
+      ]
+    }
+  },
+  "pacing_and_structure": {
+    "novel_word_count_targets": {
+      "novella_lead_magnet_min_words": "18000",
+      "novella_lead_magnet_max_words": "30000",
+      "standard_series_installment_min_words": "55000",
+      "standard_series_installment_max_words": "85000",
+      "epic_standalone_or_finale_min_words": "85000",
+      "epic_standalone_or_finale_max_words": "115000",
+      "box_set_omnibus_min_words": "160000"
+    },
+    "chapter_word_count_targets": {
+      "ideal_chapter_min_words": "2000",
+      "ideal_chapter_max_words": "3400",
+      "hard_ceiling_words": "4200",
+      "mobile_scroll_pacing_note": "Anchor every chapter with a clear date/location header and keep sections between 2000 and 3400 words for bingeable documentary flow."
+    },
+    "act_structure": {
+      "act_1_the_inciting_hustle": {
+        "percentage_range": "0.00 to 25.00",
+        "structural_beats": [
+          "Open with verified scene-setting and the fateful turning point within the first 500 words",
+          "Center the victim's life, community context, and the initial official assumptions",
+          "Expose the first documented timeline contradiction by the 25.00 percent mark"
+        ]
+      },
+      "act_2_escalation_and_pressure_cooker": {
+        "percentage_range": "25.00 to 75.00",
+        "structural_beats": [
+          "First Half (25.00 to 50.00 percent): Trace early leads, jurisdictional friction, and overlooked physical records",
+          "Midpoint Reversal (50.00 percent): A fresh witness, DNA/digital record, or FOIA release flips the investigative focus",
+          "Second Half (50.00 to 75.00 percent): Legal hurdles, stalled appeals, or mounting pressure on the primary suspect"
+        ]
+      },
+      "act_3_retribution_and_reckoning": {
+        "percentage_range": "75.00 to 100.00",
+        "structural_beats": [
+          "The Counter-Play (75.00 to 88.00 percent): Reconstruct the prosecution or cold-case task force's decisive evidentiary chain",
+          "The Climax (88.00 to 95.00 percent): Trial verdict, confession, or definitive forensic identification",
+          "The Resolution or Series Cliffhanger (95.00 to 100.00 percent): Summarize verified aftermath, policy/reform impact, and source notes"
+        ]
+      }
+    },
+    "cliffhanger_cadence": {
+      "micro_tension_interval_words": "650",
+      "chapter_ending_cliffhanger_rate_percent": "78.00",
+      "mandatory_chapter_exit_hooks": [
+        "The Archival Contradiction: A verified receipt, call log, or deposition line that disproves the official alibi",
+        "The Cold-Case Reopen: A new detective or journalist spotting an unexamined box in evidence storage",
+        "The Courtroom Pivot: A surprise ruling or forensic exhibit entering the record",
+        "The Unanswered Record: Closing a chapter on the exact gap investigators next had to bridge"
+      ],
+      "series_arc_cliffhanger_strategy": "Organize thematic regional or era anthologies (e.g., Cold Case Files Vol. 1–3) where each volume stands alone completely with full source citations."
+    }
+  },
+  "trope_checklist": {
+    "core_tropes_readers_expect": [
+      {
+        "trope_id": "TC-TROPE-001",
+        "name": "Timestamped Timeline Reconstruction",
+        "execution_rule": "Header chapters with clear dates and locations so readers track movements, alibis, and evidence chains effortlessly."
+      },
+      {
+        "trope_id": "TC-TROPE-002",
+        "name": "Dignified Victim-First Framing",
+        "execution_rule": "Humanize victims through verified family memories and lived context rather than reducing them to crime-scene statistics."
+      },
+      {
+        "trope_id": "TC-TROPE-003",
+        "name": "Documented Source Attribution",
+        "execution_rule": "Distinguish strictly between verified public records, sworn testimony, and clearly labeled investigative hypotheses."
+      }
+    ],
+    "cliches_and_anti_patterns_to_avoid": [
+      {
+        "anti_pattern_id": "TC-AVOID-001",
+        "name": "Invented Composite Dialogue Presented as Fact",
+        "prevention_rule": "Never fabricate verbatim quotes or private thoughts without explicit attribution to sworn testimony, recordings, or memoirs."
+      },
+      {
+        "anti_pattern_id": "TC-AVOID-002",
+        "name": "Gratuitous Gore & Sensationalism",
+        "prevention_rule": "Report forensic facts clinically and respectfully without lingering on exploitative violence."
+      },
+      {
+        "anti_pattern_id": "TC-AVOID-003",
+        "name": "Defamatory Unverified Accusations",
+        "prevention_rule": "Rely strictly on public court filings, official investigative files, and documented journalism."
+      }
+    ]
+  },
+  "character_archetypes": {
+    "protagonist_models": [
+      {
+        "archetype": "The Persistent Cold-Case Investigator / Investigative Journalist",
+        "core_drive": "Giving overlooked families answers through meticulous archival and forensic verification",
+        "strengths": "Patience with paper trails, empathy in interviews, disciplined skepticism",
+        "fatal_flaw": "Emotional toll from carrying unresolved injustice across years of dead ends"
+      }
+    ],
+    "antagonist_models": [
+      {
+        "archetype": "The Deceptive Perpetrator & Institutional Neglect",
+        "motivation": "Concealing guilt behind social charm, jurisdictional gaps, or lost paperwork",
+        "tactic": "Relies on time, intimidation, and fragmented records to evade scrutiny"
+      }
+    ],
+    "foil_and_ensemble_dynamics": {
+      "the_family_advocate": "Relative or community organizer whose persistence kept the case alive in public memory",
+      "the_forensic_specialist": "DNA genealogist, ballistics analyst, or digital forensics expert unlocking modern leads",
+      "spin_off_seeding_rule": "Cross-reference related regional casebooks and offer downloadable timeline dossiers on the author's GrabLab CMS storefront."
+    }
+  },
+  "voice_and_dialogue_rules": {
+    "pov_conventions": {
+      "preferred_pov": "Objective Narrative Nonfiction Third-Person (journalistic documentary voice)",
+      "secondary_pov_option": "First-Person Investigative Memoir when authored by a case participant or journalist",
+      "head_hopping_rule": "Never invent unattributed internal thoughts of real people; attribute perspectives strictly to documented records."
+    },
+    "dialogue_cadence": {
+      "dialogue_to_narration_ratio_percent": "20.00 to 35.00",
+      "rhythm_and_vernacular_rules": [
+        "Use verbatim excerpts only where grounded in transcripts, interviews, or public records",
+        "Maintain crisp, authoritative journalistic pacing free of melodramatic speculation",
+        "Use clear transitions between archival chronology and courtroom scenes"
+      ]
+    },
+    "sensory_grounding": {
+      "required_sensory_layers_per_scene": "2",
+      "signature_urban_textures": [
+        "Auditory: Microfilm reels clicking, courtroom gavel, distant highway hum along a county road",
+        "Visual: Fluorescent basement archives, faded polaroids, annotated street maps",
+        "Olfactory and Tactile: Aged newsprint, dry courthouse oak, winter wind outside a precinct"
+      ]
+    },
+    "hemingway_clarity_checks": {
+      "target_reading_grade_level": "7.50",
+      "max_reading_grade_level": "9.00",
+      "average_sentence_length_words": "15",
+      "hard_sentence_length_ceiling_words": "28",
+      "passive_voice_max_percent": "5.00",
+      "adverb_density_max_percent": "1.50",
+      "clarity_directives": [
+        "State dates, names, and verifiable actions clearly in active voice",
+        "Eliminate vague hedging clichés when citing documented evidence",
+        "Keep paragraphs focused (2 to 5 sentences) so complex timelines stay effortless to follow"
+      ]
+    }
+  },
+  "publishing_and_pricing_tiers": {
+    "series_launch_strategy": {
+      "rapid_release_cadence_days": "60",
+      "optimal_series_length_books": "3",
+      "extended_universe_model": "Offer a free 0.00 Case-File Dossier lead magnet, individual casebooks at 2.99 to 4.99, anthology bundle at 9.99, and trade paperback at 14.99."
+    },
+    "pricing_tiers_usd": {
+      "reader_magnet_prequel_price": "0.00",
+      "book_1_standard_price": "2.99",
+      "book_2_standard_price": "4.99",
+      "book_3_finale_standard_price": "4.99",
+      "trilogy_box_set_bundle_price": "9.99",
+      "trade_paperback_print_price": "14.99"
+    },
+    "royalty_and_unit_economics": {
+      "kdp_70_percent_tier_min_price": "2.99",
+      "kdp_70_percent_tier_max_price": "9.99",
+      "kdp_standard_royalty_rate_percent": "70.00",
+      "direct_to_reader_grablab_net_margin_percent": "94.50",
+      "target_book_1_to_book_2_read_through_percent": "62.00"
+    },
+    "direct_to_reader_and_kdp_hybrid_windowing": [
+      "Direct Documentary Storefront: Host companion timelines and source appendices on GrabLab CMS alongside 4.99 digital / 14.99 print editions.",
+      "Anthology Funnel: Bundle 3 regional casebooks at 9.99 with exact ADR-025c pricing."
+    ]
+  },
+  "schema_org_book_defaults": {
+    "@context": "https://schema.org",
+    "@type": "Book",
+    "genre": [
+      "True Crime",
+      "Narrative Nonfiction",
+      "Investigative Journalism"
+    ],
+    "keywords": [
+      "true crime",
+      "cold case investigation",
+      "forensic history",
+      "courtroom nonfiction",
+      "investigative documentary"
+    ],
+    "inLanguage": "en-US",
+    "bookFormat": "https://schema.org/EBook",
+    "typicalAgeRange": "18-",
+    "isAccessibleForFree": false,
+    "offers_defaults": {
+      "@type": "Offer",
+      "priceCurrency": "USD",
+      "price": "4.99",
+      "availability": "https://schema.org/InStock"
+    }
+  }
+}

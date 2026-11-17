@@ -1,7 +1,7 @@
 # GROXY-AI-SPEC-170 — Multi-Genre Storytelling Brain, Hemingway Readability Auditor & `schema.org/Book` JSON-LD Engine
 
 - **Version:** Groxy AI `v1.7.0`
-- **Status:** Approved; implementation in progress
+- **Status:** Approved & Frozen — Complete
 - **Draft Date:** 2026-11-17
 - **SemVer:** MINOR — backwards-compatible feature release (`ADR-027c`).
 - **Frozen baselines:** Groxy AI `v1.0.0` through `v1.6.0`; GRAB `v1.1.0`; Grex JS `v1.0.0`; GrabLab CMS `v1.0.1`; Grex Theme Builder `v1.0.0`; Gashboard `v1.0.0`; Groxy Desk `v1.0.0`.
@@ -138,7 +138,7 @@ Renders inside `views/dashboard.grab.html` + `public/groxy/author-studio.js` (an
 
 ## 10. Owner Review & Next Phase
 
-**Approved as written (2026-11-17).** Stage 2 Pre-Implementation Cross-Layer Security & Contract Audit verdict: **`PASS`** (Section 11). Next phase: **Stage 3** implementation and all Section 9 acceptance gates (implementing Binding Conditions `C1–C8`) on **`Hydrogen (High)`** (or **`Claude Sonnet (High)`**) per the [AGENTS.md](../AGENTS.md) 4-pool routing matrix.
+**Approved & Frozen — Complete (2026-11-17).** Stage 2 Pre-Implementation Cross-Layer Security & Contract Audit verdict: **`PASS`** (Section 11). Stage 3 implementation, `94/94` Node unit/DOM tests, and live 4-layer Gate 3B (`integration_e2e.py`, `release-ready: True`) passed 100% across Binding Conditions `C1–C8`. Next milestone: `v1.8.0` Stage 1 Spec-First Gate (`Claude Sonnet (Medium)` / `Hydrogen (Medium)`).
 
 ---
 

@@ -16,6 +16,7 @@ import * as pubEmailFlows from "../public/groxy/email-flows.js";
 import * as pubCommerceEngines from "../public/groxy/commerce-engines.js";
 import * as pubDbConsultant from "../public/groxy/db-consultant.js";
 import * as pubSectionCopilot from "../public/groxy/section-copilot.js";
+import * as pubAuthorStudio from "../public/groxy/author-studio.js";
 
 import * as assetPlaybook from "../assets/playbook.js";
 import * as assetAuditor from "../assets/auditor.js";
@@ -29,11 +30,12 @@ import * as assetEmailFlows from "../assets/email-flows.js";
 import * as assetCommerceEngines from "../assets/commerce-engines.js";
 import * as assetDbConsultant from "../assets/db-consultant.js";
 import * as assetSectionCopilot from "../assets/section-copilot.js";
+import * as assetAuthorStudio from "../assets/author-studio.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..");
 
-test("v1.6.0 runtime version metadata is synchronized across src/, views/, public/groxy/, and assets/", () => {
+test("v1.7.0 runtime version metadata is synchronized across src/, views/, public/groxy/, and assets/", () => {
   const runtimeModules = [
     ["public/groxy/playbook.js", pubPlaybook],
     ["public/groxy/auditor.js", pubAuditor],
@@ -47,6 +49,7 @@ test("v1.6.0 runtime version metadata is synchronized across src/, views/, publi
     ["public/groxy/commerce-engines.js", pubCommerceEngines],
     ["public/groxy/db-consultant.js", pubDbConsultant],
     ["public/groxy/section-copilot.js", pubSectionCopilot],
+    ["public/groxy/author-studio.js", pubAuthorStudio],
     ["assets/playbook.js", assetPlaybook],
     ["assets/auditor.js", assetAuditor],
     ["assets/booster.js", assetBooster],
@@ -59,23 +62,24 @@ test("v1.6.0 runtime version metadata is synchronized across src/, views/, publi
     ["assets/commerce-engines.js", assetCommerceEngines],
     ["assets/db-consultant.js", assetDbConsultant],
     ["assets/section-copilot.js", assetSectionCopilot],
+    ["assets/author-studio.js", assetAuthorStudio],
   ];
 
   for (const [label, mod] of runtimeModules) {
-    assert.equal(mod.GROXY_VERSION, "1.6.0", `${label} must export GROXY_VERSION === "1.6.0"`);
+    assert.equal(mod.GROXY_VERSION, "1.7.0", `${label} must export GROXY_VERSION === "1.7.0"`);
   }
 
   const groxyGrab = fs.readFileSync(path.join(REPO_ROOT, "src", "groxy.grab"), "utf8");
-  assert.ok(groxyGrab.includes('record {status: "ok", service: "groxy-ai", version: "1.6.0"}'));
-  assert.ok(groxyGrab.includes('record {status: "ready", service: "groxy-ai", version: "1.6.0"'));
+  assert.ok(groxyGrab.includes('record {status: "ok", service: "groxy-ai", version: "1.7.0"}'));
+  assert.ok(groxyGrab.includes('record {status: "ready", service: "groxy-ai", version: "1.7.0"'));
   assert.ok(groxyGrab.includes('set pb_out to copy_to_map using pb'));
-  assert.ok(groxyGrab.includes('set pb_out to collections.put using pb_out, "service_version", "1.6.0"'));
-  assert.ok(groxyGrab.includes('record {ok: yes, service: "groxy-ai", version: "1.6.0"'));
+  assert.ok(groxyGrab.includes('set pb_out to collections.put using pb_out, "service_version", "1.7.0"'));
+  assert.ok(groxyGrab.includes('record {ok: yes, service: "groxy-ai", version: "1.7.0"'));
 
   const viewHtml = fs.readFileSync(path.join(REPO_ROOT, "views", "dashboard.grab.html"), "utf8");
-  assert.ok(viewHtml.includes('<meta name="groxy-version" content="1.6.0">'));
-  assert.ok(viewHtml.includes('<span class="groxy-badge">v1.6.0</span>'));
-  assert.ok(viewHtml.includes("Groxy AI v1.6.0"));
+  assert.ok(viewHtml.includes('<meta name="groxy-version" content="1.7.0">'));
+  assert.ok(viewHtml.includes('<span class="groxy-badge">v1.7.0</span>'));
+  assert.ok(viewHtml.includes("Groxy AI v1.7.0"));
   assert.equal(/<div\b/i.test(viewHtml), false, "dashboard.grab.html must contain zero <div> tags");
 });
 

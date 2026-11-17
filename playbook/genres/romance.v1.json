@@ -1,0 +1,253 @@
+{
+  "schema_version": "groxy-genre-playbook-v1.0",
+  "genre_slug": "romance",
+  "display_name": "Romance",
+  "target_audience": {
+    "primary_demographics": {
+      "age_range": "18-60",
+      "core_age_bracket": "23-45",
+      "gender_skew": "Predominantly women seeking emotionally resonant connection, banter, and guaranteed Happily Ever After (HEA) payoff",
+      "reading_frequency": "4 to 15 titles per month across Kindle Unlimited, direct storefronts, and serialized trope collections",
+      "preferred_formats": [
+        "Digital Ebook (EPUB / Kindle / Mobile Web Reader)",
+        "Trade Paperback Special Edition",
+        "Duet-Narrated Romance Audiobook",
+        "Interconnected Series Box Set"
+      ]
+    },
+    "reading_motivations": [
+      "Electric chemistry, witty banter, and earned emotional vulnerability between two distinct leads",
+      "Comfort and trust in a guaranteed Happily Ever After (HEA) or Happily For Now (HFN)",
+      "Trope-rich escapism (forced proximity, enemies to lovers, grumpy-sunshine, second chance)"
+    ],
+    "emotional_payoffs": [
+      "The pivotal 'I choose you' confession where guarded leads drop their emotional armor",
+      "Grovel or grand gesture that directly repairs the Act 2/3 emotional wound",
+      "Warm, deeply satisfying epilogue confirming lasting partnership"
+    ],
+    "cover_and_blurb_conversion_hooks": {
+      "cover_design_rules": [
+        "Clear visual trope signaling: expressive illustrated or photorealistic couple framing with warm or moody lighting",
+        "Legible script/serif pairing with explicit series subtitle and trope clarity at 120px thumbnail size",
+        "Consistent color coding across interconnected standalones in the same universe"
+      ],
+      "blurb_structure_rules": [
+        "Paragraph 1 (The Tagline Hook): Punchy 12-to-20-word hook spotlighting the core trope and romantic collision",
+        "Paragraph 2 (Lead A Stakes): Introduce the first protagonist's goal, guarded heart, and why romance is inconvenient right now",
+        "Paragraph 3 (Lead B Chemistry): Introduce the counterpart's irresistible pull, secret vulnerability, and the forced proximity binding them",
+        "Paragraph 4 (The Ultimatum Closer): Frame the choice between guarding their heart or risking everything for love, plus HEA/series CTA"
+      ]
+    }
+  },
+  "pacing_and_structure": {
+    "novel_word_count_targets": {
+      "novella_lead_magnet_min_words": "18000",
+      "novella_lead_magnet_max_words": "28000",
+      "standard_series_installment_min_words": "55000",
+      "standard_series_installment_max_words": "80000",
+      "epic_standalone_or_finale_min_words": "80000",
+      "epic_standalone_or_finale_max_words": "98000",
+      "box_set_omnibus_min_words": "165000"
+    },
+    "chapter_word_count_targets": {
+      "ideal_chapter_min_words": "2000",
+      "ideal_chapter_max_words": "3400",
+      "hard_ceiling_words": "4200",
+      "mobile_scroll_pacing_note": "Alternate dual-POV chapters of 2000 to 3400 words so readers experience both sides of the yearning without losing momentum."
+    },
+    "act_structure": {
+      "act_1_the_inciting_hustle": {
+        "percentage_range": "0.00 to 25.00",
+        "structural_beats": [
+          "Open with an immediate spark, meet-disaster, or loaded reunion within the first 500 words",
+          "Establish each lead's internal emotional wound and external life goal",
+          "Lock the leads into forced proximity, fake dating, or shared stakes by 25.00 percent"
+        ]
+      },
+      "act_2_escalation_and_pressure_cooker": {
+        "percentage_range": "25.00 to 75.00",
+        "structural_beats": [
+          "First Half (25.00 to 50.00 percent): Banter deepens into reluctant care, first tender vulnerability, and rising romantic tension",
+          "Midpoint Reversal (50.00 percent): Defining kiss, intimacy breakthrough, or emotional confession raises what both leads stand to lose",
+          "Second Half (50.00 to 75.00 percent): External pressure and internal fear collide, culminating in the 75.00 percent Black Moment breakup or betrayal"
+        ]
+      },
+      "act_3_retribution_and_reckoning": {
+        "percentage_range": "75.00 to 100.00",
+        "structural_beats": [
+          "The Counter-Play (75.00 to 88.00 percent): Both leads confront their core fear independently and choose growth over self-protection",
+          "The Climax (88.00 to 95.00 percent): Earned grovel, public declaration, and mutual commitment resolving the central barrier",
+          "The Resolution or Series Cliffhanger (95.00 to 100.00 percent): Complete Happily Ever After (HEA) plus subtle hook introducing the next couple in the series"
+        ]
+      }
+    },
+    "cliffhanger_cadence": {
+      "micro_tension_interval_words": "650",
+      "chapter_ending_cliffhanger_rate_percent": "80.00",
+      "mandatory_chapter_exit_hooks": [
+        "The Unspoken Truth: A lingering gaze or overheard remark that exposes hidden feelings",
+        "The Interrupted Almost-Kiss: Rising heat cut short by an unexpected arrival or urgent message",
+        "The Dual-POV Reveal: Ending Lead A's chapter on misinterpretation, immediately answered by Lead B's yearning POV",
+        "The Emotional Ultimatum: A final spoken line forcing vulnerability in the next scene"
+      ],
+      "series_arc_cliffhanger_strategy": "Deliver a 100 percent complete HEA in every interconnected standalone while seeding the next sibling or best friend's love story in the epilogue."
+    }
+  },
+  "trope_checklist": {
+    "core_tropes_readers_expect": [
+      {
+        "trope_id": "RO-TROPE-001",
+        "name": "Forced Proximity / One Bed",
+        "execution_rule": "Create practical logistical reasons the leads must share space, forcing emotional masks to crack through everyday intimacy."
+      },
+      {
+        "trope_id": "RO-TROPE-002",
+        "name": "Grumpy x Sunshine / Opposites Attract",
+        "execution_rule": "Show how the guarded partner's quiet acts of service complement the optimistic partner's emotional courage."
+      },
+      {
+        "trope_id": "RO-TROPE-003",
+        "name": "Fake Dating / Marriage of Convenience",
+        "execution_rule": "Establish clear contractual boundaries early so every accidental moment of real tenderness feels electric and risky."
+      },
+      {
+        "trope_id": "RO-TROPE-004",
+        "name": "Earned Grovel & Emotional Repair",
+        "execution_rule": "When a lead wounds the other at the 75.00 percent beat, repair requires concrete behavioral change—not merely a flower bouquet."
+      }
+    ],
+    "cliches_and_anti_patterns_to_avoid": [
+      {
+        "anti_pattern_id": "RO-AVOID-001",
+        "name": "Miscommunication Easily Solved by One Text",
+        "prevention_rule": "Root third-act conflicts in genuine value clashes or deep trauma—never contrived silence over an overheard half-sentence."
+      },
+      {
+        "anti_pattern_id": "RO-AVOID-002",
+        "name": "Missing Happily Ever After in Marketed Romance",
+        "prevention_rule": "Never end a marketed romance standalone on an unresolved breakup; the emotional contract guarantees an earned HEA/HFN."
+      },
+      {
+        "anti_pattern_id": "RO-AVOID-003",
+        "name": "Passive Secondary Lead",
+        "prevention_rule": "Both partners must possess distinct careers, friendships, and agency outside the relationship."
+      }
+    ]
+  },
+  "character_archetypes": {
+    "protagonist_models": [
+      {
+        "archetype": "The Fiercely Independent Achiever",
+        "core_drive": "Protecting hard-won autonomy while secretly craving a partner who truly sees her",
+        "strengths": "Competence, wit, loyalty to chosen family",
+        "fatal_flaw": "Equating asking for help with weakness"
+      },
+      {
+        "archetype": "The Guarded Protector / Soft-Hearted Strategist",
+        "core_drive": "Proving worthy of love through quiet competence and unwavering devotion",
+        "strengths": "Attentiveness, steadiness under crisis, dry humor",
+        "fatal_flaw": "Withholding feelings out of fear of repeating past abandonment"
+      }
+    ],
+    "antagonist_models": [
+      {
+        "archetype": "The Internal Wound & External Pressure",
+        "motivation": "Competing career relocation, family expectations, or toxic ex-partner interference",
+        "tactic": "Exploits the leads' oldest insecurities right when commitment becomes real"
+      }
+    ],
+    "foil_and_ensemble_dynamics": {
+      "the_ride_or_die_best_friend": "Calls out self-sabotage with humor and sets up Book 2's spin-off romance",
+      "the_found_family_circle": "Sibling group, small-town regulars, or coworkers who root for the couple and anchor emotional stakes",
+      "spin_off_seeding_rule": "Seed 2 to 3 standout secondary characters with unmistakable chemistry in every book to power series read-through."
+    }
+  },
+  "voice_and_dialogue_rules": {
+    "pov_conventions": {
+      "preferred_pov": "First-Person Dual Alternating POV (Heroine / Hero clearly labeled at chapter open)",
+      "secondary_pov_option": "Close Third-Person Dual Alternating POV",
+      "head_hopping_rule": "Strictly one POV per chapter; never switch internal monologues mid-scene."
+    },
+    "dialogue_cadence": {
+      "dialogue_to_narration_ratio_percent": "50.00 to 62.00",
+      "rhythm_and_vernacular_rules": [
+        "Let banter carry affection, teasing, and subtext beneath surface sparring",
+        "Pair emotional dialogue with micro-physical awareness (breath, hands, posture, eye contact)",
+        "Avoid stiff formal declarations where authentic conversational cadence fits better"
+      ]
+    },
+    "sensory_grounding": {
+      "required_sensory_layers_per_scene": "3",
+      "signature_urban_textures": [
+        "Auditory: Rain on café windows, soft vinyl jazz, laughter across a crowded patio",
+        "Visual: Golden-hour light, handwritten margin notes, rolled shirtsleeves",
+        "Olfactory and Tactile: Cedarwood and vanilla, warm ceramic mugs, linen sheets, steady pulse"
+      ]
+    },
+    "hemingway_clarity_checks": {
+      "target_reading_grade_level": "6.50",
+      "max_reading_grade_level": "8.00",
+      "average_sentence_length_words": "14",
+      "hard_sentence_length_ceiling_words": "28",
+      "passive_voice_max_percent": "4.00",
+      "adverb_density_max_percent": "1.80",
+      "clarity_directives": [
+        "Replace melodramatic adverbs with physical emotion beats",
+        "Cut filter phrases ('she felt him look', 'he began to realize') so intimacy feels immediate",
+        "Keep paragraphs to 2 to 5 sentences for effortless mobile reading"
+      ]
+    }
+  },
+  "publishing_and_pricing_tiers": {
+    "series_launch_strategy": {
+      "rapid_release_cadence_days": "30",
+      "optimal_series_length_books": "3",
+      "extended_universe_model": "Release interconnected standalones every 30 to 45 days with a free bonus epilogue lead magnet bridging into the next couple."
+    },
+    "pricing_tiers_usd": {
+      "reader_magnet_prequel_price": "0.00",
+      "book_1_standard_price": "2.99",
+      "book_2_standard_price": "4.99",
+      "book_3_finale_standard_price": "4.99",
+      "trilogy_box_set_bundle_price": "9.99",
+      "trade_paperback_print_price": "14.99"
+    },
+    "royalty_and_unit_economics": {
+      "kdp_70_percent_tier_min_price": "2.99",
+      "kdp_70_percent_tier_max_price": "9.99",
+      "kdp_standard_royalty_rate_percent": "70.00",
+      "direct_to_reader_grablab_net_margin_percent": "94.50",
+      "target_book_1_to_book_2_read_through_percent": "70.00"
+    },
+    "direct_to_reader_and_kdp_hybrid_windowing": [
+      "Direct Storefront Bonus Edition: Offer special edition paperbacks (14.99) and trilogy digital box sets (9.99) on GrabLab CMS.",
+      "KU & Read-Through Funnel: Price prequel novella at 0.00, Book 1 at 2.99, and sequels at 4.99 with immediate backmatter links."
+    ]
+  },
+  "schema_org_book_defaults": {
+    "@context": "https://schema.org",
+    "@type": "Book",
+    "genre": [
+      "Romance",
+      "Contemporary Romance",
+      "Romantic Comedy"
+    ],
+    "keywords": [
+      "contemporary romance",
+      "forced proximity",
+      "happily ever after",
+      "dual pov romance",
+      "romance series"
+    ],
+    "inLanguage": "en-US",
+    "bookFormat": "https://schema.org/EBook",
+    "typicalAgeRange": "18-",
+    "isAccessibleForFree": false,
+    "offers_defaults": {
+      "@type": "Offer",
+      "priceCurrency": "USD",
+      "price": "4.99",
+      "availability": "https://schema.org/InStock"
+    }
+  }
+}

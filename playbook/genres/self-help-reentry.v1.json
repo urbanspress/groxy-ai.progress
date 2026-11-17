@@ -1,0 +1,242 @@
+{
+  "schema_version": "groxy-genre-playbook-v1.0",
+  "genre_slug": "self-help-reentry",
+  "display_name": "Self-Help / Re-Entry",
+  "target_audience": {
+    "primary_demographics": {
+      "age_range": "18-65",
+      "core_age_bracket": "24-50",
+      "gender_skew": "Broad readership including returning citizens, justice-impacted families, career rebuilders, and community mentors",
+      "reading_frequency": "Action-oriented readers completing 1 to 3 practical guides or workbooks per month",
+      "preferred_formats": [
+        "Accessible Trade Paperback & Facility-Approved Print Edition",
+        "Digital Ebook & Mobile Action Workbook",
+        "Plain-English Spoken Audiobook",
+        "Institutional / Community Bulk Pack"
+      ]
+    },
+    "reading_motivations": [
+      "Dignified, judgment-free practical roadmaps for housing, employment, credit repair, and family rebuilding",
+      "Step-by-step checklists that convert overwhelm into immediate 15-minute daily wins",
+      "Lived-experience credibility paired with concrete legal, financial, and mindset tools"
+    ],
+    "emotional_payoffs": [
+      "Renewed agency and self-respect without preachy condescension",
+      "Relief from clear, jargon-free steps replacing bureaucratic confusion",
+      "Confidence walking into interviews, parole check-ins, or family conversations prepared"
+    ],
+    "cover_and_blurb_conversion_hooks": {
+      "cover_design_rules": [
+        "Clean, authoritative, high-contrast typography with bold emerald, navy, or warm gold signal colors",
+        "Zero stigmatizing stereotypes; emphasize forward motion, clarity, and practical transformation",
+        "Clear subtitle stating the exact measurable outcome and audience benefit"
+      ],
+      "blurb_structure_rules": [
+        "Paragraph 1 (The Tagline Hook): Direct, empathetic 12-to-20-word promise naming the real-world hurdle and solution",
+        "Paragraph 2 (Reader Reality & Empathy): Acknowledge the systemic friction, stigma, and starting-over pressure honestly",
+        "Paragraph 3 (The Action Framework): Outline 3 concrete takeaways (90-day plan, resume/housing scripts, mindset resets)",
+        "Paragraph 4 (The Ultimatum Closer): Invite the reader to take Day 1 action now with a clear workbook/series CTA"
+      ]
+    }
+  },
+  "pacing_and_structure": {
+    "novel_word_count_targets": {
+      "novella_lead_magnet_min_words": "12000",
+      "novella_lead_magnet_max_words": "20000",
+      "standard_series_installment_min_words": "32000",
+      "standard_series_installment_max_words": "52000",
+      "epic_standalone_or_finale_min_words": "52000",
+      "epic_standalone_or_finale_max_words": "70000",
+      "box_set_omnibus_min_words": "95000"
+    },
+    "chapter_word_count_targets": {
+      "ideal_chapter_min_words": "1800",
+      "ideal_chapter_max_words": "2800",
+      "hard_ceiling_words": "3500",
+      "mobile_scroll_pacing_note": "Break every chapter into clear subheadings, real-world vignettes, and a 3-step action checklist under 2800 words."
+    },
+    "act_structure": {
+      "act_1_the_inciting_hustle": {
+        "percentage_range": "0.00 to 25.00",
+        "structural_beats": [
+          "Open with an authentic, grounded Day-One turning point within the first 400 words",
+          "Name the unspoken barriers (background checks, credit gaps, shame, isolation) plainly",
+          "Deliver one immediate Day-One quick win by the 25.00 percent mark to build momentum"
+        ]
+      },
+      "act_2_escalation_and_pressure_cooker": {
+        "percentage_range": "25.00 to 75.00",
+        "structural_beats": [
+          "First Half (25.00 to 50.00 percent): Core stability pillars—ID/documents, housing, steady income, and healthy routines",
+          "Midpoint Reversal (50.00 percent): Handling setbacks, rejections, and triggers without losing progress",
+          "Second Half (50.00 to 75.00 percent): Skill building, entrepreneurship/trade paths, financial literacy, and rebuilding trust"
+        ]
+      },
+      "act_3_retribution_and_reckoning": {
+        "percentage_range": "75.00 to 100.00",
+        "structural_beats": [
+          "The Counter-Play (75.00 to 88.00 percent): Assemble a 90-day personal operating plan and support network",
+          "The Climax (88.00 to 95.00 percent): Scripts and frameworks for high-stakes interviews, boundaries, and long-term goals",
+          "The Resolution or Series Cliffhanger (95.00 to 100.00 percent): Close with an empowering Day-90 milestone review and companion workbook link"
+        ]
+      }
+    },
+    "cliffhanger_cadence": {
+      "micro_tension_interval_words": "500",
+      "chapter_ending_cliffhanger_rate_percent": "75.00",
+      "mandatory_chapter_exit_hooks": [
+        "The Immediate Action Prompt: A 10-minute exercise readers can complete before closing the book",
+        "The Hard Question: A reflection prompt that leads directly into the next chapter's framework",
+        "The Case-Study Turn: A real-world scenario setting up the exact script solved in the next chapter",
+        "The Milestone Bridge: Summarizing today's win while previewing the next obstacle"
+      ],
+      "series_arc_cliffhanger_strategy": "Pair a core flagship handbook with focused companion workbooks (Employment & Trades, Financial Reset, Family & Mentorship)."
+    }
+  },
+  "trope_checklist": {
+    "core_tropes_readers_expect": [
+      {
+        "trope_id": "SR-TROPE-001",
+        "name": "Story -> Principle -> Exact Script",
+        "execution_rule": "Ground every piece of advice in a concrete human scenario followed by word-for-word scripts or templates."
+      },
+      {
+        "trope_id": "SR-TROPE-002",
+        "name": "Zero-Shame Accountability",
+        "execution_rule": "Speak directly as a trusted peer and mentor—honest about consequences, respectful of dignity, never preachy."
+      },
+      {
+        "trope_id": "SR-TROPE-003",
+        "name": "30-60-90 Day Milestone Checklists",
+        "execution_rule": "End every major module with small, measurable steps achievable without expensive resources."
+      }
+    ],
+    "cliches_and_anti_patterns_to_avoid": [
+      {
+        "anti_pattern_id": "SR-AVOID-001",
+        "name": "Toxic Positivity & Empty Slogans",
+        "prevention_rule": "Never replace practical logistics (records, transportation, budgeting, boundaries) with vague 'just manifest it' platitudes."
+      },
+      {
+        "anti_pattern_id": "SR-AVOID-002",
+        "name": "Academic Jargon & Legalistic Walls of Text",
+        "prevention_rule": "Translate complex policies or financial rules into crisp Grade-6-to-7 plain English."
+      },
+      {
+        "anti_pattern_id": "SR-AVOID-003",
+        "name": "Unverified Legal or Medical Claims",
+        "prevention_rule": "Provide practical educational guidance and encourage verification with local legal-aid or reentry navigators where rules vary by state."
+      }
+    ]
+  },
+  "character_archetypes": {
+    "protagonist_models": [
+      {
+        "archetype": "The Credible Mentor / Lived-Experience Guide",
+        "core_drive": "Sharing the exact map they wish someone had handed them on Day One",
+        "strengths": "Candor, practical street-and-system fluency, calm encouragement",
+        "fatal_flaw": "Assuming everyone starts with the same support network unless checklists adapt to zero-resource baselines"
+      }
+    ],
+    "antagonist_models": [
+      {
+        "archetype": "Systemic Friction & Isolation Cycles",
+        "motivation": "Paperwork hurdles, predatory fees, and self-doubt that pull people backward",
+        "tactic": "Overwhelms new starters with vague rules and scattered deadlines"
+      }
+    ],
+    "foil_and_ensemble_dynamics": {
+      "the_case_study_reader": "Representative stories showing realistic obstacles and realistic wins at 30, 60, and 180 days",
+      "the_community_ally": "Employers, trade instructors, and family champions modeling practical accountability",
+      "spin_off_seeding_rule": "Include printable resource appendices and cross-link companion workbooks for employment, credit, and entrepreneurship."
+    }
+  },
+  "voice_and_dialogue_rules": {
+    "pov_conventions": {
+      "preferred_pov": "Direct Second-Person & First-Person Authoritative Coaching ('You' + 'I / We')",
+      "secondary_pov_option": "Case-Study Third-Person Vignettes paired with direct reflection prompts",
+      "head_hopping_rule": "Keep coaching voice steady, respectful, and focused on the reader's next actionable step."
+    },
+    "dialogue_cadence": {
+      "dialogue_to_narration_ratio_percent": "25.00 to 35.00",
+      "rhythm_and_vernacular_rules": [
+        "Include realistic sample interview dialogues and boundary-setting scripts readers can practice aloud",
+        "Write in direct, respectful, plain English free of academic pretension",
+        "Use active imperatives and concrete verbs in action steps"
+      ]
+    },
+    "sensory_grounding": {
+      "required_sensory_layers_per_scene": "2",
+      "signature_urban_textures": [
+        "Auditory: Early bus brakes, quiet library study tables, workshop tools, steady phone call voice",
+        "Visual: Highlighted checklists, clean folder tabs, fresh morning light on a desk",
+        "Olfactory and Tactile: Crisp notebook paper, ink pen grip, fresh coffee, work boots on concrete"
+      ]
+    },
+    "hemingway_clarity_checks": {
+      "target_reading_grade_level": "6.00",
+      "max_reading_grade_level": "7.50",
+      "average_sentence_length_words": "12",
+      "hard_sentence_length_ceiling_words": "24",
+      "passive_voice_max_percent": "3.50",
+      "adverb_density_max_percent": "1.20",
+      "clarity_directives": [
+        "Write at a crisp Grade 6 clarity level so every reader can apply steps immediately under stress",
+        "Break multi-step instructions into numbered plain-English actions",
+        "Keep paragraphs to 2 to 4 sentences with generous scannable spacing"
+      ]
+    }
+  },
+  "publishing_and_pricing_tiers": {
+    "series_launch_strategy": {
+      "rapid_release_cadence_days": "45",
+      "optimal_series_length_books": "3",
+      "extended_universe_model": "Offer a free 0.00 First-30-Days starter guide lead magnet, core handbook at 4.99 digital / 14.99 paperback, and 9.99 complete workbook bundle."
+    },
+    "pricing_tiers_usd": {
+      "reader_magnet_prequel_price": "0.00",
+      "book_1_standard_price": "2.99",
+      "book_2_standard_price": "4.99",
+      "book_3_finale_standard_price": "4.99",
+      "trilogy_box_set_bundle_price": "9.99",
+      "trade_paperback_print_price": "14.99"
+    },
+    "royalty_and_unit_economics": {
+      "kdp_70_percent_tier_min_price": "2.99",
+      "kdp_70_percent_tier_max_price": "9.99",
+      "kdp_standard_royalty_rate_percent": "70.00",
+      "direct_to_reader_grablab_net_margin_percent": "94.50",
+      "target_book_1_to_book_2_read_through_percent": "60.00"
+    },
+    "direct_to_reader_and_kdp_hybrid_windowing": [
+      "Direct Community & Facility Access: Provide free 0.00 starter checklists alongside 14.99 durable trade paperbacks on GrabLab CMS.",
+      "Workbook Bundle: Package handbook + templates at 9.99 digital bundle for reentry coaches and self-guided readers."
+    ]
+  },
+  "schema_org_book_defaults": {
+    "@context": "https://schema.org",
+    "@type": "Book",
+    "genre": [
+      "Self-Help",
+      "Personal Growth",
+      "Reentry & Career"
+    ],
+    "keywords": [
+      "reentry guide",
+      "second chances",
+      "personal rebuilding",
+      "practical self help",
+      "90 day action plan"
+    ],
+    "inLanguage": "en-US",
+    "bookFormat": "https://schema.org/Paperback",
+    "typicalAgeRange": "18-",
+    "isAccessibleForFree": false,
+    "offers_defaults": {
+      "@type": "Offer",
+      "priceCurrency": "USD",
+      "price": "14.99",
+      "availability": "https://schema.org/InStock"
+    }
+  }
+}

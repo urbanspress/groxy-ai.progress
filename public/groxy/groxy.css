@@ -609,7 +609,8 @@ main#groxy-inspector-root {
   cursor: not-allowed;
   opacity: 0.72;
 }
-.groxy-section-copilot pre {
+.groxy-section-copilot pre,
+.groxy-author-studio pre {
   max-inline-size: 100%;
   max-height: 22rem;
   overflow: auto;
@@ -621,3 +622,29 @@ main#groxy-inspector-root {
   border: 1px solid var(--groxy-border);
   border-radius: 6px;
 }
+.groxy-author-studio {
+  color: var(--groxy-text);
+  background: var(--groxy-surface);
+  border: 1px solid var(--grex-color-border, var(--groxy-border));
+}
+.groxy-author-studio label,
+.groxy-author-studio summary,
+.groxy-author-studio dialog {
+  color: var(--groxy-text);
+  background: var(--groxy-surface);
+}
+.groxy-author-studio input,
+.groxy-author-studio select,
+.groxy-author-studio textarea {
+  color: var(--groxy-text);
+  background: var(--groxy-bg);
+  border: 1px solid var(--groxy-border);
+}
+.groxy-author-studio button {
+  min-height: 2.75rem;
+}
+.groxy-author-studio button:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+

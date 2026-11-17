@@ -33,6 +33,12 @@ set section_ledger_claim to data.prepare using commerce_db, "UPDATE groxy_sectio
 set section_ledger_finish to data.prepare using commerce_db, "UPDATE groxy_section_refine_ledger SET status = :status, outcome_json = :outcome_json WHERE refine_id = :refine_id AND status = 'applying'", record {params: record {refine_id: "text", status: "text", outcome_json: "text"}, columns: record {}}
 set section_ledger_expire_stale to data.prepare using commerce_db, "UPDATE groxy_section_refine_ledger SET status = 'expired' WHERE operator_id = :operator_id AND status = 'staged' AND expires_at <= :now_iso", record {params: record {operator_id: "text", now_iso: "text"}, columns: record {}}
 set section_ledger_count_pending to data.prepare using commerce_db, "SELECT refine_id FROM groxy_section_refine_ledger WHERE operator_id = :operator_id AND status = 'staged'", record {params: record {operator_id: "text"}, columns: record {refine_id: "text"}}
+set author_ledger_insert to data.prepare using commerce_db, "INSERT INTO groxy_author_ledger (plan_id, genre_slug, artifact_type, target_slot, builder_slot, slot_sha256, payload_sha256, payload_json, token_verifier, operator_id, site_id, status, created_at, expires_at, outcome_json) VALUES (:plan_id, :genre_slug, :artifact_type, :target_slot, :builder_slot, :slot_sha256, :payload_sha256, :payload_json, :token_verifier, :operator_id, :site_id, :status, :created_at, :expires_at, :outcome_json)", record {params: record {plan_id: "text", genre_slug: "text", artifact_type: "text", target_slot: "text", builder_slot: "text", slot_sha256: "text", payload_sha256: "text", payload_json: "text", token_verifier: "text", operator_id: "text", site_id: "text", status: "text", created_at: "text", expires_at: "text", outcome_json: "text"}, columns: record {}}
+set author_ledger_read to data.prepare using commerce_db, "SELECT plan_id, genre_slug, artifact_type, target_slot, builder_slot, slot_sha256, payload_sha256, payload_json, token_verifier, operator_id, site_id, status, created_at, expires_at, outcome_json FROM groxy_author_ledger WHERE plan_id = :plan_id", record {params: record {plan_id: "text"}, columns: record {plan_id: "text", genre_slug: "text", artifact_type: "text", target_slot: "text", builder_slot: "text", slot_sha256: "text", payload_sha256: "text", payload_json: "text", token_verifier: "text", operator_id: "text", site_id: "text", status: "text", created_at: "text", expires_at: "text", outcome_json: "text"}}
+set author_ledger_claim to data.prepare using commerce_db, "UPDATE groxy_author_ledger SET status = 'applying' WHERE plan_id = :plan_id AND status = 'staged'", record {params: record {plan_id: "text"}, columns: record {}}
+set author_ledger_finish to data.prepare using commerce_db, "UPDATE groxy_author_ledger SET status = :status, outcome_json = :outcome_json WHERE plan_id = :plan_id AND status = 'applying'", record {params: record {plan_id: "text", status: "text", outcome_json: "text"}, columns: record {}}
+set author_ledger_expire_stale to data.prepare using commerce_db, "UPDATE groxy_author_ledger SET status = 'expired' WHERE operator_id = :operator_id AND status = 'staged' AND expires_at <= :now_iso", record {params: record {operator_id: "text", now_iso: "text"}, columns: record {}}
+set author_ledger_count_pending to data.prepare using commerce_db, "SELECT plan_id FROM groxy_author_ledger WHERE operator_id = :operator_id AND status = 'staged'", record {params: record {operator_id: "text"}, columns: record {plan_id: "text"}}
 
 make safe_asset_url using raw_path
   try
@@ -290,6 +296,19 @@ make hex_digit_val using ch
     set idx to idx plus 1
   end
   give back -1
+end
+
+make sqlite_jitter_backoff using seed_str
+  set j_seed to crypto.random_hex using 16
+  set j_chars to text.split using j_seed, ""
+  set spins to 40 plus ((hex_digit_val using (j_chars at 0)) times 25)
+  set i to 0
+  set acc to seed_str
+  while i is less than spins
+    set acc to crypto.sha256_hex using acc
+    set i to i plus 1
+  end
+  give back acc
 end
 
 make parse_hex_color using raw_color
@@ -3868,6 +3887,10 @@ make escape_jsonld_for_script using raw_json
   set s to text.replace using raw_json, "<", "\\u003c"
   set s to text.replace using s, ">", "\\u003e"
   set s to text.replace using s, "&", "\\u0026"
+  set u2028 to json.parse using "\"\\u2028\""
+  set u2029 to json.parse using "\"\\u2029\""
+  set s to text.replace using s, u2028, "\\u2028"
+  set s to text.replace using s, u2029, "\\u2029"
   give back s
 end
 
@@ -4350,7 +4373,7 @@ make render_site_dna_md_grab using dna
 end
 
 route "GET" "/_health"
-  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "1.6.0"}
+  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "1.7.0"}
 end
 
 route "GET" "/_ready"
@@ -4360,7 +4383,11 @@ route "GET" "/_ready"
     if rule_cnt is not 22
       give back server.json using 503, record {status: "not_ready", error: "Playbook rule count mismatch"}
     end
-    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "1.6.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt}
+    set genres_chk to call load_genre_playbook_registry
+    if not genres_chk.ok
+      give back server.json using 503, record {status: "not_ready", error: genres_chk.error}
+    end
+    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "1.7.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt, genre_playbook_count: (collections.length using genres_chk.genres)}
   catch err
     give back server.json using 503, record {status: "not_ready", error: err.message}
   end
@@ -4380,7 +4407,7 @@ end
 route "GET" "/api/groxy/playbook"
   set pb to load_playbook_doc using groxy_cache
   set pb_out to copy_to_map using pb
-  set pb_out to collections.put using pb_out, "service_version", "1.6.0"
+  set pb_out to collections.put using pb_out, "service_version", "1.7.0"
   give back server.json using 200, pb_out
 end
 
@@ -4477,7 +4504,7 @@ route "POST" "/api/groxy/mcp/inspect" using req
       end
     end
 
-    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "1.6.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
+    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "1.7.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
   catch err
     give back server.json using 400, record {ok: no, error: err.message}
   end
@@ -7356,11 +7383,38 @@ route "POST" "/api/groxy/commerce/apply" using req
     end
     set commerce_apply_phase to "atomic_claim"
     # The single conditional UPDATE is itself the durable compare-and-set.
-    # Avoid a deferred read/write transaction here: concurrent SQLite workers
-    # can both begin and then fail while upgrading their locks instead of
-    # producing one committed winner and one zero-row loser.
-    set claim_result to data.execute using commerce_claim_plan, record {plan_id: plan_id}
-    if claim_result.rows_affected is 0
+    # Retry briefly only on SQLITE_BUSY ("database conflict") when busy_timeout=0.
+    set c_claimed to no
+    set c_attempt to 0
+    while (not c_claimed) and c_attempt is less than 8
+      set c_attempt to c_attempt plus 1
+      try
+        set claim_result to data.execute using commerce_claim_plan, record {plan_id: plan_id}
+        if claim_result.rows_affected is 0
+          give back server.json using 409, record {ok: no, code: "COMMERCE_APPROVAL_REPLAY", error: "This approval is already being applied or was already consumed."}
+        end
+        set c_claimed to yes
+      catch c_claim_err
+        if c_claim_err.message is "database conflict"
+          try
+            set c_recheck to data.query using commerce_read_rows, record {plan_id: plan_id}
+            if (collections.length using c_recheck) is greater than 0 and ((c_recheck at 0).status is not "staged")
+              give back server.json using 409, record {ok: no, code: "COMMERCE_APPROVAL_REPLAY", error: "This approval is already being applied or was already consumed."}
+            end
+          catch c_recheck_err
+            set ignored_crc to c_recheck_err.message
+          end
+          if c_attempt is less than 8
+            call sqlite_jitter_backoff using plan_id
+          otherwise
+            give back server.json using 409, record {ok: no, code: "COMMERCE_APPROVAL_REPLAY", error: "This approval is already being applied or was already consumed."}
+          end
+        otherwise
+          raise c_claim_err.message
+        end
+      end
+    end
+    if not c_claimed
       give back server.json using 409, record {ok: no, code: "COMMERCE_APPROVAL_REPLAY", error: "This approval is already being applied or was already consumed."}
     end
     # Operations are deliberately taken only from the immutable manifest. The
@@ -7918,8 +7972,8 @@ route "POST" "/api/groxy/db/architect-quiz" using req
     set base_mig_records to ""
     set mig_version to "1"
     if target_id is "commerce" or target_id is "commerce_inspect"
-      set base_mig_records to "record {version: 1, name: \"create_commerce_approval_ledger\", steps: [\"CREATE TABLE groxy_commerce_plans (plan_id TEXT PRIMARY KEY, engine TEXT NOT NULL, target_slot TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\"]}, record {version: 2, name: \"create_db_consultant_ledger\", steps: [\"CREATE TABLE db_consultant_ledger (plan_id TEXT PRIMARY KEY, target_id TEXT NOT NULL, origin TEXT NOT NULL, migration_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, risk_level TEXT NOT NULL, risk_acknowledged INTEGER NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\", \"CREATE TABLE db_target_locks (target_id TEXT PRIMARY KEY, locked_by_plan TEXT NOT NULL, locked_at TEXT NOT NULL)\"]}, record {version: 3, name: \"create_section_refine_ledger\", steps: [\"CREATE TABLE groxy_section_refine_ledger (refine_id TEXT PRIMARY KEY, slot TEXT NOT NULL, builder_slot TEXT NOT NULL, section_id TEXT NOT NULL, subtree_sha256 TEXT NOT NULL, slot_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\"]}, "
-      set mig_version to "4"
+      set base_mig_records to "record {version: 1, name: \"create_commerce_approval_ledger\", steps: [\"CREATE TABLE groxy_commerce_plans (plan_id TEXT PRIMARY KEY, engine TEXT NOT NULL, target_slot TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\"]}, record {version: 2, name: \"create_db_consultant_ledger\", steps: [\"CREATE TABLE db_consultant_ledger (plan_id TEXT PRIMARY KEY, target_id TEXT NOT NULL, origin TEXT NOT NULL, migration_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, risk_level TEXT NOT NULL, risk_acknowledged INTEGER NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\", \"CREATE TABLE db_target_locks (target_id TEXT PRIMARY KEY, locked_by_plan TEXT NOT NULL, locked_at TEXT NOT NULL)\"]}, record {version: 3, name: \"create_section_refine_ledger\", steps: [\"CREATE TABLE groxy_section_refine_ledger (refine_id TEXT PRIMARY KEY, slot TEXT NOT NULL, builder_slot TEXT NOT NULL, section_id TEXT NOT NULL, subtree_sha256 TEXT NOT NULL, slot_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\"]}, record {version: 4, name: \"create_author_ledger\", steps: [\"CREATE TABLE groxy_author_ledger (plan_id TEXT PRIMARY KEY, genre_slug TEXT NOT NULL, artifact_type TEXT NOT NULL, target_slot TEXT NOT NULL, builder_slot TEXT NOT NULL, slot_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\"]}, "
+      set mig_version to "5"
     end
     set migration_text to "use data\n\nset store_db to data.open using \"" joined with target_db_alias joined with "\"\nset result to data.migrate using store_db, [" joined with base_mig_records joined with "record {version: " joined with mig_version joined with ", name: \"groxy_store_schema_v1\", steps: [" joined with mig_steps_json joined with "]}]\nshow result\n"
     set migration_sha to crypto.sha256_hex using migration_text
@@ -8155,10 +8209,20 @@ route "POST" "/api/groxy/db/apply" using req
       give back server.json using 403, record {ok: no, code: "DB_RISK_NOT_ACKNOWLEDGED", error: "High-risk database changes require explicit risk_acknowledged: true."}
     end
 
-    try
-      call data.execute using db_target_lock_acquire, record {target_id: target_id, locked_by_plan: plan_id, locked_at: now_value.iso}
-    catch lock_err
-      give back server.json using 409, record {ok: no, code: "DB_TARGET_LOCKED", error: "The target database is locked by an ongoing database operation."}
+    set db_locked to no
+    set db_lock_try to 0
+    while (not db_locked) and db_lock_try is less than 8
+      set db_lock_try to db_lock_try plus 1
+      try
+        call data.execute using db_target_lock_acquire, record {target_id: target_id, locked_by_plan: plan_id, locked_at: now_value.iso}
+        set db_locked to yes
+      catch lock_err
+        if lock_err.message is "database conflict" and db_lock_try is less than 8
+          call sqlite_jitter_backoff using plan_id
+        otherwise
+          give back server.json using 409, record {ok: no, code: "DB_TARGET_LOCKED", error: "The target database is locked by an ongoing database operation."}
+        end
+      end
     end
 
     set claim_result to data.execute using db_ledger_claim, record {plan_id: plan_id}
@@ -10012,4 +10076,1412 @@ route "POST" "/api/groxy/section-refine/apply" using req
   call data.execute using section_ledger_finish, record {refine_id: refine_id, status: "applied", outcome_json: applied_out}
 
   give back server.json using 201, record {ok: yes, schema_version: "1.6.0", approved: yes, refine_id: refine_id, slot: raw_slot, builder_slot: staged.builder_slot, section_id: section_id, subtree_sha256: subtree_sha, spliced_slot_sha256: immutable.spliced_slot_sha256, actor: "groxy-ai", command_stack_action: "applyAiLayout", undo_available: yes, builder_receipt: receipt}
+end
+
+# ---------------------------------------------------------------------------
+# Groxy AI v1.7.0 — Multi-Genre Storytelling Brain, Hemingway Readability
+# Auditor & XSS-Safe schema.org/Book JSON-LD Engine
+# ---------------------------------------------------------------------------
+
+make author_required_genre_slugs
+  give back ["urban-fiction", "thriller", "romance", "sci-fi-fantasy", "self-help-reentry", "true-crime"]
+end
+
+make author_string_has_xss using raw_val
+  set s to text.lower using (text.from using raw_val)
+  if (text.contains using s, "<script") or (text.contains using s, "</script") or (text.contains using s, "<iframe") or (text.contains using s, "<object") or (text.contains using s, "<embed") or (text.contains using s, "<style") or (text.contains using s, "<div")
+    give back yes
+  end
+  if (text.contains using s, "javascript:") or (text.contains using s, "vbscript:") or (text.contains using s, "file:") or (text.contains using s, "data:")
+    give back yes
+  end
+  if (text.contains using s, "onload=") or (text.contains using s, "onerror=") or (text.contains using s, "onclick=") or (text.contains using s, "onfocus=") or (text.contains using s, "onmouseover=")
+    give back yes
+  end
+  give back no
+end
+
+make author_scan_xss_tree using val, path_label
+  if is_text_value using val
+    if author_string_has_xss using (text.from using val)
+      give back record {ok: no, error: ("Unsafe HTML or script payload in " joined with path_label)}
+    end
+    give back record {ok: yes, error: ""}
+  end
+  if is_list_value using val
+    set idx to 0
+    for each item in val
+      set r to author_scan_xss_tree using item, (path_label joined with "[" joined with (text.from using idx) joined with "]")
+      if not r.ok
+        give back r
+      end
+      set idx to idx plus 1
+    end
+    give back record {ok: yes, error: ""}
+  end
+  if is_record_value using val
+    for each k in (collections.keys using val)
+      set r to author_scan_xss_tree using (val at k), (path_label joined with "." joined with k)
+      if not r.ok
+        give back r
+      end
+    end
+  end
+  give back record {ok: yes, error: ""}
+end
+
+make author_validate_genre_playbook using pb, expected_slug
+  if not (is_record_value using pb)
+    give back record {ok: no, error: "Genre playbook must be a JSON object."}
+  end
+  if (map_get_str using pb, "schema_version", "") is not "groxy-genre-playbook-v1.0"
+    give back record {ok: no, error: "Genre playbook schema_version must be groxy-genre-playbook-v1.0."}
+  end
+  set gslug to text.trim using (map_get_str using pb, "genre_slug", "")
+  if not (is_valid_slug_format using gslug)
+    give back record {ok: no, error: "Genre playbook has invalid genre_slug."}
+  end
+  if expected_slug is not "" and gslug is not expected_slug
+    give back record {ok: no, error: ("Genre playbook slug mismatch: expected " joined with expected_slug)}
+  end
+  if (text.trim using (map_get_str using pb, "display_name", "")) is ""
+    give back record {ok: no, error: "Genre playbook missing display_name."}
+  end
+  for each req_sec in ["target_audience", "pacing_and_structure", "trope_checklist", "character_archetypes", "voice_and_dialogue_rules", "publishing_and_pricing_tiers", "schema_org_book_defaults"]
+    if not (has_map_key using pb, req_sec) or not (is_record_value using (pb at req_sec))
+      give back record {ok: no, error: ("Genre playbook missing section: " joined with req_sec)}
+    end
+  end
+  set xss_chk to author_scan_xss_tree using pb, gslug
+  if not xss_chk.ok
+    give back xss_chk
+  end
+
+  set pacing to pb at "pacing_and_structure"
+  for each wc_bag_k in ["novel_word_count_targets", "chapter_word_count_targets"]
+    if not (has_map_key using pacing, wc_bag_k) or not (is_record_value using (pacing at wc_bag_k))
+      give back record {ok: no, error: ("Missing pacing_and_structure." joined with wc_bag_k)}
+    end
+    set wc_bag to pacing at wc_bag_k
+    for each wk in (collections.keys using wc_bag)
+      if text.ends_with using wk, "_words"
+        if not (is_exact_integer_wire_str using (wc_bag at wk))
+          give back record {ok: no, error: ("Word count target " joined with wk joined with " must be an exact base-10 integer wire string.")}
+        end
+      end
+    end
+  end
+
+  set voice to pb at "voice_and_dialogue_rules"
+  if not (has_map_key using voice, "hemingway_clarity_checks") or not (is_record_value using (voice at "hemingway_clarity_checks"))
+    give back record {ok: no, error: "Missing voice_and_dialogue_rules.hemingway_clarity_checks."}
+  end
+  set hem to voice at "hemingway_clarity_checks"
+  for each hdec in ["target_reading_grade_level", "max_reading_grade_level", "passive_voice_max_percent", "adverb_density_max_percent"]
+    if not (has_map_key using hem, hdec) or not (is_strict_decimal_wire_str using (hem at hdec))
+      give back record {ok: no, error: ("hemingway_clarity_checks." joined with hdec joined with " must be an exact base-10 decimal wire string.")}
+    end
+  end
+  for each hint in ["average_sentence_length_words", "hard_sentence_length_ceiling_words"]
+    if not (has_map_key using hem, hint) or not (is_exact_integer_wire_str using (hem at hint))
+      give back record {ok: no, error: ("hemingway_clarity_checks." joined with hint joined with " must be an exact base-10 integer wire string.")}
+    end
+  end
+
+  set pub to pb at "publishing_and_pricing_tiers"
+  if not (has_map_key using pub, "pricing_tiers_usd") or not (is_record_value using (pub at "pricing_tiers_usd"))
+    give back record {ok: no, error: "Missing publishing_and_pricing_tiers.pricing_tiers_usd."}
+  end
+  set tiers to pub at "pricing_tiers_usd"
+  set tier_vals to []
+  for each tk in (collections.keys using tiers)
+    set tv to tiers at tk
+    if not (is_strict_decimal_wire_str using tv)
+      give back record {ok: no, error: ("pricing_tiers_usd." joined with tk joined with " must be an exact ADR-025c base-10 wire string.")}
+    end
+    set tier_vals to collections.append using tier_vals, (text.from using tv)
+  end
+  for each req_tier in ["0.00", "2.99", "4.99", "9.99", "14.99"]
+    if not (list_contains using tier_vals, req_tier)
+      give back record {ok: no, error: ("pricing_tiers_usd missing canonical ADR-025c tier " joined with req_tier)}
+    end
+  end
+
+  set s_org to pb at "schema_org_book_defaults"
+  if (map_get_str using s_org, "@context", "") is not "https://schema.org"
+    give back record {ok: no, error: "schema_org_book_defaults.@context must be plain https://schema.org."}
+  end
+  if (map_get_str using s_org, "@type", "") is not "Book"
+    give back record {ok: no, error: "schema_org_book_defaults.@type must be Book."}
+  end
+  set bf to map_get_str using s_org, "bookFormat", ""
+  if (text.contains using bf, "](") or not (list_contains using ["https://schema.org/EBook", "https://schema.org/Paperback", "https://schema.org/Hardcover", "https://schema.org/AudiobookFormat"], bf)
+    give back record {ok: no, error: "schema_org_book_defaults.bookFormat must be a plain https://schema.org/ URL."}
+  end
+  if not (has_map_key using s_org, "offers_defaults") or not (is_record_value using (s_org at "offers_defaults"))
+    give back record {ok: no, error: "Missing schema_org_book_defaults.offers_defaults."}
+  end
+  set off_d to s_org at "offers_defaults"
+  if not (has_map_key using off_d, "price") or not (is_strict_decimal_wire_str using (off_d at "price"))
+    give back record {ok: no, error: "offers_defaults.price must be an exact base-10 wire string."}
+  end
+  set avail to map_get_str using off_d, "availability", ""
+  if (text.contains using avail, "](") or not (list_contains using ["https://schema.org/InStock", "https://schema.org/PreOrder", "https://schema.org/OutOfStock"], avail)
+    give back record {ok: no, error: "offers_defaults.availability must be a plain https://schema.org/ URL."}
+  end
+  give back record {ok: yes, error: ""}
+end
+
+make load_genre_playbook_registry
+  set slugs to call author_required_genre_slugs
+  set loaded to {}
+  set ordered to []
+  for each slug in slugs
+    set fpath to "playbook/genres/" joined with slug joined with ".v1.json"
+    if not (files.exists using fpath)
+      give back record {ok: no, error: ("Missing required genre playbook: " joined with fpath)}
+    end
+    try
+      set raw to files.read_text using fpath
+      if json_has_duplicate_keys using raw
+        give back record {ok: no, error: ("Duplicate JSON keys in " joined with fpath)}
+      end
+      set parsed to json.parse using raw
+      set chk to author_validate_genre_playbook using parsed, slug
+      if not chk.ok
+        give back record {ok: no, error: (fpath joined with ": " joined with chk.error)}
+      end
+      set loaded to collections.put using loaded, slug, parsed
+      set ordered to collections.append using ordered, parsed
+    catch err
+      give back record {ok: no, error: ("Failed loading " joined with fpath joined with ": " joined with err.message)}
+    end
+  end
+  give back record {ok: yes, by_slug: loaded, genres: ordered}
+end
+
+set author_genres_boot to call load_genre_playbook_registry
+
+make author_format_dec2 using scaled_int
+  set v to scaled_int
+  if v is less than 0
+    set v to 0
+  end
+  set whole to math.floor using (v divided by 100)
+  set frac to v modulo 100
+  set frac_s to text.from using frac
+  if frac is less than 10
+    set frac_s to "0" joined with frac_s
+  end
+  give back (text.from using whole) joined with "." joined with frac_s
+end
+
+make author_parse_dec2_scaled using raw_str, fallback_scaled
+  set s to text.trim using (text.from using raw_str)
+  if s is ""
+    give back fallback_scaled
+  end
+  set parts to text.split using s, "."
+  set plen to collections.length using parts
+  try
+    set whole to text.to_integer using (parts at 0)
+    set frac to 0
+    if plen is greater than 1
+      set f_raw to parts at 1
+      set f_chars to text.split using f_raw, ""
+      set flen to collections.length using f_chars
+      if flen is 1
+        set frac to (text.to_integer using (f_chars at 0)) times 10
+      otherwise if flen is at least 2
+        set frac to text.to_integer using ((f_chars at 0) joined with (f_chars at 1))
+      end
+    end
+    give back (whole times 100) plus frac
+  catch err
+    give back fallback_scaled
+  end
+end
+
+make author_tokenize_words using raw_text
+  set lower to text.lower using (text.from using raw_text)
+  set allowed to "abcdefghijklmnopqrstuvwxyz0123456789'-"
+  set words to []
+  set cur to ""
+  for each ch in (text.split using lower, "")
+    if text.contains using allowed, ch
+      set cur to cur joined with ch
+    otherwise
+      if cur is not "" and cur is not "-" and cur is not "'"
+        set words to collections.append using words, cur
+      end
+      set cur to ""
+    end
+  end
+  if cur is not "" and cur is not "-" and cur is not "'"
+    set words to collections.append using words, cur
+  end
+  give back words
+end
+
+make author_count_syllables using word_lower
+  set letters to "abcdefghijklmnopqrstuvwxyz"
+  set vowels to "aeiouy"
+  set clean to ""
+  for each ch in (text.split using word_lower, "")
+    if text.contains using letters, ch
+      set clean to clean joined with ch
+    end
+  end
+  set n to text.length using clean
+  if n is 0
+    give back 0
+  end
+  if n is at most 3
+    give back 1
+  end
+  if (text.ends_with using clean, "e") and not (text.ends_with using clean, "le")
+    set chars to text.split using clean, ""
+    set clean to text.join using (collections.slice using chars, 0, (n minus 1)), ""
+  end
+  set groups to 0
+  set prev_v to no
+  for each ch in (text.split using clean, "")
+    set is_v to text.contains using vowels, ch
+    if is_v and not prev_v
+      set groups to groups plus 1
+    end
+    set prev_v to is_v
+  end
+  if groups is less than 1
+    give back 1
+  end
+  give back groups
+end
+
+make author_split_sentences using prose_text
+  set lines to text.split using (text.from using prose_text), "\n"
+  set out to []
+  set line_idx to 1
+  for each raw_line in lines
+    set line to text.trim using raw_line
+    if line is not ""
+      set cur to ""
+      for each ch in (text.split using line, "")
+        set cur to cur joined with ch
+        if ch is "." or ch is "!" or ch is "?"
+          set trimmed to text.trim using cur
+          if trimmed is not ""
+            set out to collections.append using out, record {line_index: line_idx, text: trimmed}
+          end
+          set cur to ""
+        end
+      end
+      set rem to text.trim using cur
+      if rem is not ""
+        set out to collections.append using out, record {line_index: line_idx, text: rem}
+      end
+    end
+    set line_idx to line_idx plus 1
+  end
+  give back out
+end
+
+make author_is_adverb using w_lower
+  set non_adv to ["only", "family", "early", "daily", "friendly", "lonely", "ugly", "holy", "silly", "belly", "alley", "valley", "rally", "reply", "supply", "apply", "rely", "fly", "july", "italy", "emily", "lovely", "lively", "likely", "unlikely", "costly", "timely", "deadly", "elderly"]
+  set weak_adv to ["very", "really", "just", "quite", "rather", "somewhat", "literally", "basically", "actually"]
+  if list_contains using weak_adv, w_lower
+    give back yes
+  end
+  if (text.length using w_lower) is at least 5 and (text.ends_with using w_lower, "ly") and not (list_contains using non_adv, w_lower)
+    give back yes
+  end
+  give back no
+end
+
+make author_is_past_participle using w_lower
+  set irreg to ["written", "taken", "broken", "stolen", "hidden", "driven", "given", "known", "seen", "done", "made", "told", "found", "left", "kept", "held", "built", "caught", "taught", "shot", "sold", "sent", "lost", "chosen", "spoken", "woken", "frozen", "forgotten", "drawn", "blown", "thrown", "grown", "worn", "torn", "born", "sworn", "struck", "hung", "rung", "sung", "sunk", "drunk", "beaten", "eaten", "fallen", "shaken", "risen", "bitten", "paid", "said", "laid"]
+  if list_contains using irreg, w_lower
+    give back yes
+  end
+  if (text.length using w_lower) is at least 4 and (text.ends_with using w_lower, "ed")
+    give back yes
+  end
+  give back no
+end
+
+make author_count_dialogue_words using prose_text
+  set q1 to json.parse using "\"\\u201c\""
+  set q2 to json.parse using "\"\\u201d\""
+  set in_q to no
+  set buf to ""
+  set d_words to 0
+  for each ch in (text.split using (text.from using prose_text), "")
+    if ch is "\"" or ch is q1 or ch is q2
+      if in_q
+        set d_words to d_words plus (collections.length using (author_tokenize_words using buf))
+        set buf to ""
+        set in_q to no
+      otherwise
+        set in_q to yes
+        set buf to ""
+      end
+    otherwise if in_q
+      set buf to buf joined with ch
+    end
+  end
+  give back d_words
+end
+
+make author_eval_readability using prose_text, genre_pb
+  set hem to record {target_reading_grade_level: "7.00", max_reading_grade_level: "9.00", average_sentence_length_words: "15", hard_sentence_length_ceiling_words: "28", passive_voice_max_percent: "5.00", adverb_density_max_percent: "2.00"}
+  set gslug to "default"
+  set dial_min to 4000
+  set dial_max to 6000
+  if genre_pb is not nothing
+    set gslug to map_get_str using genre_pb, "genre_slug", "default"
+    set hem to (genre_pb at "voice_and_dialogue_rules") at "hemingway_clarity_checks"
+    set dr_raw to map_get_str using ((genre_pb at "voice_and_dialogue_rules") at "dialogue_cadence"), "dialogue_to_narration_ratio_percent", "45.00 to 55.00"
+    set dr_parts to text.split using dr_raw, "to"
+    if (collections.length using dr_parts) is at least 2
+      set dial_min to author_parse_dec2_scaled using (dr_parts at 0), 4000
+      set dial_max to author_parse_dec2_scaled using (dr_parts at 1), 6000
+    end
+  end
+
+  set sentences to author_split_sentences using prose_text
+  if (collections.length using sentences) is 0
+    set sentences to [record {line_index: 1, text: prose_text}]
+  end
+  set all_words to author_tokenize_words using prose_text
+  set total_words to collections.length using all_words
+  if total_words is less than 1
+    set total_words to 1
+  end
+  set total_sents to collections.length using sentences
+
+  set total_syl to 0
+  set adv_count to 0
+  set adv_hits to []
+  for each w in all_words
+    set total_syl to total_syl plus (author_count_syllables using w)
+    if author_is_adverb using w
+      set adv_count to adv_count plus 1
+      if not (list_contains using adv_hits, w)
+        set adv_hits to collections.append using adv_hits, w
+      end
+    end
+  end
+
+  set passive_aux to ["am", "is", "are", "was", "were", "be", "been", "being"]
+  set hard_ceil to 28
+  set avg_ceil to 15
+  try
+    set hard_ceil to text.to_integer using (map_get_str using hem, "hard_sentence_length_ceiling_words", "28")
+    set avg_ceil to text.to_integer using (map_get_str using hem, "average_sentence_length_words", "15")
+  catch e_int
+    set hard_ceil to 28
+    set avg_ceil to 15
+  end
+
+  set passive_sents to 0
+  set complex_sents to 0
+  set flagged_sents to []
+  set suggestions to []
+  set s_idx to 1
+  for each s_obj in sentences
+    set s_words to author_tokenize_words using s_obj.text
+    set sw_len to collections.length using s_words
+    set has_pass to no
+    set w_i to 0
+    while w_i is less than (sw_len minus 1)
+      if (list_contains using passive_aux, (s_words at w_i)) and (author_is_past_participle using (s_words at (w_i plus 1)))
+        set has_pass to yes
+      end
+      set w_i to w_i plus 1
+    end
+    if has_pass
+      set passive_sents to passive_sents plus 1
+      set suggestions to collections.append using suggestions, record {line_index: s_obj.line_index, sentence_index: s_idx, category: "passive_voice", original_excerpt: s_obj.text, plain_english_suggestion: "Rewrite using an active subject performing a concrete verb."}
+    end
+
+    set clause_delims to 0
+    for each ch in (text.split using s_obj.text, "")
+      if ch is "," or ch is ";" or ch is ":"
+        set clause_delims to clause_delims plus 1
+      end
+    end
+    for each cw in ["which", "although", "however", "because", "whereas", "nevertheless"]
+      if list_contains using s_words, cw
+        set clause_delims to clause_delims plus 1
+      end
+    end
+    if sw_len is greater than hard_ceil or (sw_len is greater than avg_ceil and clause_delims is at least 3)
+      set complex_sents to complex_sents plus 1
+      set flagged_sents to collections.append using flagged_sents, record {sentence_index: s_idx, line_index: s_obj.line_index, word_count: (text.from using sw_len), clause_markers: (text.from using clause_delims), excerpt: s_obj.text}
+      set suggestions to collections.append using suggestions, record {line_index: s_obj.line_index, sentence_index: s_idx, category: "complex_clause", original_excerpt: s_obj.text, plain_english_suggestion: ("Split this " joined with (text.from using sw_len) joined with "-word sentence into two punchier beats under " joined with (text.from using avg_ceil) joined with " words.")}
+    end
+
+    set s_advs to []
+    for each sw in s_words
+      if author_is_adverb using sw
+        set s_advs to collections.append using s_advs, sw
+      end
+    end
+    if (collections.length using s_advs) is greater than 0
+      set suggestions to collections.append using suggestions, record {line_index: s_obj.line_index, sentence_index: s_idx, category: "adverb_clutter", original_excerpt: s_obj.text, plain_english_suggestion: ("Replace weak modifier (" joined with (s_advs at 0) joined with ") with a stronger action verb.")}
+    end
+    set s_idx to s_idx plus 1
+  end
+
+  set lines_p to text.split using (text.from using prose_text), "\n"
+  set para_count to 0
+  set dense_paras to 0
+  set p_idx to 1
+  for each pl in lines_p
+    set p_trim to text.trim using pl
+    if p_trim is not ""
+      set para_count to para_count plus 1
+      set ps_cnt to collections.length using (author_split_sentences using p_trim)
+      if ps_cnt is greater than 5
+        set dense_paras to dense_paras plus 1
+        set suggestions to collections.append using suggestions, record {line_index: p_idx, sentence_index: 0, category: "mobile_pacing", original_excerpt: p_trim, plain_english_suggestion: ("Break this " joined with (text.from using ps_cnt) joined with "-sentence paragraph into 2-to-4-sentence blocks for mobile readability.")}
+      end
+    end
+    set p_idx to p_idx plus 1
+  end
+  if para_count is less than 1
+    set para_count to 1
+  end
+
+  set dial_words to author_count_dialogue_words using prose_text
+  set fk_raw to (0.39 times ((total_words times 1.0) divided by total_sents)) plus (11.8 times ((total_syl times 1.0) divided by total_words)) minus 15.59
+  set grade_scaled to math.floor using ((fk_raw times 100.0) plus 0.5)
+  if grade_scaled is less than 0
+    set grade_scaled to 0
+  end
+  set passive_scaled to math.floor using ((((passive_sents times 10000.0) divided by total_sents)) plus 0.5)
+  set adverb_scaled to math.floor using ((((adv_count times 10000.0) divided by total_words)) plus 0.5)
+  set dial_scaled to math.floor using ((((dial_words times 10000.0) divided by total_words)) plus 0.5)
+  set avg_sent_scaled to math.floor using ((((total_words times 100.0) divided by total_sents)) plus 0.5)
+
+  set grade_str to author_format_dec2 using grade_scaled
+  set passive_str to author_format_dec2 using passive_scaled
+  set adverb_str to author_format_dec2 using adverb_scaled
+  set dial_str to author_format_dec2 using dial_scaled
+  set avg_sent_str to author_format_dec2 using avg_sent_scaled
+
+  set target_grade_sc to author_parse_dec2_scaled using (map_get_str using hem, "target_reading_grade_level", "7.00"), 700
+  set max_grade_sc to author_parse_dec2_scaled using (map_get_str using hem, "max_reading_grade_level", "9.00"), 900
+  set max_pass_sc to author_parse_dec2_scaled using (map_get_str using hem, "passive_voice_max_percent", "5.00"), 500
+  set max_adv_sc to author_parse_dec2_scaled using (map_get_str using hem, "adverb_density_max_percent", "2.00"), 200
+
+  set penalty to 0
+  if grade_scaled is greater than max_grade_sc
+    set penalty to penalty plus 15
+  otherwise if grade_scaled is greater than target_grade_sc
+    set penalty to penalty plus 5
+  end
+  if passive_scaled is greater than max_pass_sc
+    set penalty to penalty plus 15
+  end
+  if adverb_scaled is greater than max_adv_sc
+    set penalty to penalty plus 12
+  end
+  set c_pen to complex_sents times 6
+  if c_pen is greater than 20
+    set c_pen to 20
+  end
+  set p_pen to dense_paras times 5
+  if p_pen is greater than 10
+    set p_pen to 10
+  end
+  set penalty to penalty plus c_pen plus p_pen
+  set score to 100 minus penalty
+  if score is less than 0
+    set score to 0
+  end
+  set letter to "F"
+  if score is at least 95
+    set letter to "A+"
+  otherwise if score is at least 90
+    set letter to "A"
+  otherwise if score is at least 80
+    set letter to "B"
+  otherwise if score is at least 70
+    set letter to "C"
+  otherwise if score is at least 60
+    set letter to "D"
+  end
+
+  set pacing_note to "Dialogue-to-narration pacing fits target genre cadence."
+  if dial_scaled is less than dial_min
+    set pacing_note to ("Dialogue ratio (" joined with dial_str joined with "%) is below target; convert exposition into spoken tension.")
+  otherwise if dial_scaled is greater than dial_max
+    set pacing_note to ("Dialogue ratio (" joined with dial_str joined with "%) exceeds target; add sensory grounding beats between lines.")
+  end
+
+  set metrics_rec to record {word_count: (text.from using (collections.length using all_words)), sentence_count: (text.from using total_sents), paragraph_count: (text.from using para_count), grade_level: grade_str, average_sentence_words: avg_sent_str, passive_voice_percent: passive_str, adverb_density_percent: adverb_str, dialogue_ratio_percent: dial_str, complex_sentence_count: (text.from using complex_sents)}
+  set thresh_rec to record {target_reading_grade_level: (map_get_str using hem, "target_reading_grade_level", "7.00"), max_reading_grade_level: (map_get_str using hem, "max_reading_grade_level", "9.00"), average_sentence_length_words: (map_get_str using hem, "average_sentence_length_words", "15"), hard_sentence_length_ceiling_words: (map_get_str using hem, "hard_sentence_length_ceiling_words", "28"), passive_voice_max_percent: (map_get_str using hem, "passive_voice_max_percent", "5.00"), adverb_density_max_percent: (map_get_str using hem, "adverb_density_max_percent", "2.00"), dialogue_target_percent: ((author_format_dec2 using dial_min) joined with " to " joined with (author_format_dec2 using dial_max))}
+
+  give back record {ok: yes, schema_version: "1.7.0", genre_slug: gslug, score: score, grade: letter, publish_ready: (score is at least 80), metrics: metrics_rec, thresholds: thresh_rec, pacing_recommendation: pacing_note, adverb_hits: adv_hits, flagged_sentences: flagged_sents, suggestions: suggestions}
+end
+
+make author_build_book_jsonld using genre_pb, book_meta, brief, site_url, artifact_type
+  set s_def to genre_pb at "schema_org_book_defaults"
+  set off_def to s_def at "offers_defaults"
+
+  set price_val to off_def at "price"
+  if has_map_key using brief, "price"
+    set price_val to brief at "price"
+  end
+  if has_map_key using book_meta, "price"
+    set price_val to book_meta at "price"
+  end
+  if (has_map_key using book_meta, "offers") and (is_record_value using (book_meta at "offers")) and (has_map_key using (book_meta at "offers"), "price")
+    set price_val to (book_meta at "offers") at "price"
+  end
+  if not (is_strict_decimal_wire_str using price_val)
+    give back record {ok: no, status: 422, code: "ADR025C_WIRE_REQUIRED", error: "Book price must be an exact ADR-025c base-10 wire string; raw JS floats/numbers are rejected."}
+  end
+  set clean_price to text.from using price_val
+
+  set pages_val to "280"
+  if has_map_key using book_meta, "numberOfPages"
+    set pages_val to book_meta at "numberOfPages"
+  end
+  if not (is_exact_integer_wire_str using pages_val) or (text.from using pages_val) is "0"
+    give back record {ok: no, status: 422, code: "ADR025C_WIRE_REQUIRED", error: "book_meta.numberOfPages must be a positive base-10 integer wire string."}
+  end
+  set clean_pages to text.from using pages_val
+
+  set fmt_raw to map_get_str using book_meta, "bookFormat", (map_get_str using s_def, "bookFormat", "https://schema.org/EBook")
+  set clean_fmt to fmt_raw
+  if fmt_raw is "EBook" or fmt_raw is "ebook"
+    set clean_fmt to "https://schema.org/EBook"
+  otherwise if fmt_raw is "Paperback" or fmt_raw is "paperback"
+    set clean_fmt to "https://schema.org/Paperback"
+  otherwise if fmt_raw is "Hardcover" or fmt_raw is "hardcover"
+    set clean_fmt to "https://schema.org/Hardcover"
+  otherwise if fmt_raw is "AudiobookFormat" or fmt_raw is "audiobook"
+    set clean_fmt to "https://schema.org/AudiobookFormat"
+  end
+  if not (list_contains using ["https://schema.org/EBook", "https://schema.org/Paperback", "https://schema.org/Hardcover", "https://schema.org/AudiobookFormat"], clean_fmt)
+    give back record {ok: no, status: 422, code: "BOOK_META_INVALID", error: ("Unsupported schema.org bookFormat: " joined with fmt_raw)}
+  end
+
+  set clean_isbn to text.trim using (map_get_str using book_meta, "isbn", "978-0-00-000000-0")
+  set isbn_len to text.length using clean_isbn
+  if isbn_len is less than 10 or isbn_len is greater than 20
+    give back record {ok: no, status: 422, code: "BOOK_META_INVALID", error: "Invalid ISBN length."}
+  end
+  for each ich in (text.split using clean_isbn, "")
+    if not (text.contains using "0123456789Xx-", ich)
+      give back record {ok: no, status: 422, code: "BOOK_META_INVALID", error: "Invalid characters in ISBN."}
+    end
+  end
+
+  set title to text.trim using (map_get_str using book_meta, "title", (map_get_str using brief, "title", ((map_get_str using genre_pb, "display_name", "Book") joined with " Release")))
+  set author_name to text.trim using (map_get_str using book_meta, "author_name", (map_get_str using brief, "author_name", "Plotific Press Author"))
+  set series_name to text.trim using (map_get_str using book_meta, "series_name", (map_get_str using brief, "series_name", ""))
+  set lang to text.trim using (map_get_str using book_meta, "inLanguage", (map_get_str using s_def, "inLanguage", "en-US"))
+  set age_rng to text.trim using (map_get_str using book_meta, "typicalAgeRange", (map_get_str using s_def, "typicalAgeRange", "18-"))
+  if (author_string_has_xss using title) or (author_string_has_xss using author_name) or (author_string_has_xss using series_name) or (author_string_has_xss using lang)
+    give back record {ok: no, status: 422, code: "GREX-SEC-003", error: "Unsafe HTML or script markup in book metadata."}
+  end
+
+  set gslug to map_get_str using genre_pb, "genre_slug", "urban-fiction"
+  set clean_site to text.trim using site_url
+  if clean_site is ""
+    set clean_site to "https://example.com"
+  end
+  if not (is_safe_url using clean_site)
+    give back record {ok: no, status: 422, code: "GREX-SEC-003", error: "Unsafe site URL in JSON-LD."}
+  end
+  if text.ends_with using clean_site, "/"
+    set c_chars to text.split using clean_site, ""
+    set clean_site to text.join using (collections.slice using c_chars, 0, ((collections.length using c_chars) minus 1)), ""
+  end
+
+  set is_free to no
+  if clean_price is "0.00"
+    set is_free to yes
+  otherwise if has_map_key using s_def, "isAccessibleForFree"
+    set is_free to (s_def at "isAccessibleForFree") is yes
+  end
+  set kw_list to []
+  if (has_map_key using s_def, "keywords") and (is_list_value using (s_def at "keywords"))
+    set kw_list to s_def at "keywords"
+  end
+  set offer_obj to {"@type": "Offer", "priceCurrency": (map_get_str using off_def, "priceCurrency", "USD"), "price": clean_price, "availability": (map_get_str using off_def, "availability", "https://schema.org/InStock"), "url": (clean_site joined with "/books/" joined with gslug)}
+  set book_obj to {"@type": "Book", "name": title, "author": {"@type": "Person", "name": author_name}, "bookFormat": clean_fmt, "isbn": clean_isbn, "numberOfPages": clean_pages, "inLanguage": lang, "genre": (s_def at "genre"), "keywords": (text.join using kw_list, ", "), "typicalAgeRange": age_rng, "isAccessibleForFree": is_free, "offers": offer_obj}
+
+  set schema_type to "Book"
+  set ld_obj to {}
+  if series_name is not "" or artifact_type is "series_reading_grid"
+    set schema_type to "BookSeries+Book"
+    set resolved_series to series_name
+    if resolved_series is ""
+      set resolved_series to title joined with " Series"
+    end
+    set book_obj to collections.put using book_obj, "isPartOf", {"@type": "BookSeries", "name": resolved_series}
+    set series_obj to {"@type": "BookSeries", "name": resolved_series, "genre": (s_def at "genre"), "inLanguage": lang, "author": {"@type": "Person", "name": author_name}}
+    set ld_obj to {"@context": "https://schema.org", "@graph": [series_obj, book_obj]}
+  otherwise
+    set ld_obj to collections.put using book_obj, "@context", "https://schema.org"
+  end
+
+  set raw_json to json.stringify using ld_obj
+  set escaped_json to escape_jsonld_for_script using raw_json
+  set preview_tag to "<script type=\"application/ld+json\">\n" joined with escaped_json joined with "\n</script>"
+  give back record {ok: yes, schema_type: schema_type, json_ld_object: ld_obj, json_ld_escaped: escaped_json, script_tag_preview: preview_tag, resolved_price: clean_price, resolved_pages: clean_pages}
+end
+
+make author_build_series_layout using genre_pb, brief, book_meta, ds_md, cms_types, seo_pb
+  set tiers to (genre_pb at "publishing_and_pricing_tiers") at "pricing_tiers_usd"
+  set p0 to map_get_str using tiers, "reader_magnet_prequel_price", "0.00"
+  set p1 to map_get_str using tiers, "book_1_standard_price", "2.99"
+  set p2 to map_get_str using tiers, "book_2_standard_price", "4.99"
+  set p3 to map_get_str using tiers, "book_3_finale_standard_price", "4.99"
+  set pbox to map_get_str using tiers, "trilogy_box_set_bundle_price", "9.99"
+  set pprint to map_get_str using tiers, "trade_paperback_print_price", "14.99"
+  set series_title to text.trim using (map_get_str using book_meta, "series_name", (map_get_str using brief, "series_name", (map_get_str using brief, "title", ((map_get_str using genre_pb, "display_name", "Book") joined with " Series"))))
+  set author_name to text.trim using (map_get_str using book_meta, "author_name", (map_get_str using brief, "author_name", "Plotific Press"))
+  set dname to map_get_str using genre_pb, "display_name", "Fiction"
+
+  set loop_ct to "post"
+  if cms_types is not nothing
+    for each ct in cms_types
+      if (map_get_str using ct, "slug", "") is "book"
+        set loop_ct to "book"
+      end
+    end
+  end
+
+  set ds_modes to parse_design_system_modes using ds_md
+  set sp_tok to sec_nearest_8pt_token using 24, ds_modes.all_tokens
+  set sp_val to "24px"
+  if sp_tok is not ""
+    set sp_val to "var(" joined with sp_tok joined with ")"
+  end
+
+  set c0 to record {element: "Card", tag: "article", props: record {id: "series-card-prequel", price: p0}, styles: record {base: {"padding": sp_val, "background-color": "#ffffff", "color": "#0f172a"}}, children: [record {element: "Heading", props: record {id: "series-card-prequel-h3", level: 3, text: ("Book 0 — Prequel Novella: " joined with series_title joined with " Origin")}}, record {element: "Text", tag: "p", props: record {id: "series-card-prequel-desc", text: "Free reader-magnet prequel establishing the inciting stakes."}}, record {element: "Text", tag: "p", props: record {id: "series-card-prequel-price", text: ("Direct Price: $" joined with p0 joined with " USD")}}, record {element: "Link", props: record {id: "series-card-prequel-cta", href: "/books/prequel", text: "Claim Free Prequel", variant: "secondary"}}]}
+  set c1 to record {element: "Card", tag: "article", props: record {id: "series-card-book-1", price: p1}, styles: record {base: {"padding": sp_val, "background-color": "#ffffff", "color": "#0f172a"}}, children: [record {element: "Heading", props: record {id: "series-card-book-1-h3", level: 3, text: ("Book 1 — Series Opener: " joined with series_title)}}, record {element: "Text", tag: "p", props: record {id: "series-card-book-1-desc", text: "Act 1 launch installment tuned for high-velocity read-through."}}, record {element: "Text", tag: "p", props: record {id: "series-card-book-1-price", text: ("Direct Price: $" joined with p1 joined with " USD")}}, record {element: "Link", props: record {id: "series-card-book-1-cta", href: "/books/book-1", text: ("Start Book 1 ($" joined with p1 joined with ")"), variant: "primary"}}]}
+  set c2 to record {element: "Card", tag: "article", props: record {id: "series-card-book-2", price: p2}, styles: record {base: {"padding": sp_val, "background-color": "#ffffff", "color": "#0f172a"}}, children: [record {element: "Heading", props: record {id: "series-card-book-2-h3", level: 3, text: ("Book 2 — Escalation: " joined with series_title)}}, record {element: "Text", tag: "p", props: record {id: "series-card-book-2-desc", text: "Raises personal and empire stakes toward the series midpoint."}}, record {element: "Text", tag: "p", props: record {id: "series-card-book-2-price", text: ("Direct Price: $" joined with p2 joined with " USD")}}, record {element: "Link", props: record {id: "series-card-book-2-cta", href: "/books/book-2", text: ("Continue Book 2 ($" joined with p2 joined with ")"), variant: "secondary"}}]}
+  set c3 to record {element: "Card", tag: "article", props: record {id: "series-card-book-3", price: p3}, styles: record {base: {"padding": sp_val, "background-color": "#ffffff", "color": "#0f172a"}}, children: [record {element: "Heading", props: record {id: "series-card-book-3-h3", level: 3, text: ("Book 3 — Reckoning Finale: " joined with series_title)}}, record {element: "Text", tag: "p", props: record {id: "series-card-book-3-desc", text: ("Complete trilogy arc ($" joined with pbox joined with " digital box set / $" joined with pprint joined with " print).")}}, record {element: "Text", tag: "p", props: record {id: "series-card-book-3-price", text: ("Direct Price: $" joined with p3 joined with " USD")}}, record {element: "Link", props: record {id: "series-card-book-3-cta", href: "/books/box-set", text: ("Complete Series ($" joined with pbox joined with ")"), variant: "secondary"}}]}
+
+  set hero_sec to record {element: "Section", tag: "section", props: {"id": "author-series-hero", "aria-label": (series_title joined with " Reading Order")}, styles: record {base: {"padding": sp_val, "gap": sp_val}}, children: [record {element: "Heading", props: record {id: "author-series-h1", level: 1, text: (series_title joined with " — Complete Reading Order")}}, record {element: "Text", tag: "p", props: record {id: "author-series-intro", text: ("Written by " joined with author_name joined with " in " joined with dname joined with ". Start free at $" joined with p0 joined with ", launch Book 1 at $" joined with p1 joined with ", continue at $" joined with p2 joined with ", or bundle at $" joined with pbox joined with " (print $" joined with pprint joined with ").")}}]}
+  set grid_node to record {element: "Grid", props: record {id: "author-series-grid", columns: "2"}, styles: record {base: {"gap": sp_val}}, children: [c0, c1, c2, c3]}
+  set loop_node to record {element: "ForEach", props: record {id: "author-series-cms-loop", query: record {content_type: loop_ct, per_page: "6", sort_by: "published_at", sort_dir: "desc"}}, children: [record {element: "Text", tag: "p", props: record {id: "author-series-loop-item", text: "{title}"}}]}
+  set cards_sec to record {element: "Section", tag: "section", props: {"id": "author-series-cards-section", "aria-label": "Series Installment Grid"}, styles: record {base: {"padding": sp_val, "gap": sp_val}}, children: [record {element: "Heading", props: record {id: "author-series-h2", level: 2, text: "Installments & Exact Edition Pricing"}}, grid_node, loop_node]}
+  set layout_tree to record {element: "Container", tag: "main", props: record {id: "author-series-reading-grid"}, styles: record {base: {"padding": sp_val, "background-color": "#ffffff", "color": "#0f172a"}}, children: [hero_sec, cards_sec]}
+
+  set strict_chk to sec_validate_subtree_strict using layout_tree, ds_modes.all_tokens, ds_modes.registered_classes, 1
+  if not strict_chk.ok
+    give back record {ok: no, code: strict_chk.code, error: strict_chk.error}
+  end
+  set craft_res to sec_audit_design_craft using layout_tree, ds_modes, cms_types
+  if not craft_res.ok
+    give back record {ok: no, code: craft_res.code, error: craft_res.error}
+  end
+  if not craft_res.valid
+    give back record {ok: no, code: "DESIGN_CRAFT_FAILED", error: "Series reading grid failed Golden-Ratio Design-Craft validation."}
+  end
+  set audit_rep to sec_audit_spliced_slot using craft_res.repaired_subtree, {}, ds_md, seo_pb, "home"
+  if (not audit_rep.publish_safe) or (audit_rep.overall_score is less than 90)
+    give back record {ok: no, code: "AUTHOR_LAYOUT_AUDIT_FAILED", error: "Series reading grid failed the 22-rule Grade A/A+ quality gate."}
+  end
+  give back record {ok: yes, layout: craft_res.repaired_subtree, design_craft: craft_res, audit_report: audit_rep}
+end
+
+make author_extract_slot_tree using draft_doc, builder_slot
+  set slot_tree to nothing
+  if text.starts_with using builder_slot, "part:"
+    set pkey to text.replace using builder_slot, "part:", ""
+    if (has_map_key using draft_doc, "parts") and (has_map_key using (draft_doc at "parts"), pkey)
+      set slot_tree to (draft_doc at "parts") at pkey
+    end
+  otherwise
+    if (has_map_key using draft_doc, "templates") and (has_map_key using (draft_doc at "templates"), builder_slot)
+      set slot_tree to (draft_doc at "templates") at builder_slot
+    end
+  end
+  give back slot_tree
+end
+
+make author_synthesize_artifact using genre_pb, artifact_type, brief, book_meta, brand_md, site_md, bible_md, ds_md, cms_types, seo_pb
+  set gslug to map_get_str using genre_pb, "genre_slug", "urban-fiction"
+  set dname to map_get_str using genre_pb, "display_name", "Fiction"
+  set title to text.trim using (map_get_str using book_meta, "title", (map_get_str using brief, "title", (dname joined with " Story")))
+  set protagonist to text.trim using (map_get_str using brief, "protagonist", "Elena Vance")
+  set setting to text.trim using (map_get_str using brief, "setting", "rain-slicked Atlanta skyline")
+  set premise to text.trim using (map_get_str using brief, "premise", (map_get_str using brief, "conflict", "A decisive betrayal forces an impossible alliance under mounting pressure."))
+  set ch_num to text.trim using (map_get_str using brief, "chapter_number", "1")
+
+  set pacing to genre_pb at "pacing_and_structure"
+  set ch_wc to pacing at "chapter_word_count_targets"
+  set ideal_min to map_get_str using ch_wc, "ideal_chapter_min_words", "2200"
+  set ideal_max to map_get_str using ch_wc, "ideal_chapter_max_words", "3500"
+  set cliff to pacing at "cliffhanger_cadence"
+  set exit_hooks to cliff at "mandatory_chapter_exit_hooks"
+  set cliff_hook to "The Unanswered Turn: A midnight message shatters the protagonist's remaining cover."
+  if (collections.length using exit_hooks) is greater than 0
+    set cliff_hook to text.from using (exit_hooks at 0)
+  end
+  set tropes to (genre_pb at "trope_checklist") at "core_tropes_readers_expect"
+  set trope_names to []
+  for each tr in tropes
+    set trope_names to collections.append using trope_names, (map_get_str using tr, "name", "")
+  end
+  set pov_rule to map_get_str using ((genre_pb at "voice_and_dialogue_rules") at "pov_conventions"), "preferred_pov", "Close Third-Person POV"
+  set tiers to (genre_pb at "publishing_and_pricing_tiers") at "pricing_tiers_usd"
+  set p0 to map_get_str using tiers, "reader_magnet_prequel_price", "0.00"
+  set p1 to map_get_str using tiers, "book_1_standard_price", "2.99"
+  set p2 to map_get_str using tiers, "book_2_standard_price", "4.99"
+  set pbox to map_get_str using tiers, "trilogy_box_set_bundle_price", "9.99"
+  set pprint to map_get_str using tiers, "trade_paperback_print_price", "14.99"
+
+  set grounded_sources to []
+  if brand_md is not ""
+    set grounded_sources to collections.append using grounded_sources, "storage/BRAND-DNA.md"
+  end
+  if site_md is not ""
+    set grounded_sources to collections.append using grounded_sources, "storage/SITE-CONTEXT.md"
+  end
+  if bible_md is not ""
+    set grounded_sources to collections.append using grounded_sources, "storage/BOOK-BIBLE.md"
+  end
+  set grounded_sources to collections.append using grounded_sources, ("playbook/genres/" joined with gslug joined with ".v1.json")
+
+  if artifact_type is "chapter_outline"
+    set beats to [{"act": "Act 1 (0.00 to 25.00%)", "summary": ("Open in media res in " joined with setting joined with " as " joined with protagonist joined with " confronts the inciting crisis: " joined with premise)}, {"act": "Act 2 (25.00 to 75.00%)", "summary": "Escalate stakes through the midpoint reversal while seeding inner-circle friction and ticking-clock pressure."}, {"act": "Act 3 (75.00 to 100.00%)", "summary": "Execute the counter-play, settle immediate debts, and lock in the closing chapter cliffhanger."}]
+    set prose_sample to protagonist joined with " checked the deadbolt twice before stepping into the hallway. Rain drummed against the glass. \"You brought the ledger?\" Marcus asked from the stairwell. \"Every page,\" she said. Outside, tires hissed on wet asphalt as headlights swept across the brick wall."
+    set art to record {title: (title joined with " — Chapter " joined with ch_num joined with " Outline"), genre_slug: gslug, pov: pov_rule, target_word_window: (ideal_min joined with " to " joined with ideal_max), act_beats: beats, core_tropes_applied: trope_names, cliffhanger_hook: cliff_hook, grounded_sources: grounded_sources}
+    give back record {ok: yes, artifact: art, prose_for_audit: prose_sample, grex_layout: nothing, design_craft: nothing, audit_report: nothing}
+  end
+
+  if artifact_type is "chapter_draft"
+    set draft_prose to protagonist joined with " locked the ledger inside her coat and stepped out into the " joined with setting joined with ". Cold air stung her face. She checked both alleys before crossing the street.\n\"You came alone?\" Marcus asked, leaning against the iron rail.\n\"I never bring witnesses to a dirty audit,\" she said. " joined with premise joined with " Her phone buzzed once in her pocket. One unread photo lit the screen—and proved someone inside her own circle had already sold them out."
+    set art to record {title: (title joined with " — Chapter " joined with ch_num joined with " Draft"), genre_slug: gslug, pov: pov_rule, chapter_number: ch_num, prose_text: draft_prose, cliffhanger_hook: cliff_hook, grounded_sources: grounded_sources}
+    give back record {ok: yes, artifact: art, prose_for_audit: draft_prose, grex_layout: nothing, design_craft: nothing, audit_report: nothing}
+  end
+
+  if artifact_type is "back_cover_blurb"
+    set para1 to "One stolen ledger can buy an empire—or sign a death warrant."
+    set para2 to protagonist joined with " built a quiet life in " joined with setting joined with ", far from the fallout of past mistakes. Now " joined with premise
+    set para3 to "Standing across the table is an adversary who never forgives a debt and never fights fair. Every move toward safety pulls both closer to a dangerous collision."
+    set para4 to "When loyalty collides with survival, who walks out whole? Start the series today (Prequel $" joined with p0 joined with ", Book 1 $" joined with p1 joined with ", Sequels $" joined with p2 joined with ", Box Set $" joined with pbox joined with ", Print $" joined with pprint joined with ")."
+    set blurb_full to para1 joined with "\n\n" joined with para2 joined with "\n\n" joined with para3 joined with "\n\n" joined with para4
+    set art to record {title: (title joined with " — Back-Cover Blurb"), genre_slug: gslug, paragraphs: [para1, para2, para3, para4], blurb_text: blurb_full, pricing_tiers_referenced: [p0, p1, p2, pbox, pprint], grounded_sources: grounded_sources}
+    give back record {ok: yes, artifact: art, prose_for_audit: blurb_full, grex_layout: nothing, design_craft: nothing, audit_report: nothing}
+  end
+
+  set grid_res to author_build_series_layout using genre_pb, brief, book_meta, ds_md, cms_types, seo_pb
+  if not grid_res.ok
+    give back grid_res
+  end
+  set grid_prose to "Explore the complete reading order in " joined with dname joined with ". Start free at $" joined with p0 joined with ", read Book 1 at $" joined with p1 joined with ", continue at $" joined with p2 joined with ", or bundle the trilogy at $" joined with pbox joined with "."
+  set art to record {title: (title joined with " — Series Reading-Order Grid"), genre_slug: gslug, pricing_tiers_usd: tiers, grex_layout: grid_res.layout, grounded_sources: grounded_sources}
+  give back record {ok: yes, artifact: art, prose_for_audit: grid_prose, grex_layout: grid_res.layout, design_craft: grid_res.design_craft, audit_report: grid_res.audit_report}
+end
+
+route "GET" "/api/groxy/author/genres" using req
+  set reg to call load_genre_playbook_registry
+  if not reg.ok
+    give back server.json using 503, record {ok: no, code: "GENRE_PLAYBOOK_INVALID", error: reg.error}
+  end
+  set items to []
+  for each gp in reg.genres
+    set hem to (gp at "voice_and_dialogue_rules") at "hemingway_clarity_checks"
+    set tiers to (gp at "publishing_and_pricing_tiers") at "pricing_tiers_usd"
+    set wc to (gp at "pacing_and_structure") at "chapter_word_count_targets"
+    set items to collections.append using items, record {genre_slug: gp.genre_slug, display_name: gp.display_name, schema_version: gp.schema_version, chapter_word_count_targets: wc, hemingway_clarity_checks: hem, pricing_tiers_usd: tiers, schema_org_book_defaults: (gp at "schema_org_book_defaults")}
+  end
+  give back server.json using 200, record {ok: yes, schema_version: "1.7.0", playbook_schema_version: "groxy-genre-playbook-v1.0", count: (collections.length using items), genres: items}
+end
+
+route "POST" "/api/groxy/author/readability-audit" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  if has_map_key using req, "body"
+    if json_has_duplicate_keys using (req at "body")
+      give back server.json using 400, record {ok: no, code: "AUTHOR_DUPLICATE_KEY", error: "Duplicate JSON keys are not permitted."}
+    end
+  end
+  set payload to nothing
+  try
+    set payload to server.parse_json using req
+  catch parse_err
+    give back server.json using 400, record {ok: no, code: "AUTHOR_INVALID_JSON", error: "Request body must be valid JSON."}
+  end
+  if not (is_record_value using payload)
+    give back server.json using 400, record {ok: no, code: "AUTHOR_INVALID_JSON", error: "Request body must be a JSON object."}
+  end
+  for each rk in (collections.keys using payload)
+    if rk is not "prose" and rk is not "genre_slug"
+      give back server.json using 400, record {ok: no, code: "AUTHOR_UNKNOWN_FIELD", error: ("Unsupported field: " joined with rk)}
+    end
+  end
+  if not (has_map_key using payload, "prose") or not (is_text_value using (payload at "prose"))
+    give back server.json using 400, record {ok: no, code: "PROSE_REQUIRED", error: "prose must be a non-empty string."}
+  end
+  set prose_str to text.trim using (text.from using (payload at "prose"))
+  if prose_str is "" or (text.length using prose_str) is greater than 50000
+    give back server.json using 400, record {ok: no, code: "PROSE_BOUNDS", error: "prose must be 1 to 50,000 characters."}
+  end
+  if author_string_has_xss using prose_str
+    give back server.json using 422, record {ok: no, code: "GREX-SEC-003", error: "Unsafe HTML or script markup is not permitted in prose."}
+  end
+
+  set genre_pb to nothing
+  if has_map_key using payload, "genre_slug"
+    if not (is_text_value using (payload at "genre_slug"))
+      give back server.json using 400, record {ok: no, code: "AUTHOR_INVALID_GENRE", error: "genre_slug must be a string."}
+    end
+    set gslug to text.trim using (text.from using (payload at "genre_slug"))
+    if gslug is not ""
+      set reg to call load_genre_playbook_registry
+      if not reg.ok
+        give back server.json using 503, record {ok: no, code: "GENRE_PLAYBOOK_INVALID", error: reg.error}
+      end
+      if not (has_map_key using reg.by_slug, gslug)
+        give back server.json using 404, record {ok: no, code: "GENRE_NOT_FOUND", error: ("Unknown genre_slug: " joined with gslug)}
+      end
+      set genre_pb to reg.by_slug at gslug
+    end
+  end
+
+  set rep to author_eval_readability using prose_str, genre_pb
+  give back server.json using 200, rep
+end
+
+route "POST" "/api/groxy/author/generate" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  if has_map_key using req, "body"
+    if json_has_duplicate_keys using (req at "body")
+      give back server.json using 400, record {ok: no, code: "AUTHOR_DUPLICATE_KEY", error: "Duplicate JSON keys are not permitted."}
+    end
+  end
+  set payload to nothing
+  try
+    set payload to server.parse_json using req
+  catch parse_err
+    give back server.json using 400, record {ok: no, code: "AUTHOR_INVALID_JSON", error: "Request body must be valid JSON."}
+  end
+  if not (is_record_value using payload)
+    give back server.json using 400, record {ok: no, code: "AUTHOR_INVALID_JSON", error: "Request body must be a JSON object."}
+  end
+  for each rk in (collections.keys using payload)
+    if rk is not "genre_slug" and rk is not "artifact_type" and rk is not "brief" and rk is not "target_slot" and rk is not "generation_mode" and rk is not "book_meta"
+      give back server.json using 400, record {ok: no, code: "AUTHOR_UNKNOWN_FIELD", error: ("Unsupported request field: " joined with rk)}
+    end
+  end
+
+  set reg to call load_genre_playbook_registry
+  if not reg.ok
+    give back server.json using 503, record {ok: no, code: "GENRE_PLAYBOOK_INVALID", error: reg.error}
+  end
+
+  if not (has_map_key using payload, "genre_slug") or not (is_text_value using (payload at "genre_slug"))
+    give back server.json using 400, record {ok: no, code: "AUTHOR_INVALID_GENRE", error: "genre_slug must be a registered genre string."}
+  end
+  set gslug to text.trim using (map_get_str using payload, "genre_slug", "")
+  if not (has_map_key using reg.by_slug, gslug)
+    give back server.json using 404, record {ok: no, code: "GENRE_NOT_FOUND", error: "genre_slug must be one of the 6 registered genre playbooks."}
+  end
+  set genre_pb to reg.by_slug at gslug
+
+  if not (has_map_key using payload, "artifact_type") or not (is_text_value using (payload at "artifact_type"))
+    give back server.json using 400, record {ok: no, code: "AUTHOR_INVALID_ARTIFACT", error: "artifact_type is required."}
+  end
+  set artifact_type to text.trim using (map_get_str using payload, "artifact_type", "")
+  if not (list_contains using ["chapter_outline", "chapter_draft", "back_cover_blurb", "series_reading_grid"], artifact_type)
+    give back server.json using 400, record {ok: no, code: "AUTHOR_INVALID_ARTIFACT", error: "artifact_type must be chapter_outline, chapter_draft, back_cover_blurb, or series_reading_grid."}
+  end
+
+  if not (has_map_key using payload, "brief") or not (is_record_value using (payload at "brief"))
+    give back server.json using 400, record {ok: no, code: "AUTHOR_BRIEF_INVALID", error: "brief must be a plain-English JSON object."}
+  end
+  set brief to payload at "brief"
+  set brief_xss to author_scan_xss_tree using brief, "brief"
+  if not brief_xss.ok
+    give back server.json using 422, record {ok: no, code: "GREX-SEC-003", error: brief_xss.error}
+  end
+
+  set book_meta to {}
+  if has_map_key using payload, "book_meta"
+    if not (is_record_value using (payload at "book_meta"))
+      give back server.json using 400, record {ok: no, code: "BOOK_META_INVALID", error: "book_meta must be a JSON object."}
+    end
+    set book_meta to payload at "book_meta"
+    set meta_xss to author_scan_xss_tree using book_meta, "book_meta"
+    if not meta_xss.ok
+      give back server.json using 422, record {ok: no, code: "GREX-SEC-003", error: meta_xss.error}
+    end
+  end
+
+  set target_slot to "cms-draft"
+  if artifact_type is "series_reading_grid"
+    set target_slot to "home"
+  end
+  if has_map_key using payload, "target_slot"
+    if not (is_text_value using (payload at "target_slot"))
+      give back server.json using 400, record {ok: no, code: "AUTHOR_INVALID_SLOT", error: "target_slot must be a string."}
+    end
+    set target_slot to text.trim using (text.from using (payload at "target_slot"))
+    if not (sec_valid_identifier using target_slot, 64, yes)
+      give back server.json using 400, record {ok: no, code: "AUTHOR_INVALID_SLOT", error: "Invalid target_slot identifier."}
+    end
+  end
+  set builder_slot to map_gen_builder_slot using target_slot
+
+  set mode to "deterministic"
+  if has_map_key using payload, "generation_mode"
+    if not (is_text_value using (payload at "generation_mode"))
+      give back server.json using 400, record {ok: no, code: "AUTHOR_INVALID_MODE", error: "generation_mode must be a string."}
+    end
+    set mode to text.lower using (text.trim using (text.from using (payload at "generation_mode")))
+    if mode is not "deterministic" and mode is not "ollama" and mode is not "byok"
+      give back server.json using 400, record {ok: no, code: "AUTHOR_INVALID_MODE", error: "generation_mode must be deterministic, ollama, or byok."}
+    end
+  end
+
+  set site_url to "https://example.com"
+  set site_md to ""
+  if files.exists using "storage/SITE-CONTEXT.md"
+    set site_md to files.read_text using "storage/SITE-CONTEXT.md"
+  end
+  set brand_md to ""
+  if files.exists using "storage/BRAND-DNA.md"
+    set brand_md to files.read_text using "storage/BRAND-DNA.md"
+  end
+  # Condition C5: optional storage/BOOK-BIBLE.md confined strictly under GRAB-E401
+  set bible_md to ""
+  if files.exists using "storage/BOOK-BIBLE.md"
+    set bible_md to files.read_text using "storage/BOOK-BIBLE.md"
+  end
+
+  set jsonld_res to author_build_book_jsonld using genre_pb, book_meta, brief, site_url, artifact_type
+  if not jsonld_res.ok
+    give back server.json using jsonld_res.status, record {ok: no, code: jsonld_res.code, error: jsonld_res.error}
+  end
+
+  set ds_md to "## 1. Active `--grex-*` Design Tokens\n### Base `:root` Tokens\n| Token | Value |\n|---|---|\n| `--grex-bg` | `#ffffff` |\n| `--grex-ink` | `#0f172a` |\n| `--grex-space-md` | `24px` |\n"
+  set slot_sha to "cms-draft"
+  set cms_types to nothing
+  set cms_url to resolve_env_opt using "GROXY_CMS_URL"
+  if cms_url is not ""
+    set cms_token to resolve_env_opt using "GROXY_CMS_MCP_TOKEN"
+    set lct_res to call_cms_mcp_tool using cms_url, cms_token, "list_content_types", {}, 1701
+    if lct_res.ok and (has_map_key using lct_res.data, "content_types")
+      set cms_types to lct_res.data at "content_types"
+    end
+  end
+
+  if artifact_type is "series_reading_grid"
+    set builder_url to resolve_env_opt using "GROXY_BUILDER_URL"
+    if builder_url is not ""
+      set b_state_resp to nothing
+      set ds_resp to nothing
+      try
+        set b_state_resp to http.get using (builder_url joined with "/api/studio/state")
+        set ds_resp to http.get using (builder_url joined with "/api/design-system.md")
+      catch b_net_err
+        give back server.json using 503, record {ok: no, code: "BUILDER_UNAVAILABLE", error: "Grex Theme Builder is unreachable."}
+      end
+      if not b_state_resp.ok or not ds_resp.ok
+        give back server.json using 503, record {ok: no, code: "BUILDER_UNAVAILABLE", error: "Grex Theme Builder state or design-system.md is unavailable."}
+      end
+      set b_state to json.parse using b_state_resp.body
+      set ds_md to text.from using ds_resp.body
+      set slot_tree to author_extract_slot_tree using b_state.draft, builder_slot
+      if slot_tree is nothing
+        give back server.json using 404, record {ok: no, code: "SLOT_NOT_FOUND", error: ("Target slot \"" joined with target_slot joined with "\" was not found in Builder draft.")}
+      end
+      set slot_sha to crypto.sha256_hex using (canonical_json using slot_tree)
+    end
+  end
+  set ds_sha to crypto.sha256_hex using ds_md
+
+  set seo_pb_author to load_playbook_doc using groxy_cache
+  set synth to author_synthesize_artifact using genre_pb, artifact_type, brief, book_meta, brand_md, site_md, bible_md, ds_md, cms_types, seo_pb_author
+  if not synth.ok
+    give back server.json using 422, record {ok: no, code: synth.code, error: synth.error}
+  end
+  set artifact to synth.artifact
+  set prose_for_audit to synth.prose_for_audit
+
+  set provider_used to "deterministic"
+  set fallback_used to no
+  set fallback_reason to ""
+  if mode is "ollama" or mode is "byok"
+    set prov_url to "http://127.0.0.1:11434/api/generate"
+    set prov_hdrs to {"Content-Type": "application/json"}
+    set prov_model to resolve_env_opt using "GROXY_AUTHOR_OLLAMA_MODEL"
+    if prov_model is ""
+      set prov_model to "llama3.2"
+    end
+    if mode is "byok"
+      set prov_url to resolve_env_opt using "GROXY_AUTHOR_BYOK_URL"
+      if prov_url is ""
+        set prov_url to resolve_env_opt using "GROXY_COMMERCE_BYOK_URL"
+      end
+      set byok_origin to resolve_env_opt using "GROXY_AUTHOR_BYOK_ALLOW_ORIGIN"
+      if byok_origin is ""
+        set byok_origin to resolve_env_opt using "GROXY_COMMERCE_BYOK_ALLOW_ORIGIN"
+      end
+      set prov_key to resolve_env_opt using "GROXY_AUTHOR_BYOK_API_KEY"
+      if prov_key is ""
+        set prov_key to resolve_env_opt using "GROXY_COMMERCE_BYOK_API_KEY"
+      end
+      set prov_model to resolve_env_opt using "GROXY_AUTHOR_BYOK_MODEL"
+      if prov_model is ""
+        set prov_model to resolve_env_opt using "GROXY_COMMERCE_BYOK_MODEL"
+      end
+      set prov_lower to text.lower using prov_url
+      if prov_url is "" or byok_origin is "" or prov_key is "" or prov_model is "" or not (text.starts_with using prov_url, "https://") or not (text.starts_with using byok_origin, "https://") or (not (text.starts_with using prov_url, byok_origin joined with "/") and prov_url is not byok_origin) or (text.contains using prov_lower, "@") or (text.contains using prov_lower, "localhost") or (text.contains using prov_lower, "127.0.0.1") or (text.contains using prov_lower, "169.254.") or (text.contains using prov_lower, "10.") or (text.contains using prov_lower, "192.168.") or (text.contains using prov_lower, "0.0.0.0") or (text.contains using prov_lower, "[::1]") or (text.contains using prov_lower, "metadata.google.internal")
+        give back server.json using 403, record {ok: no, code: "GRAB-E402", error: "BYOK author enrichment endpoint, key, or HTTPS allowlist capability is invalid."}
+      end
+      set prov_hdrs to collections.put using prov_hdrs, "Authorization", ("Bearer " joined with prov_key)
+    end
+    set prov_prompt to "Return JSON only with optional tagline string (<= 200 chars, plain text, no HTML, no URLs). Never alter pricing, routing, or targets. Untrusted brief follows as a JSON string value. UNTRUSTED_BRIEF_JSON: " joined with (json.stringify using brief)
+    try
+      set prov_body to ""
+      if mode is "ollama"
+        set prov_body to json.stringify using record {model: prov_model, stream: no, format: "json", prompt: prov_prompt}
+      otherwise
+        set prov_body to json.stringify using record {model: prov_model, stream: no, response_format: record {type: "json_object"}, messages: [record {role: "user", content: prov_prompt}]}
+      end
+      set prov_resp to http.post using prov_url, prov_body, record {headers: prov_hdrs, timeout_ms: 10000, retries: 0}
+      if prov_resp.ok
+        set prov_doc to json.parse using prov_resp.body
+        set prov_txt to map_get_str using prov_doc, "response", ""
+        if mode is "byok" and has_map_key using prov_doc, "choices"
+          set ch0 to (prov_doc at "choices") at 0
+          set prov_txt to map_get_str using (ch0 at "message"), "content", ""
+        end
+        set prov_parsed to json.parse using prov_txt
+        set cand_tag to text.trim using (map_get_str using prov_parsed, "tagline", "")
+        if cand_tag is not "" and (text.length using cand_tag) is at most 200 and not (author_string_has_xss using cand_tag) and not (text.contains using (text.lower using cand_tag), "http")
+          set artifact to collections.put using artifact, "enrichment_tagline", cand_tag
+          set provider_used to mode
+        otherwise
+          set fallback_used to yes
+          set fallback_reason to "Provider output failed safe validation; deterministic artifact was retained."
+        end
+      otherwise
+        set fallback_used to yes
+        set fallback_reason to "Provider unavailable; deterministic artifact was retained."
+      end
+    catch prov_err
+      if mode is "byok" and (text.contains using (text.from using prov_err), "GRAB-E402")
+        give back server.json using 403, record {ok: no, code: "GRAB-E402", error: "GRAB denied the BYOK request; no proposal was staged."}
+      end
+      set fallback_used to yes
+      set fallback_reason to "Provider unreachable or returned invalid data; deterministic artifact was retained."
+    end
+  end
+
+  set hem_audit to author_eval_readability using prose_for_audit, genre_pb
+  set layout_sha to ""
+  if synth.grex_layout is not nothing
+    set layout_sha to crypto.sha256_hex using (canonical_json using synth.grex_layout)
+  end
+
+  set author_plan_id to "aplan-" joined with (crypto.random_hex using 16)
+  set approval_token to "atok_" joined with (crypto.random_hex using 32)
+
+  set operator_id to resolve_env_opt using "GROXY_OPERATOR_ID"
+  if operator_id is ""
+    set operator_id to "local-operator"
+  end
+  set site_id to resolve_env_opt using "GROXY_SITE_ID"
+  if site_id is ""
+    set site_id to "configured-site"
+  end
+
+  set now_val to call dates.now_utc
+  set expires_val to dates.from_unix using (now_val.unix plus 900)
+  try
+    call data.execute using author_ledger_expire_stale, record {operator_id: operator_id, now_iso: now_val.iso}
+    set pending_rows to data.query using author_ledger_count_pending, record {operator_id: operator_id}
+    if (collections.length using pending_rows) is at least 20
+      give back server.json using 429, record {ok: no, code: "AUTHOR_PENDING_LIMIT", error: "Maximum 20 pending author proposals per operator reached."}
+    end
+  catch cap_err
+    give back server.json using 503, record {ok: no, code: "LEDGER_UNAVAILABLE", error: "Author ledger is unavailable."}
+  end
+
+  set immutable to record {schema_version: "1.7.0", author_plan_id: author_plan_id, genre_slug: gslug, artifact_type: artifact_type, target_slot: target_slot, builder_slot: builder_slot, slot_sha256: slot_sha, layout_sha256: layout_sha, design_system_sha256: ds_sha, operator_id: operator_id, site_id: site_id, artifact: artifact, book_meta: book_meta, hemingway_audit: hem_audit, schema_org_json_ld: jsonld_res, grex_layout: synth.grex_layout}
+  set canonical_payload to canonical_json using immutable
+  set payload_sha to crypto.sha256_hex using canonical_payload
+  set binding to approval_token joined with "|" joined with author_plan_id joined with "|" joined with gslug joined with "|" joined with artifact_type joined with "|" joined with target_slot joined with "|" joined with payload_sha joined with "|" joined with site_id joined with "|" joined with operator_id
+  set token_verifier to crypto.hash_password using (crypto.sha256_hex using binding)
+
+  try
+    call data.execute using author_ledger_insert, record {plan_id: author_plan_id, genre_slug: gslug, artifact_type: artifact_type, target_slot: target_slot, builder_slot: builder_slot, slot_sha256: slot_sha, payload_sha256: payload_sha, payload_json: canonical_payload, token_verifier: token_verifier, operator_id: operator_id, site_id: site_id, status: "staged", created_at: now_val.iso, expires_at: expires_val.iso, outcome_json: "{}"}
+  catch ins_err
+    give back server.json using 503, record {ok: no, code: "LEDGER_PERSISTENCE_FAILED", error: "Failed to persist staged author proposal."}
+  end
+
+  give back server.json using 200, record {ok: yes, schema_version: "1.7.0", author_plan_id: author_plan_id, genre_slug: gslug, artifact_type: artifact_type, target_slot: target_slot, builder_slot: builder_slot, payload_sha256: payload_sha, approval_required: yes, approval_token: approval_token, expires_at: expires_val.iso, artifact: artifact, hemingway_audit: hem_audit, schema_org_json_ld: jsonld_res, grex_layout: synth.grex_layout, design_craft: synth.design_craft, audit_report: synth.audit_report, generation: record {mode: mode, provider_used: provider_used, fallback_used: fallback_used, fallback_reason: fallback_reason}}
+end
+
+route "POST" "/api/groxy/author/apply" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  if has_map_key using req, "body"
+    if json_has_duplicate_keys using (req at "body")
+      give back server.json using 400, record {ok: no, code: "AUTHOR_APPLY_DUPLICATE_KEY", error: "Duplicate JSON keys are not permitted."}
+    end
+  end
+  set payload to nothing
+  try
+    set payload to server.parse_json using req
+  catch parse_err
+    give back server.json using 400, record {ok: no, code: "AUTHOR_APPLY_INVALID_JSON", error: "Request body must be valid JSON."}
+  end
+  if not (is_record_value using payload)
+    give back server.json using 400, record {ok: no, code: "AUTHOR_APPLY_INVALID_JSON", error: "Request body must be a JSON object."}
+  end
+  for each ak in (collections.keys using payload)
+    if ak is not "author_plan_id" and ak is not "genre_slug" and ak is not "artifact_type" and ak is not "target_slot" and ak is not "payload_sha256" and ak is not "approval_token"
+      give back server.json using 400, record {ok: no, code: "AUTHOR_APPLY_UNKNOWN_FIELD", error: ("Unsupported apply field: " joined with ak)}
+    end
+  end
+
+  set author_plan_id to map_get_str using payload, "author_plan_id", ""
+  set gslug to map_get_str using payload, "genre_slug", ""
+  set artifact_type to map_get_str using payload, "artifact_type", ""
+  set target_slot to map_get_str using payload, "target_slot", ""
+  set payload_sha to map_get_str using payload, "payload_sha256", ""
+  set approval_token to map_get_str using payload, "approval_token", ""
+  if not (text.starts_with using author_plan_id, "aplan-") or (text.length using author_plan_id) is not 38 or (text.length using payload_sha) is not 64 or not (text.starts_with using approval_token, "atok_") or (text.length using approval_token) is not 69
+    give back server.json using 403, record {ok: no, code: "AUTHOR_APPROVAL_INVALID", error: "Invalid author plan binding or approval token."}
+  end
+
+  set rows to []
+  try
+    set rows to data.query using author_ledger_read, record {plan_id: author_plan_id}
+  catch q_err
+    give back server.json using 503, record {ok: no, code: "LEDGER_UNAVAILABLE", error: "Author ledger is unavailable."}
+  end
+  if (collections.length using rows) is 0
+    give back server.json using 403, record {ok: no, code: "AUTHOR_APPROVAL_INVALID", error: "Staged author proposal does not exist."}
+  end
+  set staged to rows at 0
+  if staged.genre_slug is not gslug or staged.artifact_type is not artifact_type or staged.target_slot is not target_slot or staged.payload_sha256 is not payload_sha
+    give back server.json using 403, record {ok: no, code: "AUTHOR_TARGET_MISMATCH", error: "Genre, artifact_type, target_slot, or payload_sha256 does not match staged approval."}
+  end
+
+  set operator_id to resolve_env_opt using "GROXY_OPERATOR_ID"
+  if operator_id is ""
+    set operator_id to "local-operator"
+  end
+  set site_id to resolve_env_opt using "GROXY_SITE_ID"
+  if site_id is ""
+    set site_id to "configured-site"
+  end
+  if staged.operator_id is not operator_id or staged.site_id is not site_id
+    give back server.json using 403, record {ok: no, code: "AUTHOR_APPROVAL_INVALID", error: "Proposal belongs to a different operator or site."}
+  end
+
+  set immutable to json.parse using staged.payload_json
+  if (crypto.sha256_hex using (canonical_json using immutable)) is not staged.payload_sha256
+    give back server.json using 403, record {ok: no, code: "AUTHOR_DIGEST_INVALID", error: "Staged author payload failed canonical digest verification."}
+  end
+
+  set binding to approval_token joined with "|" joined with author_plan_id joined with "|" joined with gslug joined with "|" joined with artifact_type joined with "|" joined with target_slot joined with "|" joined with payload_sha joined with "|" joined with site_id joined with "|" joined with operator_id
+  if not (crypto.verify_password using (crypto.sha256_hex using binding), staged.token_verifier)
+    give back server.json using 403, record {ok: no, code: "AUTHOR_APPROVAL_INVALID", error: "Approval token is not bound to this author proposal."}
+  end
+
+  if staged.status is not "staged"
+    give back server.json using 409, record {ok: no, code: "AUTHOR_APPROVAL_REPLAY", error: "This author approval token has already been used or invalidated."}
+  end
+
+  set now_val to call dates.now_utc
+  if now_val.iso is greater than staged.expires_at
+    give back server.json using 403, record {ok: no, code: "AUTHOR_APPROVAL_EXPIRED", error: "Approval token expired; regenerate author proposal."}
+  end
+
+  set builder_url to resolve_env_opt using "GROXY_BUILDER_URL"
+  set cms_url to resolve_env_opt using "GROXY_CMS_URL"
+  set cms_token to resolve_env_opt using "GROXY_CMS_MCP_TOKEN"
+  set live_cms_types to []
+
+  if artifact_type is "series_reading_grid"
+    if builder_url is ""
+      give back server.json using 503, record {ok: no, code: "BUILDER_UNAVAILABLE", error: "Grex Theme Builder is not configured; token remains unconsumed."}
+    end
+    set pre_state_resp to nothing
+    set pre_ds_resp to nothing
+    try
+      set pre_state_resp to http.get using (builder_url joined with "/api/studio/state")
+      set pre_ds_resp to http.get using (builder_url joined with "/api/design-system.md")
+    catch pre_err
+      give back server.json using 503, record {ok: no, code: "BUILDER_UNAVAILABLE", error: "Grex Theme Builder is unreachable; token remains unconsumed."}
+    end
+    if not pre_state_resp.ok or not pre_ds_resp.ok
+      give back server.json using 503, record {ok: no, code: "BUILDER_UNAVAILABLE", error: "Grex Theme Builder preflight failed; token remains unconsumed."}
+    end
+    set pre_state to json.parse using pre_state_resp.body
+    set pre_slot_tree to author_extract_slot_tree using pre_state.draft, staged.builder_slot
+    if pre_slot_tree is nothing or (crypto.sha256_hex using (canonical_json using pre_slot_tree)) is not staged.slot_sha256
+      give back server.json using 409, record {ok: no, code: "AUTHOR_SLOT_DRIFT", error: "The target Builder slot changed after staging; regenerate author proposal."}
+    end
+    if (crypto.sha256_hex using (text.from using pre_ds_resp.body)) is not immutable.design_system_sha256
+      give back server.json using 409, record {ok: no, code: "AUTHOR_DESIGN_STALE", error: "The design system changed after staging; regenerate author proposal."}
+    end
+  otherwise
+    if cms_url is ""
+      give back server.json using 503, record {ok: no, code: "CMS_UNAVAILABLE", error: "GrabLab CMS is not configured; token remains unconsumed."}
+    end
+    set lct_res to call_cms_mcp_tool using cms_url, cms_token, "list_content_types", {}, 1702
+    if not lct_res.ok or not (has_map_key using lct_res.data, "content_types")
+      give back server.json using 503, record {ok: no, code: "CMS_UNAVAILABLE", error: "GrabLab CMS content types are unavailable; token remains unconsumed."}
+    end
+    set live_cms_types to lct_res.data at "content_types"
+  end
+
+  set author_apply_phase to "atomic_claim"
+  set claimed_ok to no
+  set claim_attempt to 0
+  while (not claimed_ok) and claim_attempt is less than 8
+    set claim_attempt to claim_attempt plus 1
+    try
+      set claim_res to data.execute using author_ledger_claim, record {plan_id: author_plan_id}
+      if claim_res.rows_affected is 0
+        give back server.json using 409, record {ok: no, code: "AUTHOR_APPROVAL_REPLAY", error: "This author approval is already being applied or was already consumed."}
+      end
+      set claimed_ok to yes
+    catch claim_err
+      if claim_err.message is "database conflict" and claim_attempt is less than 8
+        try
+          set recheck_rows to data.query using author_ledger_read, record {plan_id: author_plan_id}
+          if (collections.length using recheck_rows) is greater than 0
+            set r0 to recheck_rows at 0
+            if r0.status is not "staged"
+              give back server.json using 409, record {ok: no, code: "AUTHOR_APPROVAL_REPLAY", error: "This author approval is already being applied or was already consumed."}
+            end
+          end
+        catch recheck_err
+          set ignored_rc to recheck_err.message
+        end
+        call sqlite_jitter_backoff using author_plan_id
+      otherwise
+        give back server.json using 409, record {ok: no, code: "AUTHOR_APPROVAL_REPLAY", error: "This author approval is already being applied or was already consumed."}
+      end
+    end
+  end
+  if not claimed_ok
+    give back server.json using 409, record {ok: no, code: "AUTHOR_APPROVAL_REPLAY", error: "This author approval is already being applied or was already consumed."}
+  end
+
+  if artifact_type is "series_reading_grid"
+    set post_state_resp to nothing
+    try
+      set post_state_resp to http.get using (builder_url joined with "/api/studio/state")
+    catch post_err
+      call data.execute using author_ledger_finish, record {plan_id: author_plan_id, status: "dispatch_failed", outcome_json: (json.stringify using record {status: "dispatch_failed", reason: "builder_reread_failed"})}
+      give back server.json using 502, record {ok: no, code: "AUTHOR_DISPATCH_FAILED", status: "dispatch_failed", error: "Builder state re-read failed after approval claim."}
+    end
+    if not post_state_resp.ok
+      call data.execute using author_ledger_finish, record {plan_id: author_plan_id, status: "dispatch_failed", outcome_json: (json.stringify using record {status: "dispatch_failed", reason: "builder_reread_http_error"})}
+      give back server.json using 502, record {ok: no, code: "AUTHOR_DISPATCH_FAILED", status: "dispatch_failed", error: "Builder state re-read failed after approval claim."}
+    end
+    set post_state to json.parse using post_state_resp.body
+    set builder_csrf to map_get_str using post_state, "csrf_token", ""
+    set post_slot_tree to author_extract_slot_tree using post_state.draft, staged.builder_slot
+    if post_slot_tree is nothing or (crypto.sha256_hex using (canonical_json using post_slot_tree)) is not staged.slot_sha256
+      call data.execute using author_ledger_finish, record {plan_id: author_plan_id, status: "dispatch_failed", outcome_json: (json.stringify using record {status: "dispatch_failed", reason: "concurrent_slot_drift"})}
+      give back server.json using 409, record {ok: no, code: "AUTHOR_SLOT_DRIFT", status: "dispatch_failed", error: "Target slot drifted before dispatch; regenerate author proposal."}
+    end
+
+    set dispatch_payload to record {slot: staged.builder_slot, actor: "groxy-ai", summary: ("Groxy Author Series Grid: " joined with gslug), layout: immutable.grex_layout}
+    set dispatch_resp to nothing
+    try
+      set dispatch_resp to http.post using (builder_url joined with "/api/mcp/layout"), (json.stringify using dispatch_payload), record {headers: {"Content-Type": "application/json", "X-CSRF-Token": builder_csrf}}
+    catch disp_err
+      call data.execute using author_ledger_finish, record {plan_id: author_plan_id, status: "dispatch_failed", outcome_json: (json.stringify using record {status: "dispatch_failed", reason: "builder_dispatch_unreachable"})}
+      give back server.json using 502, record {ok: no, code: "AUTHOR_DISPATCH_FAILED", status: "dispatch_failed", error: "Builder dispatch failed safely; regenerate author proposal."}
+    end
+    if not dispatch_resp.ok
+      call data.execute using author_ledger_finish, record {plan_id: author_plan_id, status: "dispatch_failed", outcome_json: (json.stringify using record {status: "dispatch_failed", status_code: dispatch_resp.status})}
+      give back server.json using 502, record {ok: no, code: "AUTHOR_DISPATCH_FAILED", status: "dispatch_failed", error: ("Grex Theme Builder returned HTTP " joined with (text.from using dispatch_resp.status))}
+    end
+    set receipt to json.parse using dispatch_resp.body
+    if not (has_map_key using receipt, "command") or not (has_map_key using receipt, "document")
+      call data.execute using author_ledger_finish, record {plan_id: author_plan_id, status: "dispatch_failed", outcome_json: (json.stringify using record {status: "dispatch_failed", reason: "missing_builder_receipt"})}
+      give back server.json using 502, record {ok: no, code: "AUTHOR_READBACK_MISMATCH", status: "dispatch_failed", error: "Builder receipt missing command or document readback."}
+    end
+    set ret_slot_tree to author_extract_slot_tree using (receipt at "document"), staged.builder_slot
+    if ret_slot_tree is nothing or (crypto.sha256_hex using (canonical_json using ret_slot_tree)) is not immutable.layout_sha256
+      call data.execute using author_ledger_finish, record {plan_id: author_plan_id, status: "dispatch_failed", outcome_json: (json.stringify using record {status: "dispatch_failed", reason: "readback_digest_mismatch"})}
+      give back server.json using 502, record {ok: no, code: "AUTHOR_READBACK_MISMATCH", status: "dispatch_failed", error: "Builder readback tree digest did not match dispatched series grid."}
+    end
+    set applied_out to json.stringify using record {status: "applied", author_plan_id: author_plan_id, actor: "groxy-ai", builder_slot: staged.builder_slot, layout_sha256: immutable.layout_sha256, applied_at: now_val.iso}
+    call data.execute using author_ledger_finish, record {plan_id: author_plan_id, status: "applied", outcome_json: applied_out}
+    give back server.json using 201, record {ok: yes, schema_version: "1.7.0", approved: yes, author_plan_id: author_plan_id, genre_slug: gslug, artifact_type: artifact_type, target_slot: target_slot, builder_slot: staged.builder_slot, payload_sha256: payload_sha, status: "applied", status_enforced: "draft", actor: "groxy-ai", command_stack_action: "applyAiLayout", undo_available: yes, builder_receipt: receipt, schema_org_json_ld: immutable.schema_org_json_ld}
+  end
+
+  # Condition C7: select book/chapter if defined in live CMS, else fall back cleanly to post/page,
+  # and filter custom_fields strictly to registered keys on that content type.
+  set preferred_order to ["chapter", "post", "page"]
+  if artifact_type is "back_cover_blurb"
+    set preferred_order to ["book", "post", "page"]
+  end
+  set chosen_ct to nothing
+  for each cand_slug in preferred_order
+    if chosen_ct is nothing
+      for each lct in live_cms_types
+        if (map_get_str using lct, "slug", "") is cand_slug
+          set chosen_ct to lct
+        end
+      end
+    end
+  end
+  if chosen_ct is nothing
+    call data.execute using author_ledger_finish, record {plan_id: author_plan_id, status: "dispatch_failed", outcome_json: (json.stringify using record {status: "dispatch_failed", reason: "no_compatible_content_type"})}
+    give back server.json using 502, record {ok: no, code: "AUTHOR_CMS_INCOMPATIBLE", status: "dispatch_failed", error: "No compatible GrabLab content type (book/chapter/post/page) was found."}
+  end
+
+  set ct_slug_used to map_get_str using chosen_ct, "slug", "post"
+  set reg_fields to {}
+  if (has_map_key using chosen_ct, "fields") and (is_list_value using (chosen_ct at "fields"))
+    for each fd in (chosen_ct at "fields")
+      set fkey to map_get_str using fd, "field_key", ""
+      if fkey is not ""
+        set reg_fields to collections.put using reg_fields, fkey, (map_get_str using fd, "field_type", "text")
+      end
+    end
+  end
+  set filtered_cf to {}
+  if has_map_key using reg_fields, "subtitle"
+    set filtered_cf to collections.put using filtered_cf, "subtitle", (gslug joined with " — " joined with artifact_type)
+  end
+  if has_map_key using reg_fields, "reading_minutes"
+    set filtered_cf to collections.put using filtered_cf, "reading_minutes", "12"
+  end
+
+  set art_title to map_get_str using immutable.artifact, "title", ("Author " joined with artifact_type joined with " " joined with author_plan_id)
+  set draft_envelope to json.stringify using record {schema_version: "1.7.0", author_plan_id: author_plan_id, genre_slug: gslug, artifact_type: artifact_type, payload_sha256: payload_sha, artifact: immutable.artifact, hemingway_audit: immutable.hemingway_audit, schema_org_json_ld: immutable.schema_org_json_ld}
+  set cms_args to record {content_type_slug: ct_slug_used, title: art_title, slug: author_plan_id, excerpt: ("Human-reviewed Groxy Author Mode draft (" joined with gslug joined with " / " joined with artifact_type joined with ")."), meta_title: art_title, meta_description: ("Draft " joined with artifact_type joined with " calibrated to " joined with gslug joined with " playbook."), body: draft_envelope, custom_fields: filtered_cf}
+  set cms_res to call_cms_mcp_tool using cms_url, cms_token, "create_entry_draft", cms_args, 1703
+  if not cms_res.ok or (map_get_str using cms_res.data, "status_enforced", "") is not "draft"
+    call data.execute using author_ledger_finish, record {plan_id: author_plan_id, status: "dispatch_failed", outcome_json: (json.stringify using record {status: "dispatch_failed", reason: "cms_create_entry_draft_failed", detail: (map_get_str using cms_res, "error", "unknown")})}
+    give back server.json using 502, record {ok: no, code: "AUTHOR_DRAFT_FAILED", status: "dispatch_failed", error: "CMS create_entry_draft failed or did not enforce draft status."}
+  end
+
+  set draft_data to cms_res.data
+  set draft_id to map_get_str using draft_data, "entry_id", ""
+  if (has_map_key using draft_data, "entry") and (is_record_value using (draft_data at "entry"))
+    set draft_id to text.from using ((draft_data at "entry") at "id")
+  end
+  set applied_cms_out to json.stringify using record {status: "applied", author_plan_id: author_plan_id, draft_id: draft_id, content_type_used: ct_slug_used, status_enforced: "draft", applied_at: now_val.iso}
+  call data.execute using author_ledger_finish, record {plan_id: author_plan_id, status: "applied", outcome_json: applied_cms_out}
+  give back server.json using 201, record {ok: yes, schema_version: "1.7.0", approved: yes, author_plan_id: author_plan_id, genre_slug: gslug, artifact_type: artifact_type, target_slot: target_slot, payload_sha256: payload_sha, status: "applied", status_enforced: "draft", draft_id: draft_id, content_type_used: ct_slug_used, entry: (draft_data at "entry"), schema_org_json_ld: immutable.schema_org_json_ld}
 end

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Groxy AI v1.6.0 — Cross-Layer Regression, Section Co-Pilot & Database Gate Suite.
+Groxy AI v1.7.0 — Cross-Layer Regression, Multi-Genre Author Studio,
+Hemingway Readability, schema.org/Book JSON-LD & Database Gate Suite.
 
 Runs 3 non-negotiable gates:
   Gate 1: Static analysis (grab check), non-destructive canonical formatting (grab format byte-for-byte),
@@ -10,7 +11,7 @@ Runs 3 non-negotiable gates:
             - Core GRAB v1.1.0 `grab mcp` stdio JSON-RPC 2.0 server
             - GrabLab CMS v1.0.1 (isolated temp copy)
             - Grex Theme Builder v1.0.0 (isolated temp copy)
-            - Groxy AI v1.6.0 (src/groxy.grab)
+            - Groxy AI v1.7.0 (src/groxy.grab)
 """
 
 import http.cookiejar
@@ -283,6 +284,7 @@ def gate_1_static_and_format(grab_bin: str):
         REPO_ROOT / "public" / "groxy" / "vision-clone.js",
         REPO_ROOT / "public" / "groxy" / "db-consultant.js",
         REPO_ROOT / "public" / "groxy" / "section-copilot.js",
+        REPO_ROOT / "public" / "groxy" / "author-studio.js",
     ]:
         src = js_file.read_text(encoding="utf-8")
         code_only = re.sub(r"/\*[\s\S]*?\*/|//.*", "", src)
@@ -327,6 +329,7 @@ def gate_2_node_tests():
         "tests/unit_email_flows.test.js",
         "tests/unit_commerce_engines.test.js",
         "tests/unit_section_copilot.test.js",
+        "tests/unit_author_studio.test.js",
     ])
     print("  [PASS] Gate 2 complete (all unit & DOM tests passed).")
 
@@ -467,7 +470,7 @@ class MockDeskHandler(http.server.BaseHTTPRequestHandler):
 
 
 def gate_3b_live_cross_layer(grab_bin: str):
-    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v1.6.0...")
+    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v1.7.0...")
     cms_src = Path(os.environ.get("GRABLAB_CMS_DIR", r"C:\Development\grablab-cms"))
     builder_src = Path(os.environ.get("GREX_BUILDER_DIR", r"C:\Development\grex-builder"))
     if not (cms_src / "src" / "app.grab").exists():
@@ -619,7 +622,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         assert st_tok == 201, f"GrabLab mcp-token mint failed ({st_tok}): {tok_body}"
         cms_token = json.loads(tok_body)["token"]
 
-        # 3. Start Groxy AI v1.6.0 from an isolated copy so its storage writes
+        # 3. Start Groxy AI v1.7.0 from an isolated copy so its storage writes
         #    never modify the developer's working tree.
         groxy_log = tmp_root / "groxy.log"
         groxy_fh = open(groxy_log, "wb+")
@@ -651,10 +654,10 @@ def gate_3b_live_cross_layer(grab_bin: str):
                 "--allow-net",
                 f"127.0.0.1:{cms_port},127.0.0.1:{builder_port},127.0.0.1:9490",
                 "--allow-env",
-                "GROXY_CMS_URL,GROXY_CMS_MCP_TOKEN,GROXY_BUILDER_URL,GROXY_OPERATOR_ID,GROXY_DB_CONSULTANT_ENABLED,GROXY_EMAIL_FLOWS_BYOK_URL,GROXY_EMAIL_FLOWS_ALLOW_ORIGIN,GROXY_EMAIL_FLOWS_API_KEY,GROXY_COMMERCE_BYOK_URL,GROXY_COMMERCE_BYOK_ALLOW_ORIGIN,GROXY_COMMERCE_BYOK_API_KEY,GROXY_COMMERCE_BYOK_MODEL",
+                "GROXY_CMS_URL,GROXY_CMS_MCP_TOKEN,GROXY_BUILDER_URL,GROXY_OPERATOR_ID,GROXY_DB_CONSULTANT_ENABLED,GROXY_EMAIL_FLOWS_BYOK_URL,GROXY_EMAIL_FLOWS_ALLOW_ORIGIN,GROXY_EMAIL_FLOWS_API_KEY,GROXY_COMMERCE_BYOK_URL,GROXY_COMMERCE_BYOK_ALLOW_ORIGIN,GROXY_COMMERCE_BYOK_API_KEY,GROXY_COMMERCE_BYOK_MODEL,GROXY_AUTHOR_BYOK_URL,GROXY_AUTHOR_BYOK_ALLOW_ORIGIN,GROXY_AUTHOR_BYOK_API_KEY,GROXY_AUTHOR_BYOK_MODEL",
                 "src/groxy.grab",
             ]
-        groxy_environment = {**os.environ, "GROXY_CMS_URL": cms_url, "GROXY_CMS_MCP_TOKEN": cms_token, "GROXY_BUILDER_URL": builder_url, "GROXY_OPERATOR_ID": "e2e-admin", "GROXY_DB_CONSULTANT_ENABLED": "", "GROXY_EMAIL_FLOWS_BYOK_URL": "https://169.254.169.254/latest/meta-data", "GROXY_EMAIL_FLOWS_ALLOW_ORIGIN": "https://169.254.169.254", "GROXY_EMAIL_FLOWS_API_KEY": "e2e-only-secret", "GROXY_COMMERCE_BYOK_URL": "https://169.254.169.254/latest/meta-data", "GROXY_COMMERCE_BYOK_ALLOW_ORIGIN": "https://169.254.169.254", "GROXY_COMMERCE_BYOK_API_KEY": "e2e-only-secret", "GROXY_COMMERCE_BYOK_MODEL": "test-model"}
+        groxy_environment = {**os.environ, "GROXY_CMS_URL": cms_url, "GROXY_CMS_MCP_TOKEN": cms_token, "GROXY_BUILDER_URL": builder_url, "GROXY_OPERATOR_ID": "e2e-admin", "GROXY_DB_CONSULTANT_ENABLED": "", "GROXY_EMAIL_FLOWS_BYOK_URL": "https://169.254.169.254/latest/meta-data", "GROXY_EMAIL_FLOWS_ALLOW_ORIGIN": "https://169.254.169.254", "GROXY_EMAIL_FLOWS_API_KEY": "e2e-only-secret", "GROXY_COMMERCE_BYOK_URL": "https://169.254.169.254/latest/meta-data", "GROXY_COMMERCE_BYOK_ALLOW_ORIGIN": "https://169.254.169.254", "GROXY_COMMERCE_BYOK_API_KEY": "e2e-only-secret", "GROXY_COMMERCE_BYOK_MODEL": "test-model", "GROXY_AUTHOR_BYOK_URL": "https://169.254.169.254/latest/meta-data", "GROXY_AUTHOR_BYOK_ALLOW_ORIGIN": "https://169.254.169.254", "GROXY_AUTHOR_BYOK_API_KEY": "e2e-only-secret", "GROXY_AUTHOR_BYOK_MODEL": "test-model"}
         groxy_proc = subprocess.Popen(
             groxy_command,
             cwd=str(groxy_tmp),
@@ -663,7 +666,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
             stderr=subprocess.STDOUT,
         )
         procs.append(groxy_proc)
-        health_json = wait_for_health(groxy_url, groxy_proc, "Groxy AI v1.6.0", log_path=groxy_log)
+        health_json = wait_for_health(groxy_url, groxy_proc, "Groxy AI v1.7.0", log_path=groxy_log)
         assert health_json.get("status") == "ok", (
             f"Unexpected /_health payload from Groxy AI: {health_json}"
         )
@@ -679,7 +682,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         st, _, html = http_request(f"{groxy_url}/groxy")
         assert st == 200
         assert re.search(r"<div\b", html, re.IGNORECASE) is None, "/groxy HTML must have zero <div> elements"
-        assert '<meta name="groxy-version" content="1.6.0">' in html, "Missing groxy-version 1.6.0 meta tag"
+        assert '<meta name="groxy-version" content="1.7.0">' in html, "Missing groxy-version 1.7.0 meta tag"
         m = re.search(r'<meta\s+name="groxy-csrf"\s+content="([^"]+)"', html)
         assert m, "Missing groxy-csrf meta tag in /groxy HTML"
         groxy_csrf = m.group(1)
@@ -695,6 +698,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
             "/static/groxy/dashboard.js",
             "/static/groxy/vision-clone.js",
             "/static/groxy/section-copilot.js",
+            "/static/groxy/author-studio.js",
             "/static/groxy/brand-dna.js",
             "/static/groxy/batch-campaign.js",
             "/static/groxy/booster.js",
@@ -710,7 +714,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         pb = json.loads(pb_body)
         assert len(pb.get("rules", [])) == 22
         assert pb.get("playbook_version") == "1.0.0"
-        assert pb.get("service_version") == "1.6.0"
+        assert pb.get("service_version") == "1.7.0"
 
         # Verify CSRF enforcement on all POST routes
         for post_path in [
@@ -734,6 +738,9 @@ def gate_3b_live_cross_layer(grab_bin: str):
             "/api/groxy/db/apply",
             "/api/groxy/section-refine",
             "/api/groxy/section-refine/apply",
+            "/api/groxy/author/readability-audit",
+            "/api/groxy/author/generate",
+            "/api/groxy/author/apply",
         ]:
             st_no_csrf, _, _ = http_request(f"{groxy_url}{post_path}", method="POST", json_body={"entry": {}})
             assert st_no_csrf == 403, f"Expected 403 without CSRF on {post_path}, got {st_no_csrf}"
@@ -875,7 +882,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         assert st_insp == 200, f"/api/groxy/mcp/inspect failed ({st_insp}): {insp_body}"
         insp = json.loads(insp_body)
         assert insp["ok"] is True
-        assert insp["version"] == "1.6.0"
+        assert insp["version"] == "1.7.0"
         assert insp["grablab_cms"]["connected"] is True
         assert insp["grablab_cms"]["elements_count"] == 20
         assert "create_entry_draft" in insp["grablab_cms"]["tools"]
@@ -2079,7 +2086,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
             stderr=subprocess.STDOUT,
         )
         procs.append(groxy_worker_proc)
-        wait_for_health(groxy_worker_url, groxy_worker_proc, "Groxy AI v1.6.0 second worker", log_path=groxy_worker_log)
+        wait_for_health(groxy_worker_url, groxy_worker_proc, "Groxy AI v1.7.0 second worker", log_path=groxy_worker_log)
         _, _, worker_html = http_request(f"{groxy_worker_url}/groxy")
         worker_csrf_match = re.search(r'<meta\s+name="groxy-csrf"\s+content="([^"]+)"', worker_html)
         assert worker_csrf_match, "Second Groxy worker did not provide a CSRF token"
@@ -2278,7 +2285,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         log_files.append(groxy_restart_fh)
         groxy_proc = subprocess.Popen(groxy_command, cwd=str(groxy_tmp), env=groxy_environment, stdout=groxy_restart_fh, stderr=subprocess.STDOUT)
         procs.append(groxy_proc)
-        wait_for_health(groxy_url, groxy_proc, "Groxy AI v1.6.0 restart", log_path=groxy_restart_log)
+        wait_for_health(groxy_url, groxy_proc, "Groxy AI v1.7.0 restart", log_path=groxy_restart_log)
         st_restart_html, _, restart_html = http_request(f"{groxy_url}/groxy")
         assert st_restart_html == 200
         restart_csrf_match = re.search(r'<meta\s+name="groxy-csrf"\s+content="([^"]+)"', restart_html)
@@ -2925,11 +2932,304 @@ def gate_3b_live_cross_layer(grab_bin: str):
         )
         assert st_sec_fail_replay == 409, f"dispatch_failed proposal must never be reusable (got {st_sec_fail_replay})"
 
+        # -----------------------------------------------------------------
+        # v1.7.0: Multi-Genre Storytelling Brain, Hemingway Readability
+        # Auditor & schema.org/Book JSON-LD Engine
+        # -----------------------------------------------------------------
+        st_genres, _, genres_raw = http_request(f"{groxy_url}/api/groxy/author/genres")
+        assert st_genres == 200, f"GET /api/groxy/author/genres failed ({st_genres}): {genres_raw}"
+        genres_doc = json.loads(genres_raw)
+        assert genres_doc["count"] == 6 and genres_doc["playbook_schema_version"] == "groxy-genre-playbook-v1.0"
+        assert [g["genre_slug"] for g in genres_doc["genres"]] == [
+            "urban-fiction", "thriller", "romance", "sci-fi-fantasy", "self-help-reentry", "true-crime"
+        ]
+        for gp in genres_doc["genres"]:
+            assert gp["schema_org_book_defaults"]["@context"] == "https://schema.org"
+            assert gp["schema_org_book_defaults"]["bookFormat"].startswith("https://schema.org/")
+            tier_vals = set(gp["pricing_tiers_usd"].values())
+            for req_tier in ("0.00", "2.99", "4.99", "9.99", "14.99"):
+                assert req_tier in tier_vals, f"{gp['genre_slug']} missing canonical ADR-025c tier {req_tier}"
+
+        # Hemingway Readability Auditor (C2 wire strings + passive/adverb/complex-clause checks)
+        st_read, _, read_raw = http_request(
+            f"{groxy_url}/api/groxy/author/readability-audit", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "genre_slug": "urban-fiction",
+                "prose": (
+                    "The ledger was hidden by Marcus quickly, and the steel door was locked very tightly "
+                    "because nobody wanted auditors to trace the missing shipment across three docks before dawn. "
+                    '"Give me the ledger," Maya said. "Not tonight," Marcus replied.'
+                ),
+            },
+        )
+        assert st_read == 200, f"Readability audit failed ({st_read}): {read_raw}"
+        read_doc = json.loads(read_raw)
+        assert isinstance(read_doc["metrics"]["grade_level"], str)
+        assert isinstance(read_doc["metrics"]["passive_voice_percent"], str)
+        assert isinstance(read_doc["metrics"]["adverb_density_percent"], str)
+        assert isinstance(read_doc["metrics"]["dialogue_ratio_percent"], str)
+        assert float(read_doc["metrics"]["passive_voice_percent"]) > 0.0
+        assert float(read_doc["metrics"]["adverb_density_percent"]) > 0.0
+        assert int(read_doc["metrics"]["complex_sentence_count"]) >= 1
+        assert any(s["category"] == "passive_voice" for s in read_doc["suggestions"])
+
+        # C2 float rejection (422) & XSS rejection (422) & Ollama fallback & GRAB-E402 BYOK SSRF
+        st_auth_float, _, _ = http_request(
+            f"{groxy_url}/api/groxy/author/generate", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "genre_slug": "urban-fiction",
+                "artifact_type": "chapter_outline",
+                "brief": {"title": "Float Test", "premise": "Testing float rejection."},
+                "book_meta": {"price": 4.99, "numberOfPages": "280"},
+            },
+        )
+        assert st_auth_float == 422, f"Expected 422 ADR-025c float rejection, got {st_auth_float}"
+
+        st_auth_pages_float, _, _ = http_request(
+            f"{groxy_url}/api/groxy/author/generate", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "genre_slug": "urban-fiction",
+                "artifact_type": "chapter_outline",
+                "brief": {"title": "Pages Float Test", "premise": "Testing int wire rejection."},
+                "book_meta": {"price": "4.99", "numberOfPages": 280},
+            },
+        )
+        assert st_auth_pages_float == 422, f"Expected 422 on raw number numberOfPages, got {st_auth_pages_float}"
+
+        st_auth_xss, _, _ = http_request(
+            f"{groxy_url}/api/groxy/author/generate", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "genre_slug": "thriller",
+                "artifact_type": "back_cover_blurb",
+                "brief": {"title": "<script>alert(1)</script>", "premise": "Bad HTML."},
+            },
+        )
+        assert st_auth_xss == 422, f"Expected 422 on XSS brief, got {st_auth_xss}"
+
+        st_auth_ollama, _, auth_ollama_raw = http_request(
+            f"{groxy_url}/api/groxy/author/generate", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "genre_slug": "romance",
+                "artifact_type": "back_cover_blurb",
+                "generation_mode": "ollama",
+                "brief": {"title": "Harbor Hearts", "premise": "Two rival architects share one coastal cottage."},
+            },
+        )
+        assert st_auth_ollama == 200, f"Author ollama fallback failed ({st_auth_ollama}): {auth_ollama_raw}"
+        auth_ollama_doc = json.loads(auth_ollama_raw)
+        assert auth_ollama_doc["generation"]["provider_used"] == "deterministic" and auth_ollama_doc["generation"]["fallback_used"] is True
+
+        st_auth_byok, _, auth_byok_raw = http_request(
+            f"{groxy_url}/api/groxy/author/generate", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "genre_slug": "thriller",
+                "artifact_type": "chapter_draft",
+                "generation_mode": "byok",
+                "brief": {"title": "Cold Signal", "premise": "A forensic analyst intercepts a dead-drop signal."},
+            },
+        )
+        assert st_auth_byok == 403 and json.loads(auth_byok_raw).get("code") == "GRAB-E402", f"Expected GRAB-E402 BYOK SSRF block, got {st_auth_byok}: {auth_byok_raw}"
+        assert "e2e-only-secret" not in auth_byok_raw
+
+        # Stage chapter_outline, verify canonical payload_sha256, 403 mismatch, and 2-worker 201 + 409 race -> CMS draft
+        st_auth_gen, _, auth_gen_raw = http_request(
+            f"{groxy_url}/api/groxy/author/generate", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "genre_slug": "urban-fiction",
+                "artifact_type": "chapter_outline",
+                "brief": {"title": "Crown of Concrete", "protagonist": "Maya Cross", "setting": "Atlanta", "premise": "An accountant uncovers an empire betrayal.", "series_name": "Concrete Dynasty"},
+                "book_meta": {"title": "Crown of Concrete", "author_name": "Urban Author", "price": "4.99", "numberOfPages": "312", "bookFormat": "EBook", "isbn": "978-1-4028-9462-6"},
+            },
+        )
+        assert st_auth_gen == 200, f"Author generate chapter_outline failed ({st_auth_gen}): {auth_gen_raw}"
+        auth_gen = json.loads(auth_gen_raw)
+        assert auth_gen["author_plan_id"].startswith("aplan-") and auth_gen["approval_token"].startswith("atok_")
+        assert auth_gen["schema_org_json_ld"]["schema_type"] == "BookSeries+Book"
+        assert auth_gen["schema_org_json_ld"]["resolved_price"] == "4.99"
+        assert auth_gen["schema_org_json_ld"]["resolved_pages"] == "312"
+        assert "</script>" not in auth_gen["schema_org_json_ld"]["json_ld_escaped"]
+
+        with sqlite3.connect(groxy_tmp / "storage" / "groxy-commerce.db") as commerce_db:
+            author_wire = commerce_db.execute("SELECT payload_json FROM groxy_author_ledger WHERE plan_id = ?", (auth_gen["author_plan_id"],)).fetchone()[0]
+        canonical_author_bytes = json.dumps(json.loads(author_wire), ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        assert hashlib.sha256(canonical_author_bytes).hexdigest() == auth_gen["payload_sha256"], "Author payload_sha256 mismatch vs recursive sorted UTF-8 canonicalization"
+
+        auth_apply_body = {
+            "author_plan_id": auth_gen["author_plan_id"],
+            "genre_slug": auth_gen["genre_slug"],
+            "artifact_type": auth_gen["artifact_type"],
+            "target_slot": auth_gen["target_slot"],
+            "payload_sha256": auth_gen["payload_sha256"],
+            "approval_token": auth_gen["approval_token"],
+        }
+        st_auth_403, _, _ = http_request(
+            f"{groxy_url}/api/groxy/author/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body={**auth_apply_body, "genre_slug": "thriller"},
+        )
+        assert st_auth_403 == 403, f"Expected 403 on genre_slug mismatch, got {st_auth_403}"
+
+        def apply_author_once(url, csrf):
+            return http_request(
+                f"{url}/api/groxy/author/apply", method="POST",
+                headers={"X-CSRF-Token": csrf}, json_body=auth_apply_body,
+            )
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            auth_race_res = list(pool.map(
+                lambda args: apply_author_once(*args),
+                [(groxy_url, groxy_csrf), (groxy_worker_url, worker_csrf)],
+            ))
+        auth_race_statuses = sorted(r[0] for r in auth_race_res)
+        assert auth_race_statuses == [201, 409], f"Two-worker author apply race must yield [201, 409], got {auth_race_statuses}: {auth_race_res}"
+        auth_winner = json.loads(next(r[2] for r in auth_race_res if r[0] == 201))
+        assert auth_winner["status_enforced"] == "draft" and auth_winner["entry"]["status"] == "draft"
+        st_auth_replay, _, _ = apply_author_once(groxy_url, groxy_csrf)
+        assert st_auth_replay == 409, f"Expected 409 on author token replay, got {st_auth_replay}"
+
+        # Stage series_reading_grid, verify C6 sibling-drift 409, one-slot Builder dispatch + 1-click Undo (C8)
+        _, _, auth_b_pre_raw = http_request(f"{builder_url}/api/studio/state")
+        auth_b_pre = json.loads(auth_b_pre_raw)
+        auth_home_before = copy.deepcopy(auth_b_pre["draft"]["templates"]["home"])
+        auth_builder_csrf = auth_b_pre["csrf_token"]
+
+        st_grid_gen, _, grid_gen_raw = http_request(
+            f"{groxy_url}/api/groxy/author/generate", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "genre_slug": "sci-fi-fantasy",
+                "artifact_type": "series_reading_grid",
+                "target_slot": "home",
+                "brief": {"title": "Orbital Horizon", "series_name": "Orbital Horizon Trilogy", "author_name": "S. Vance"},
+                "book_meta": {"price": "4.99", "numberOfPages": "360"},
+            },
+        )
+        assert st_grid_gen == 200, f"Author series_reading_grid generate failed ({st_grid_gen}): {grid_gen_raw}"
+        grid_gen = json.loads(grid_gen_raw)
+        assert grid_gen["audit_report"]["overall_score"] >= 90 and grid_gen["audit_report"]["publish_safe"] is True
+        grid_serialized = json.dumps(grid_gen["grex_layout"])
+        for req_tier in ("0.00", "2.99", "4.99", "9.99", "14.99"):
+            assert req_tier in grid_serialized, f"series_reading_grid missing ADR-025c tier {req_tier}"
+
+        # Sibling edit on Builder home -> 409 AUTHOR_SLOT_DRIFT without consuming token or overwriting
+        auth_drift_home = copy.deepcopy(auth_home_before)
+        auth_drift_home["children"][1]["children"][1]["children"][0]["props"]["text"] = "Author Sibling Drift Edit"
+        http_request(
+            f"{builder_url}/api/mcp/layout", method="POST",
+            headers={"X-CSRF-Token": auth_builder_csrf},
+            json_body={"slot": "home", "actor": "designer", "summary": "Author drift test", "layout": auth_drift_home},
+        )
+        st_grid_drift, _, grid_drift_raw = http_request(
+            f"{groxy_url}/api/groxy/author/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "author_plan_id": grid_gen["author_plan_id"],
+                "genre_slug": grid_gen["genre_slug"],
+                "artifact_type": grid_gen["artifact_type"],
+                "target_slot": grid_gen["target_slot"],
+                "payload_sha256": grid_gen["payload_sha256"],
+                "approval_token": grid_gen["approval_token"],
+            },
+        )
+        assert st_grid_drift == 409 and json.loads(grid_drift_raw).get("code") == "AUTHOR_SLOT_DRIFT", f"Expected 409 AUTHOR_SLOT_DRIFT, got {st_grid_drift}: {grid_drift_raw}"
+
+        # Restore home, re-stage series_reading_grid, apply cleanly, verify 1-click Undo restoration
+        http_request(
+            f"{builder_url}/api/mcp/layout", method="POST",
+            headers={"X-CSRF-Token": auth_builder_csrf},
+            json_body={"slot": "home", "actor": "designer-restore", "summary": "Restore home", "layout": auth_home_before},
+        )
+        st_grid_gen2, _, grid_gen2_raw = http_request(
+            f"{groxy_url}/api/groxy/author/generate", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "genre_slug": "sci-fi-fantasy",
+                "artifact_type": "series_reading_grid",
+                "target_slot": "home",
+                "brief": {"title": "Orbital Horizon", "series_name": "Orbital Horizon Trilogy", "author_name": "S. Vance"},
+                "book_meta": {"price": "4.99", "numberOfPages": "360"},
+            },
+        )
+        assert st_grid_gen2 == 200
+        grid_gen2 = json.loads(grid_gen2_raw)
+        st_grid_apply, _, grid_apply_raw = http_request(
+            f"{groxy_url}/api/groxy/author/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "author_plan_id": grid_gen2["author_plan_id"],
+                "genre_slug": grid_gen2["genre_slug"],
+                "artifact_type": grid_gen2["artifact_type"],
+                "target_slot": grid_gen2["target_slot"],
+                "payload_sha256": grid_gen2["payload_sha256"],
+                "approval_token": grid_gen2["approval_token"],
+            },
+        )
+        assert st_grid_apply == 201, f"series_reading_grid apply failed ({st_grid_apply}): {grid_apply_raw}"
+        grid_apply_doc = json.loads(grid_apply_raw)
+        assert grid_apply_doc["actor"] == "groxy-ai" and grid_apply_doc["command_stack_action"] == "applyAiLayout" and grid_apply_doc["undo_available"] is True
+
+        _, _, auth_cmds_raw = http_request(f"{builder_url}/api/studio/commands")
+        latest_auth_cmd = json.loads(json.loads(auth_cmds_raw)["commands"][0]["command_json"])
+        assert latest_auth_cmd["actor"] == "groxy-ai" and latest_auth_cmd["slot"] == "home" and latest_auth_cmd["inverse"]["_restore"] is True
+        st_auth_undo, _, _ = http_request(
+            f"{builder_url}/api/mcp/layout", method="POST",
+            headers={"X-CSRF-Token": auth_builder_csrf},
+            json_body={"slot": "home", "actor": "designer-undo", "summary": "Undo v1.7.0 series grid", "layout": latest_auth_cmd["inverse"]["nextTree"]},
+        )
+        assert st_auth_undo == 200
+        _, _, auth_restored_raw = http_request(f"{builder_url}/api/studio/state")
+        assert json.loads(auth_restored_raw)["draft"]["templates"]["home"] == auth_home_before
+
+        # C8: Downstream Builder outage transitions ledger row to terminal dispatch_failed
+        st_grid_fail_gen, _, grid_fail_raw = http_request(
+            f"{groxy_url}/api/groxy/author/generate", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "genre_slug": "true-crime",
+                "artifact_type": "series_reading_grid",
+                "target_slot": "home",
+                "brief": {"title": "Cold Case Files", "series_name": "Cold Case Files"},
+            },
+        )
+        assert st_grid_fail_gen == 200
+        grid_fail = json.loads(grid_fail_raw)
+        grid_fail_apply = {
+            "author_plan_id": grid_fail["author_plan_id"],
+            "genre_slug": grid_fail["genre_slug"],
+            "artifact_type": grid_fail["artifact_type"],
+            "target_slot": grid_fail["target_slot"],
+            "payload_sha256": grid_fail["payload_sha256"],
+            "approval_token": grid_fail["approval_token"],
+        }
+        builder_proxy_state["fail_next_layout"] = True
+        st_grid_fail, _, grid_fail_resp = http_request(
+            f"{groxy_url}/api/groxy/author/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body=grid_fail_apply,
+        )
+        assert st_grid_fail == 502 and json.loads(grid_fail_resp).get("status") == "dispatch_failed"
+        with sqlite3.connect(groxy_tmp / "storage" / "groxy-commerce.db") as commerce_db:
+            auth_fail_status = commerce_db.execute(
+                "SELECT status FROM groxy_author_ledger WHERE plan_id = ?",
+                (grid_fail["author_plan_id"],),
+            ).fetchone()[0]
+        assert auth_fail_status == "dispatch_failed"
+        st_grid_fail_replay, _, _ = http_request(
+            f"{groxy_url}/api/groxy/author/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body=grid_fail_apply,
+        )
+        assert st_grid_fail_replay == 409
+
         for log_fh in log_files:
             log_fh.flush()
             log_bytes = Path(log_fh.name).read_bytes()
             assert b"e2e-only-secret" not in log_bytes, f"Provider key leaked into service log {Path(log_fh.name).name}"
-        print("  [PASS] Gate 3B complete (live GrabLab CMS + Grex Theme Builder + Groxy AI v1.6.0 Section Co-Pilot & Design-Craft).")
+        print("  [PASS] Gate 3B complete (live GrabLab CMS + Grex Theme Builder + Groxy AI v1.7.0 Author Studio, Hemingway & JSON-LD).")
     finally:
         for p in reversed(procs):
             terminate_process(p)
@@ -2954,7 +3254,7 @@ def main():
     gate_2_node_tests()
     gate_3a_grab_mcp_stdio(grab_bin)
     gate_3b_live_cross_layer(grab_bin)
-    print("\nAll regression gates and v1.6.0 Section Co-Pilot & Design-Craft gates passed; release-ready: True")
+    print("\nAll regression gates and v1.7.0 Multi-Genre Author Studio, Hemingway & JSON-LD gates passed; release-ready: True")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,253 @@
+{
+  "schema_version": "groxy-genre-playbook-v1.0",
+  "genre_slug": "sci-fi-fantasy",
+  "display_name": "Sci-Fi / Fantasy",
+  "target_audience": {
+    "primary_demographics": {
+      "age_range": "16-60",
+      "core_age_bracket": "20-44",
+      "gender_skew": "Broad cross-gender readership passionate about immersive worldbuilding, magic/tech systems, and found-family epics",
+      "reading_frequency": "2 to 6 longer-form installments per month plus serialized progression arcs",
+      "preferred_formats": [
+        "Digital Ebook (EPUB / Kindle / Mobile Web Reader)",
+        "Hardcover / Trade Paperback Collector Edition",
+        "Unabridged Epic Audiobook",
+        "Multi-Book Omnibus Box Set"
+      ]
+    },
+    "reading_motivations": [
+      "Sense of wonder from coherent magic rules, starship physics, or speculative societies",
+      "High-stakes rebellion, quest progression, and hard-earned competence under impossible odds",
+      "Found-family loyalty forged across dangerous frontiers and political factions"
+    ],
+    "emotional_payoffs": [
+      "Cathartic mastery when the protagonist solves a crisis through clever use of established magic/tech rules",
+      "Awe at shifting cosmic or realm-wide stakes that reshape the world",
+      "Deep loyalty payoff when disparate crew members stand together in the final battle"
+    ],
+    "cover_and_blurb_conversion_hooks": {
+      "cover_design_rules": [
+        "Iconic worldbuilding emblem, starship, or heroic silhouette set against luminous atmosphere legible at 120px",
+        "Crisp metallic serif or geometric sci-fi typography clearly displaying series number and subgenre tone",
+        "Avoid overcrowded collage elements; prioritize one unmistakable focal symbol"
+      ],
+      "blurb_structure_rules": [
+        "Paragraph 1 (The Tagline Hook): Bold 12-to-20-word premise uniting the world's central rule/anomaly with personal peril",
+        "Paragraph 2 (Protagonist & Magic/Tech Cost): Establish who the hero is, their constrained gift or mission, and the price of failure",
+        "Paragraph 3 (Faction Collision): Introduce the rival empire, rogue AI, or ancient threat destabilizing the realm",
+        "Paragraph 4 (The Ultimatum Closer): Frame the impossible choice between survival and reshaping the world, plus series CTA"
+      ]
+    }
+  },
+  "pacing_and_structure": {
+    "novel_word_count_targets": {
+      "novella_lead_magnet_min_words": "25000",
+      "novella_lead_magnet_max_words": "40000",
+      "standard_series_installment_min_words": "85000",
+      "standard_series_installment_max_words": "120000",
+      "epic_standalone_or_finale_min_words": "110000",
+      "epic_standalone_or_finale_max_words": "145000",
+      "box_set_omnibus_min_words": "260000"
+    },
+    "chapter_word_count_targets": {
+      "ideal_chapter_min_words": "2500",
+      "ideal_chapter_max_words": "4200",
+      "hard_ceiling_words": "5200",
+      "mobile_scroll_pacing_note": "Ground worldbuilding inside active movement so chapters stay between 2500 and 4200 words without dry encyclopedia dumps."
+    },
+    "act_structure": {
+      "act_1_the_inciting_hustle": {
+        "percentage_range": "0.00 to 25.00",
+        "structural_beats": [
+          "Open with an active magic/tech demonstration under pressure within the first 600 words",
+          "Reveal the cost and limits of the world's power system through action",
+          "Cross the threshold into the wider frontier, academy, or orbital conflict by 25.00 percent"
+        ]
+      },
+      "act_2_escalation_and_pressure_cooker": {
+        "percentage_range": "25.00 to 75.00",
+        "structural_beats": [
+          "First Half (25.00 to 50.00 percent): Crew assembly, training or tactical trials, and escalating faction friction",
+          "Midpoint Reversal (50.00 percent): Major myth or protocol shatters, exposing the true scale of the existential threat",
+          "Second Half (50.00 to 75.00 percent): Supply lines fail, mentors fall or defect, and the sanctuary collapses at 75.00 percent"
+        ]
+      },
+      "act_3_retribution_and_reckoning": {
+        "percentage_range": "75.00 to 100.00",
+        "structural_beats": [
+          "The Counter-Play (75.00 to 88.00 percent): Fuse crew specialties and rule-bound ingenuity into an audacious counter-offensive",
+          "The Climax (88.00 to 95.00 percent): Decisive battle or containment breach resolved strictly within established rules and costs",
+          "The Resolution or Series Cliffhanger (95.00 to 100.00 percent): Deliver victory for the immediate arc while opening the next horizon of the saga"
+        ]
+      }
+    },
+    "cliffhanger_cadence": {
+      "micro_tension_interval_words": "750",
+      "chapter_ending_cliffhanger_rate_percent": "82.00",
+      "mandatory_chapter_exit_hooks": [
+        "The System Breach: Sensors detect an anomaly that violates known physics or ward law",
+        "The Cost Paid: Power succeeds at a steep unexpected physical or political price",
+        "The Faction Betrayal: A signal or sealed decree reveals an ally switched sides",
+        "The Horizon Reveal: A closing line unveiling a larger ancient structure, fleet, or awakening"
+      ],
+      "series_arc_cliffhanger_strategy": "Structure 3-to-5-book sagas where each book closes its local quest while escalating the cosmic or political stakes toward a definitive series finale."
+    }
+  },
+  "trope_checklist": {
+    "core_tropes_readers_expect": [
+      {
+        "trope_id": "SF-TROPE-001",
+        "name": "Rule-Bound Magic / Hard-Logic Tech Costs",
+        "execution_rule": "Define clear limits and consequences so every victory feels earned through strategy rather than convenient miracles."
+      },
+      {
+        "trope_id": "SF-TROPE-002",
+        "name": "Found-Family Crew Under Pressure",
+        "execution_rule": "Give each crew member an indispensable skill, conflicting worldview, and evolving trust arc."
+      },
+      {
+        "trope_id": "SF-TROPE-003",
+        "name": "Hidden History / Buried Artifact",
+        "execution_rule": "Tie ancient lore directly to present-day survival and political power struggles."
+      },
+      {
+        "trope_id": "SF-TROPE-004",
+        "name": "Competence & Progression Payoff",
+        "execution_rule": "Show tangible growth in skill, tactical leadership, and mastery across scenes."
+      }
+    ],
+    "cliches_and_anti_patterns_to_avoid": [
+      {
+        "anti_pattern_id": "SF-AVOID-001",
+        "name": "Prologue Lore-Dump Wall of Text",
+        "prevention_rule": "Never open with 1500 words of creation myth; introduce history through immediate character conflict."
+      },
+      {
+        "anti_pattern_id": "SF-AVOID-002",
+        "name": "Deus Ex Machina Power Spike",
+        "prevention_rule": "Never invent an unseeded spell or gadget in Chapter 30 to rescue the hero; foreshadow every mechanism in Act 1 or 2."
+      },
+      {
+        "anti_pattern_id": "SF-AVOID-003",
+        "name": "Unpronounceable Apostrophe Name Soup",
+        "prevention_rule": "Keep character and place names memorable, distinct, and easy to parse on sight and in audio."
+      }
+    ]
+  },
+  "character_archetypes": {
+    "protagonist_models": [
+      {
+        "archetype": "The Underestimated Tactician / Reluctant Heir",
+        "core_drive": "Protecting marginalized people or crew by mastering forbidden or volatile systems",
+        "strengths": "Resourcefulness, empathy under fire, lateral problem-solving",
+        "fatal_flaw": "Carrying cosmic responsibility alone instead of trusting allies"
+      },
+      {
+        "archetype": "The Pragmatic Outrider / Disillusioned Captain",
+        "core_drive": "Keeping the ship flying and the crew alive in a fractured galaxy",
+        "strengths": "Battlefield instincts, negotiation grit, fierce loyalty",
+        "fatal_flaw": "Cynicism that blinds them to genuine hope until forced to commit"
+      }
+    ],
+    "antagonist_models": [
+      {
+        "archetype": "The Order-Obsessed Regent / Hegemon",
+        "motivation": "Believes total control is the only way to prevent chaos or collapse",
+        "tactic": "Monopolizes technology/magic supply and crushes dissent through bureaucratic or orbital force"
+      }
+    ],
+    "foil_and_ensemble_dynamics": {
+      "the_skeptical_engineer_or_scholar": "Translates arcane or technical hazards into concrete tactical stakes for the reader",
+      "the_rival_with_honor": "Antagonistic counterpart whose shared code creates uneasy alliances",
+      "spin_off_seeding_rule": "Anchor side characters with distinct homeworlds or guilds for companion novellas and omnibus extras."
+    }
+  },
+  "voice_and_dialogue_rules": {
+    "pov_conventions": {
+      "preferred_pov": "Close Third-Person Limited (1 to 3 core POV characters with clear chapter headers)",
+      "secondary_pov_option": "First-Person Tight POV for progression fantasy or space-opera memoirs",
+      "head_hopping_rule": "One POV per scene/chapter; clearly separate transitions with chapter or section breaks."
+    },
+    "dialogue_cadence": {
+      "dialogue_to_narration_ratio_percent": "40.00 to 52.00",
+      "rhythm_and_vernacular_rules": [
+        "Reflect faction culture and technical discipline in character speech without unreadable jargon",
+        "Weave worldbuilding naturally into tactical debates and crew banter",
+        "Use action beats grounded in gear, instruments, or environment"
+      ]
+    },
+    "sensory_grounding": {
+      "required_sensory_layers_per_scene": "3",
+      "signature_urban_textures": [
+        "Auditory: Reactor thrum, wind howling over basalt battlements, comm static",
+        "Visual: Bioluminescent mist, holographic star-charts, runic frost on steel",
+        "Olfactory and Tactile: Recycled hull air, pine smoke, static charge on fingertips, heavy leather harness"
+      ]
+    },
+    "hemingway_clarity_checks": {
+      "target_reading_grade_level": "7.50",
+      "max_reading_grade_level": "9.50",
+      "average_sentence_length_words": "15",
+      "hard_sentence_length_ceiling_words": "30",
+      "passive_voice_max_percent": "5.00",
+      "adverb_density_max_percent": "1.80",
+      "clarity_directives": [
+        "Keep combat and starship maneuvering clear, spatial, and active-voiced",
+        "Replace stacked adjectives with one vivid sensory detail",
+        "Avoid dense 10-line exposition paragraphs; break descriptions with character motion"
+      ]
+    }
+  },
+  "publishing_and_pricing_tiers": {
+    "series_launch_strategy": {
+      "rapid_release_cadence_days": "60",
+      "optimal_series_length_books": "3",
+      "extended_universe_model": "Offer a free prequel world-primer novella, price Book 1 at 2.99, sequels at 4.99, and a complete trilogy box set at 9.99."
+    },
+    "pricing_tiers_usd": {
+      "reader_magnet_prequel_price": "0.00",
+      "book_1_standard_price": "2.99",
+      "book_2_standard_price": "4.99",
+      "book_3_finale_standard_price": "4.99",
+      "trilogy_box_set_bundle_price": "9.99",
+      "trade_paperback_print_price": "14.99"
+    },
+    "royalty_and_unit_economics": {
+      "kdp_70_percent_tier_min_price": "2.99",
+      "kdp_70_percent_tier_max_price": "9.99",
+      "kdp_standard_royalty_rate_percent": "70.00",
+      "direct_to_reader_grablab_net_margin_percent": "94.50",
+      "target_book_1_to_book_2_read_through_percent": "72.00"
+    },
+    "direct_to_reader_and_kdp_hybrid_windowing": [
+      "Direct Collector Edition: Pair GrabLab CMS direct bundles (9.99 digital omnibus, 14.99 print) with downloadable world maps.",
+      "Series Funnel: Hook readers with a 0.00 prequel lore story and convert cleanly through 2.99 -> 4.99 installments."
+    ]
+  },
+  "schema_org_book_defaults": {
+    "@context": "https://schema.org",
+    "@type": "Book",
+    "genre": [
+      "Science Fiction",
+      "Fantasy",
+      "Speculative Fiction"
+    ],
+    "keywords": [
+      "sci-fi fantasy",
+      "epic fantasy",
+      "space opera",
+      "worldbuilding series",
+      "found family"
+    ],
+    "inLanguage": "en-US",
+    "bookFormat": "https://schema.org/EBook",
+    "typicalAgeRange": "16-",
+    "isAccessibleForFree": false,
+    "offers_defaults": {
+      "@type": "Offer",
+      "priceCurrency": "USD",
+      "price": "4.99",
+      "availability": "https://schema.org/InStock"
+    }
+  }
+}

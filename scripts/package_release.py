@@ -38,7 +38,7 @@ def validate_read_only_inspection_alias():
 
 def collect_release_files():
     validate_read_only_inspection_alias()
-    include_dirs = ["src", "views", "public", "assets", "playbook", "deploy"]
+    include_dirs = ["src", "views", "public", "assets", "playbook", "deploy", ".agents"]
     include_files = ["grab.platform.json", "grab.data.json", "scripts/migrate_commerce.grab", "README.md", "CHANGELOG.md", "GROXY-EXPERT.md", "LICENSE"]
     files = []
     tracked = set(
@@ -75,10 +75,22 @@ def collect_release_files():
         "public/groxy/section-copilot.js",
         "tests/unit_section_copilot.test.js",
     }
+    new_v170_modules = {
+        "playbook/genres/urban-fiction.v1.json",
+        "playbook/genres/thriller.v1.json",
+        "playbook/genres/romance.v1.json",
+        "playbook/genres/sci-fi-fantasy.v1.json",
+        "playbook/genres/self-help-reentry.v1.json",
+        "playbook/genres/true-crime.v1.json",
+        ".agents/skills/genre-research/SKILL.md",
+        "assets/author-studio.js",
+        "public/groxy/author-studio.js",
+        "tests/unit_author_studio.test.js",
+    }
 
     for fname in include_files:
         p = REPO_ROOT / fname
-        if p.exists() and p.is_file() and (fname in tracked or fname in new_v140_modules or fname in new_v150_modules or fname in new_v160_modules):
+        if p.exists() and p.is_file() and (fname in tracked or fname in new_v140_modules or fname in new_v150_modules or fname in new_v160_modules or fname in new_v170_modules):
             files.append(p)
 
     for dname in include_dirs:
@@ -90,7 +102,7 @@ def collect_release_files():
             if (
                 item.is_file()
                 and "__pycache__" not in item.parts
-                and (rel in tracked or rel in new_v120_modules or rel in new_v130_modules or rel in new_v140_modules or rel in new_v150_modules or rel in new_v160_modules)
+                and (rel in tracked or rel in new_v120_modules or rel in new_v130_modules or rel in new_v140_modules or rel in new_v150_modules or rel in new_v160_modules or rel in new_v170_modules)
             ):
                 files.append(item)
 

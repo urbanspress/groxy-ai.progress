@@ -1,0 +1,305 @@
+{
+"schema_version": "groxy-genre-playbook-v1.0",
+"genre_slug": "urban-fiction",
+"display_name": "Urban Fiction",
+"target_audience": {
+"primary_demographics": {
+"age_range": "18-49",
+"core_age_bracket": "21-38",
+"gender_skew": "Predominantly women (approximately 78.00 percent to 85.00 percent of digital voracious readers) alongside a dedicated male readership for gritty crime, street-lit, and hustle narratives",
+"reading_frequency": "Voracious binge-readers consuming 4 to 12 titles per month via Kindle Unlimited (KU) and direct-to-reader mobile storefronts",
+"preferred_formats": [
+"Digital Ebook (EPUB / Kindle MOBI / Mobile Web Reader)",
+"Kindle Unlimited (KDP Select page-read consumption)",
+"Direct-to-Reader Serialized Bundles and Box Sets",
+"Duet-Narrated Urban Audiobooks"
+]
+},
+"reading_motivations": [
+"Immersion in high-stakes survival, ambition, and upward mobility against systemic and street-level odds",
+"Vicarious thrill of ride-or-die loyalty, power-couple chemistry, and fierce protection of family and inner circle",
+"Recognition of authentic cultural voices, regional city textures (Atlanta, Detroit, Chicago, Houston, Miami, New York, Philadelphia), and unfiltered emotional honesty",
+"Fast-paced, cinematic escapism where betrayal is punished, hustle is rewarded, and resilience triumphs"
+],
+"emotional_payoffs": [
+"Visceral vindication when inner-circle traitors and snakes are exposed and neutralized",
+"Cathartic triumph as the protagonist rises from scarcity or betrayal to self-made sovereignty and financial independence",
+"Deep romantic satisfaction from a fiercely protective, ride-or-die partnership forged under extreme pressure",
+"Justice that operates by a clear, unyielding street and family code when institutional systems fail"
+],
+"cover_and_blurb_conversion_hooks": {
+"cover_design_rules": [
+"High-contrast, photorealistic character-forward artwork featuring expressive, aspirational Black and brown leads with sharp styling, luxury details, and authentic urban backdrops",
+"Bold, high-impact sans-serif or metallic display typography legible at 120px mobile thumbnail width with clear series numbering badges",
+"Visual shorthand signaling subgenre heat and stakes: luxury cars, skyline silhouettes, jewelry, subtle cash/empire motifs for street kingpin dramas, or intimate couple framing for urban romance"
+],
+"blurb_structure_rules": [
+"Paragraph 1 (The Tagline Hook): A single punchy 12-to-20-word bold premise establishing the power dynamic, betrayal, or forbidden alliance",
+"Paragraph 2 (Heroine / Primary Protagonist Stakes): Introduce her hustle, what she stands to lose, and the crisis forcing her hand",
+"Paragraph 3 (Hero / Counterpart Collision): Introduce his reputation, street code, and the dangerous debt, secret, or attraction binding them together",
+"Paragraph 4 (The Ultimatum Closer): End with a high-stakes binary choice where loyalty, love, and survival collide, followed by a clear binge-series call to action"
+]
+}
+},
+"pacing_and_structure": {
+"novel_word_count_targets": {
+"novella_lead_magnet_min_words": "20000",
+"novella_lead_magnet_max_words": "30000",
+"standard_series_installment_min_words": "50000",
+"standard_series_installment_max_words": "75000",
+"epic_standalone_or_finale_min_words": "75000",
+"epic_standalone_or_finale_max_words": "95000",
+"box_set_omnibus_min_words": "150000"
+},
+"chapter_word_count_targets": {
+"ideal_chapter_min_words": "2200",
+"ideal_chapter_max_words": "3500",
+"hard_ceiling_words": "4200",
+"mobile_scroll_pacing_note": "Keep chapters between 2200 and 3500 words so mobile readers finish a full chapter during a 10-to-15-minute commute or break, maximizing Kindle Unlimited KENP page-turn velocity."
+},
+"act_structure": {
+"act_1_the_inciting_hustle": {
+"percentage_range": "0.00 to 25.00",
+"structural_beats": [
+"Open in media res with an immediate money move, confrontation, prison release, or betrayal within the first 500 words—never open with weather or waking up in bed",
+"Establish the protagonist's hustle, family obligation, and the flaw or blind spot in their inner circle",
+"Trigger the Inciting Collision by the 12.00 percent mark: a missing shipment, a murder, a setup, a surprise debt, or a collision with the love interest",
+"Lock the protagonist into a high-stakes alliance or war by the 25.00 percent Act 1 turn with zero safe exit"
+]
+},
+"act_2_escalation_and_pressure_cooker": {
+"percentage_range": "25.00 to 75.00",
+"structural_beats": [
+"First Half (25.00 to 50.00 percent): Early wins and rising heat; romantic/sexual tension escalates alongside external pressure from rivals or law enforcement; plant subtle clues of an inside leak",
+"Midpoint Reversal (50.00 percent): A major power shift, intimate breakthrough, or public ambush that changes the rules of the game and raises personal stakes from money to blood or freedom",
+"Second Half (50.00 to 75.00 percent): The walls close in; alliances fracture; a trusted confidant's secret motives surface; the protagonist suffers a devastating loss or betrayal at the 75.00 percent All Hope Is Lost beat"
+]
+},
+"act_3_retribution_and_reckoning": {
+"percentage_range": "75.00 to 100.00",
+"structural_beats": [
+"The Counter-Play (75.00 to 88.00 percent): The protagonist sheds hesitation, outsmarts the trap using street intelligence and strategic planning, and turns the ambush back on the antagonist",
+"The Climax (88.00 to 95.00 percent): Direct, high-tension reckoning with the primary enemy and the inner-circle traitor; debts are settled on page",
+"The Resolution or Series Cliffhanger (95.00 to 100.00 percent): Deliver emotional payoff for the current arc while dropping a seismic closing revelation in Book 1 and Book 2 that compels an instant click to the next installment"
+]
+}
+},
+"cliffhanger_cadence": {
+"micro_tension_interval_words": "650",
+"chapter_ending_cliffhanger_rate_percent": "85.00",
+"mandatory_chapter_exit_hooks": [
+"The Unanswered Knock or Incoming Text: A message, photo, or unexpected visitor that shatters the scene's safety",
+"The Double-Cross Reveal: Ending a chapter from the antagonist's or best friend's POV showing they just sold the protagonist out",
+"The Interrupted Confession or Intimate Moment: High romantic heat cut short by a crisis, gunshot, arrest, or shocking secret",
+"The Ultimatum Line: A final spoken line of dialogue that forces an impossible choice in the very next chapter"
+],
+"series_arc_cliffhanger_strategy": "Use 3-book trilogies or 4-book cartel/family sagas. Book 1 ends on a major status-quo-shattering cliffhanger; Book 2 escalates to an empire-threatening war; Final Book delivers a complete, earned Happily Ever After (HEA) or definitive Kingpin/Queenpin victory with zero loose threads."
+}
+},
+"trope_checklist": {
+"core_tropes_readers_expect": [
+{
+"trope_id": "UF-TROPE-001",
+"name": "Kingpin and the Good Girl / Ambitious Professional",
+"execution_rule": "Pair a street-smart boss who commands respect and fear in the city with an educated, self-possessed woman (nurse, lawyer, entrepreneur, artist) who refuses to be bought or intimidated, creating mutual respect and world-collision tension."
+},
+{
+"trope_id": "UF-TROPE-002",
+"name": "Ride-or-Die Power Couple",
+"execution_rule": "Once loyalty is earned, both partners actively strategize, protect the empire, and cover each other's blind spots rather than leaving one partner passive."
+},
+{
+"trope_id": "UF-TROPE-003",
+"name": "The Inner-Circle Snake (Best Friend or Sibling Betrayal)",
+"execution_rule": "Seed jealousy and micro-resentments early so that when a close friend, cousin, or lieutenant flips out of envy or greed, the betrayal feels earned and emotionally devastating."
+},
+{
+"trope_id": "UF-TROPE-004",
+"name": "Beauty Brains and Hustle (The Self-Made Queenpin)",
+"execution_rule": "Give the female lead her own legitimate or street enterprise, financial literacy, and tactical agency so she is a powerhouse in her own right."
+},
+{
+"trope_id": "UF-TROPE-005",
+"name": "Blood vs. Loyalty (Found Family Code)",
+"execution_rule": "Contrast toxic biological relatives who leech off the protagonist against a loyal crew of chosen brothers and sisters who uphold the code under pressure."
+},
+{
+"trope_id": "UF-TROPE-006",
+"name": "Fresh Out / Reclamation Arc",
+"execution_rule": "A protagonist returning home after taking a charge or surviving a setup must reclaim their territory, family, or love from those who profited in their absence."
+},
+{
+"trope_id": "UF-TROPE-007",
+"name": "Secret Baby / Legacy Protection",
+"execution_rule": "Raise emotional stakes through the protection of children, generational wealth, and breaking cycles of trauma while keeping the plot moving at thriller speed."
+}
+],
+"cliches_and_anti_patterns_to_avoid": [
+{
+"anti_pattern_id": "UF-AVOID-001",
+"name": "Caricatured or Outdated Slang Overload",
+"prevention_rule": "Never stuff every sentence with dated slang or unreadable phonetic spellings that caricature Black and urban speech; rely on authentic cadence, syntax, and sharp subtext."
+},
+{
+"anti_pattern_id": "UF-AVOID-002",
+"name": "Passive Doormat Heroine who Forgives Unforgivable Abuse",
+"prevention_rule": "Modern Urban Fiction readers demand heroines with backbone and self-respect; distinguish between a dangerous alpha protector and toxic, unredeemable abuse toward the heroine."
+},
+{
+"anti_pattern_id": "UF-AVOID-003",
+"name": "Info-Dump Backstory in Chapter 1",
+"prevention_rule": "Never pause the opening chapter to explain 15 years of childhood history or family tree mechanics; weave backstory in 2-to-3-sentence flashes during active conflict."
+},
+{
+"anti_pattern_id": "UF-AVOID-004",
+"name": "Omnipotent Villain Without Logistics or Consequences",
+"prevention_rule": "Ground criminal enterprises, money laundering, and street politics in believable logistics—cameras, phones, burner discipline, federal task forces, and financial paper trails matter."
+},
+{
+"anti_pattern_id": "UF-AVOID-005",
+"name": "Bait-and-Switch Unresolved Series Finale",
+"prevention_rule": "While Books 1 and 2 thrive on cliffhangers, the advertised final book of a series must resolve the central war and romantic arc completely without forcing readers into a surprise Book 5 to get closure."
+}
+]
+},
+"character_archetypes": {
+"protagonist_models": [
+{
+"archetype": "The Calculating Kingpin / Reluctant Boss",
+"core_drive": "Transitioning his crew from volatile street money into legitimate generational real estate and business while defending his throne from hungry rivals",
+"strengths": "Three-steps-ahead strategic patience, unwavering protection of his inner circle, calm authority that doesn't need to shout",
+"fatal_flaw": "Hyper-vigilance and reluctance to trust anyone with his emotional vulnerability until the heroine breaks through his armor"
+},
+{
+"archetype": "The Boss Lady / Resilient Strategist",
+"core_drive": "Building financial autonomy and protecting her family or business when dragged into the crosshairs of street politics",
+"strengths": "Emotional intelligence, resourcefulness under fire, loyalty that must be earned and is lethal when betrayed",
+"fatal_flaw": "Carrying everyone else's burdens on her back until she learns to let a worthy partner share the weight"
+}
+],
+"antagonist_models": [
+{
+"archetype": "The Envious Lieutenant / Inner-Circle Judas",
+"motivation": "Believes they did the dirty work while the boss took the crown and the respect",
+"tactic": "Feeds information to rival crews or federal informants while smiling at the family dinner table"
+},
+{
+"archetype": "The Reckless Rival / New-School Hothead",
+"motivation": "Wants fast clout and territory without respecting old-school rules or collateral damage",
+"tactic": "Escalates conflict through brazen public moves that draw police heat and force a decisive war"
+},
+{
+"archetype": "The Bitter Ex / Obsessive Schemer",
+"motivation": "Entitlement to the protagonist's wealth, status, or heart, refusing to accept replacement",
+"tactic": "Weaponizes secrets, family alliances, or pregnancy/paternity traps to fracture the central couple"
+}
+],
+"foil_and_ensemble_dynamics": {
+"the_enforcer_best_friend": "Loyal, humorous, and quick-triggered counterpart who provides comic relief in calm moments and immediate tactical backup in crises—often setting up their own spin-off book",
+"the_matriarch_or_og_mentor": "Grandmother, mother, or incarcerated uncle who holds the family memory, delivers hard-truth wisdom, and grounds the moral stakes",
+"spin_off_seeding_rule": "Every Urban Fiction series should feature a 4-to-6-character crew where secondary couples and enforcers exhibit magnetic subplot chemistry, priming readers to pre-order their dedicated spin-off series immediately after the finale."
+}
+},
+"voice_and_dialogue_rules": {
+"pov_conventions": {
+"preferred_pov": "First-Person Alternating POV (I / We) with explicit character name subheaders at the start of every chapter",
+"secondary_pov_option": "Close Third-Person Limited Alternating POV for sprawling multi-family crime epics",
+"head_hopping_rule": "Strictly one POV character per chapter or explicitly separated scene break; never switch internal thoughts mid-paragraph."
+},
+"dialogue_cadence": {
+"dialogue_to_narration_ratio_percent": "55.00 to 65.00",
+"rhythm_and_vernacular_rules": [
+"Write snappy, rhythmic exchanges driven by status plays, deflection, humor, and sharp comebacks",
+"Convey African American Vernacular English (AAVE) and regional cadence through authentic word choice, rhythm, and sentence structure rather than heavy apostrophe-laden phonetic spelling",
+"Use action beats (counting bills, checking mirrors, locking doors, pouring a drink, eye contact) instead of repetitive dialogue tags like 'he said angrily'",
+"Ensure every argument carries double stakes: what the characters are arguing about on the surface and the deeper trust or power issue underneath"
+]
+},
+"sensory_grounding": {
+"required_sensory_layers_per_scene": "3",
+"signature_urban_textures": [
+"Auditory: Subwoofers vibrating through concrete, ice clinking in crystal, rain on a Maybach windshield, distant sirens, the hush of a VIP section when a boss walks in",
+"Visual: Neon reflections on wet asphalt, crisp lineups at the barbershop, designer stitching, body language in a crowded trap or penthouse",
+"Olfactory and Tactile: Expensive oud cologne mixed with gun oil or blunt smoke, humid Southern night air, cold steel, velvet booth seating, kitchen soul food aromas"
+]
+},
+"hemingway_clarity_checks": {
+"target_reading_grade_level": "6.50",
+"max_reading_grade_level": "8.00",
+"average_sentence_length_words": "14",
+"hard_sentence_length_ceiling_words": "28",
+"passive_voice_max_percent": "4.00",
+"adverb_density_max_percent": "1.50",
+"clarity_directives": [
+"Prefer concrete verbs and punchy declarative sentences during action and confrontation scenes",
+"Cut throat-clearing filter phrases ('she couldn't help but notice', 'he began to realize', 'it seemed as though')",
+"Keep paragraphs to 2 to 5 sentences on average so mobile screens maintain generous white space and fast vertical eye flow"
+]
+}
+},
+"publishing_and_pricing_tiers": {
+"series_launch_strategy": {
+"rapid_release_cadence_days": "30",
+"optimal_series_length_books": "3",
+"extended_universe_model": "Launch a 3-book core couple trilogy on a 30-day rapid-release schedule, then immediately bridge into a spin-off trilogy featuring the best friend or sibling within 45 days."
+},
+"pricing_tiers_usd": {
+"reader_magnet_prequel_price": "0.00",
+"book_1_launch_hook_price": "0.99",
+"book_1_standard_price": "2.99",
+"book_2_standard_price": "4.99",
+"book_3_finale_standard_price": "4.99",
+"premium_standalone_or_long_finale_price": "5.99",
+"trilogy_box_set_bundle_price": "9.99",
+"direct_storefront_vip_early_access_bundle_price": "12.99",
+"trade_paperback_print_price": "14.99",
+"hardcover_collector_edition_price": "24.99"
+},
+"royalty_and_unit_economics": {
+"kdp_70_percent_tier_min_price": "2.99",
+"kdp_70_percent_tier_max_price": "9.99",
+"kdp_standard_royalty_rate_percent": "70.00",
+"kdp_sub_threshold_royalty_rate_percent": "35.00",
+"estimated_kenp_payout_per_page_usd": "0.0045",
+"direct_to_reader_grablab_net_margin_percent": "94.50",
+"target_book_1_to_book_2_read_through_percent": "68.00",
+"target_book_2_to_book_3_read_through_percent": "82.00"
+},
+"direct_to_reader_and_kdp_hybrid_windowing": [
+"Window 1 (Days 1 to 14): Sell VIP Early Access Digital + Bonus Epilogue Edition direct to readers on the author's GrabLab CMS storefront at 4.99 or 12.99 trilogy bundle (retaining 94.50 percent net margin with exact ADR-025c GrabDecimal checkout)",
+"Window 2 (Day 15+): Enroll the standard edition into KDP Select / Kindle Unlimited for 90 days to capture massive page-read velocity and algorithm visibility, pricing Book 1 at 0.99 for launch week then 2.99, and Book 2+ at 4.99",
+"Backmatter Conversion Funnel: Place an immediate 1-click link to the next book's order page and a QR/link to claim a free bonus epilogue novella on the author's GrabLab CMS site before the 'About the Author' page"
+]
+},
+"schema_org_book_defaults": {
+"@context": "https://schema.org",
+"@type": "Book",
+"genre": [
+"Urban Fiction",
+"African American Fiction",
+"Street Lit",
+"Urban Romance",
+"Crime Thriller"
+],
+"keywords": [
+"urban fiction",
+"street lit",
+"hood romance",
+"african american romance",
+"kingpin romance",
+"ride or die",
+"urban crime thriller",
+"black love series"
+],
+"inLanguage": "en-US",
+"bookFormat": "https://schema.org/EBook",
+"typicalAgeRange": "18-",
+"isAccessibleForFree": false,
+"offers_defaults": {
+"@type": "Offer",
+"priceCurrency": "USD",
+"price": "4.99",
+"availability": "https://schema.org/InStock"
+}
+}
+}

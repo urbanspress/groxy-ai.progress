@@ -1369,6 +1369,195 @@ def render_v160_html() -> str:
 """
 
 
+def render_v170_html() -> str:
+    return """<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Groxy AI v1.7.0 Walkthrough Guide</title>
+  <style>
+    @page { size: letter; margin: 0.65in; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      line-height: 1.48;
+      font-size: 9.6pt;
+      margin: 0;
+    }
+    header {
+      border-bottom: 3px solid #047857;
+      padding-bottom: 0.65rem;
+      margin-bottom: 0.9rem;
+    }
+    h1 { margin: 0 0 0.2rem 0; font-size: 19pt; color: #064e3b; }
+    .subtitle { margin: 0; color: #334155; font-size: 10.6pt; font-weight: 600; }
+    .meta { margin: 0.3rem 0 0 0; color: #475569; font-size: 9pt; }
+    h2 {
+      margin: 1rem 0 0.4rem 0;
+      font-size: 12.2pt;
+      color: #065f46;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 0.16rem;
+      page-break-after: avoid;
+    }
+    p { margin: 0.3rem 0 0.5rem 0; }
+    ul { margin: 0.2rem 0 0.6rem 1.2rem; padding: 0; }
+    li { margin-bottom: 0.22rem; }
+    .callout {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      border-left: 4px solid #047857;
+      border-radius: 6px;
+      padding: 0.6rem 0.8rem;
+      margin: 0.65rem 0;
+      page-break-inside: avoid;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.65rem 0 0.9rem 0;
+      font-size: 8.8pt;
+      page-break-inside: avoid;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 0.36rem 0.48rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #ecfdf5; color: #0f172a; font-weight: 700; }
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      background: #f1f5f9;
+      padding: 0.06rem 0.25rem;
+      border-radius: 4px;
+      font-size: 8.5pt;
+    }
+    footer {
+      margin-top: 1.15rem;
+      padding-top: 0.55rem;
+      border-top: 1px solid #e2e8f0;
+      color: #475569;
+      font-size: 8.8pt;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Groxy AI v1.7.0 &mdash; Release Walkthrough Guide</h1>
+    <p class="subtitle">Multi-Genre Storytelling Brain &bull; Hemingway Clarity &amp; Readability Auditor &bull; XSS-Safe <code>schema.org/Book</code> JSON-LD Engine</p>
+    <p class="meta">Post-1.0 Ecosystem Step 4 &bull; Built natively on GRAB v1.1.0 + Grex JS v1.0.0 + GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 &bull; Status: Complete</p>
+  </header>
+
+  <section class="callout">
+    <p><strong>What Groxy AI v1.7.0 Delivers in Plain English:</strong> Authors and publishers now have a built-in, zero-fee storytelling studio inside <code>/groxy</code> backed by six validated genre playbooks (<em>Urban Fiction</em>, <em>Thriller / Mystery</em>, <em>Romance</em>, <em>Sci-Fi / Fantasy</em>, <em>Self-Help / Re-Entry</em>, and <em>True Crime</em>). Groxy drafts chapter outlines with cliffhanger hooks, POV-grounded chapter drafts, 4-paragraph back-cover conversion blurbs, and pure-Grex series reading-order grids, audits prose clarity deterministically like Hemingway, emits <code>&lt;/script&gt;</code>-escaped <code>schema.org/Book</code> JSON-LD with exact <code>ADR-025c</code> pricing, and saves everything strictly as human-reviewed GrabLab CMS drafts or 1-click undoable Grex Builder slots.</p>
+  </section>
+
+  <section>
+    <h2>1. Multi-Genre Playbook Registry &amp; Author Mode Co-Writer</h2>
+    <ul>
+      <li><strong>Six Fail-Closed Genre Playbooks (<code>playbook/genres/*.v1.json</code>, <code>C1</code>):</strong> Validated at startup and load time against <code>groxy-genre-playbook-v1.0</code>, enforcing exact <code>ADR-025c</code> base-10 pricing tiers (<code>"0.00"</code>, <code>"2.99"</code>, <code>"4.99"</code>, <code>"9.99"</code>, <code>"14.99"</code>), plain <code>https://schema.org/...</code> vocabulary URLs, and zero inline HTML/XSS. Paired with the reusable <code>.agents/skills/genre-research/SKILL.md</code> skill.</li>
+      <li><strong>Author Mode Generation (<code>POST /api/groxy/author/generate</code>, <code>C2–C5</code>):</strong> Grounded in <code>storage/BRAND-DNA.md</code>, <code>storage/SITE-CONTEXT.md</code>, and optional <code>GRAB-E401</code>-confined <code>storage/BOOK-BIBLE.md</code>. Runs offline deterministically by default, with optional local Ollama (<code>127.0.0.1:11434</code>) clean fallback or <code>GRAB-E402</code> SSRF-allowlisted BYOK enrichment (prompt-isolated JSON inputs, zero secret leaks).</li>
+      <li><strong>Atomic Single-Winner Apply (<code>POST /api/groxy/author/apply</code>, <code>C6–C8</code>):</strong> Stages recursive canonical <code>payload_sha256</code> + single-use <code>atok_&lt;hex&gt;</code> tokens in <code>groxy_author_ledger</code> (<code>scripts/migrate_commerce.grab</code> v4). Enforces CSRF (<code>403</code>), target binding (<code>403</code>), Builder <code>slot_sha256</code> sibling-drift checks (<code>409 AUTHOR_SLOT_DRIFT</code>), and atomic single-winner consumption (<code>201</code> winner, <code>409</code> replay/race). Content dispatches strictly via GrabLab CMS <code>create_entry_draft</code> (<code>status_enforced: "draft"</code>) with live <code>list_content_types</code> custom-field filtering; <code>series_reading_grid</code> dispatches via one-slot <code>POST /api/mcp/layout</code> (<code>actor: "groxy-ai"</code>, <code>Ctrl+Z</code> undo parity).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>2. Hemingway Clarity Auditor, <code>schema.org/Book</code> JSON-LD &amp; Pure Grex UI</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Capability</th>
+          <th>Endpoint / Module</th>
+          <th>Guarantees Enforced</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Hemingway Readability Auditor</strong></td>
+          <td><code>POST /api/groxy/author/readability-audit</code></td>
+          <td>Deterministic reading grade level, passive voice %, adverb density %, complex/nested clause chains, dialogue-to-narration pacing, and plain-English line-level rewrite suggestions as exact <code>ADR-025c</code> base-10 wire strings.</td>
+        </tr>
+        <tr>
+          <td><strong><code>schema.org/Book</code> &amp; <code>BookSeries</code> JSON-LD</strong></td>
+          <td><code>author-studio.js</code> &amp; <code>src/groxy.grab</code></td>
+          <td>Validates <code>bookFormat</code>, <code>isbn</code>, <code>numberOfPages</code>, <code>inLanguage</code>, <code>genre</code>, <code>typicalAgeRange</code>, and exact <code>offers.price</code> (<code>422</code> on JS floats); escapes <code>&lt;/script&gt;</code>, <code>&lt;</code>, <code>&gt;</code>, <code>&amp;</code>, <code>U+2028</code>, and <code>U+2029</code>.</td>
+        </tr>
+        <tr>
+          <td><strong>Pure Grex Author Studio Panel</strong></td>
+          <td><code>/groxy</code> (<code>author-studio.js</code>)</td>
+          <td><code>divCount === 0</code>, <code>innerHTMLWriteCount === 0</code>, zero <code>eval()</code>, full <code>Enter</code>/<code>Space</code>/<code>Escape</code> keyboard accessibility with focus restoration, and Light/Dark WCAG AA <code>&gt;= 4.5:1</code> contrast.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>3. Ecosystem Compatibility Matrix &amp; Verification Gates</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Ecosystem Layer</th>
+          <th>Repository</th>
+          <th>Required Version Range</th>
+          <th>Touched in Release?</th>
+          <th>Neighbor Upgrade Required?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Core Language, Bytecode VM &amp; Grisp Server</strong></td>
+          <td><code>urbanspress/grab</code></td>
+          <td><code>&gt;= v1.1.0 (&lt; v2.0.0)</code></td>
+          <td>No</td>
+          <td>No &bull; 100% drop-in compatible</td>
+        </tr>
+        <tr>
+          <td><strong>Reactive Frontend Runtime &amp; 20-Element Library</strong></td>
+          <td><code>urbanspress/grex-js</code></td>
+          <td><code>&gt;= v1.0.0 (&lt; v2.0.0)</code></td>
+          <td>No</td>
+          <td>No &bull; 100% drop-in compatible</td>
+        </tr>
+        <tr>
+          <td><strong>Flagship Zero-Plugin CMS</strong></td>
+          <td><code>urbanspress/grablab-cms</code></td>
+          <td><code>&gt;= v1.0.1 (&lt; v2.0.0)</code></td>
+          <td>No</td>
+          <td>No &bull; 100% drop-in compatible</td>
+        </tr>
+        <tr>
+          <td><strong>Exclusive <code>mode: "visual"</code> Theme &amp; Studio</strong></td>
+          <td><code>urbanspress/grex-builder</code></td>
+          <td><code>&gt;= v1.0.0 (&lt; v2.0.0)</code></td>
+          <td>No</td>
+          <td>No &bull; 100% drop-in compatible</td>
+        </tr>
+        <tr>
+          <td><strong>Autonomous Design, Content &amp; SEO Agent</strong></td>
+          <td><code>urbanspress/groxy-ai</code></td>
+          <td><code>&gt;= v0.1.0</code></td>
+          <td>Yes (<code>v1.7.0</code>)</td>
+          <td>No &bull; 100% drop-in compatible</td>
+        </tr>
+      </tbody>
+    </table>
+    <ul>
+      <li><strong>Verification Gates:</strong> <code>grab check</code> passed; byte-for-byte canonical <code>grab format</code> matched on both <code>.grab</code> files; <code>94/94</code> Node unit/DOM tests passed (including <code>tests/unit_author_studio.test.js</code>); full 4-layer integration suite (Gates 1, 2, 3A, 3B on <code>127.0.0.1</code>) passed 100% printing <code>release-ready: True</code>.</li>
+      <li><strong>Strict Sibling Boundary Protection:</strong> All 8 frozen sibling repositories in <code>C:\\Development\\*</code> verified clean with zero modifications.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <p>Groxy AI v1.7.0 &bull; Urban's Press / GRAB Ecosystem &bull; SemVer Tier: MINOR (1.x.0) &bull; Approved &amp; Frozen &mdash; Complete</p>
+  </footer>
+</body>
+</html>
+"""
+
+
 def main():
     version = sys.argv[1].lstrip("v") if len(sys.argv) > 1 else "1.0.0"
     renderers = {
@@ -1382,6 +1571,7 @@ def main():
         "1.3.0": render_v130_html,
         "1.5.0": render_v150_html,
         "1.6.0": render_v160_html,
+        "1.7.0": render_v170_html,
     }
     if version not in renderers:
         raise ValueError(f"Unsupported guide version '{version}'. Available: {', '.join(sorted(renderers))}")
