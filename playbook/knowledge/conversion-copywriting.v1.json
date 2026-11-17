@@ -1,0 +1,53 @@
+{
+  "schema_version": "groxy-knowledge-vault-v1.0",
+  "domain_slug": "conversion-copywriting",
+  "display_name": "Conversion Copywriting & Golden-Ratio CTA Vault",
+  "updated_at": "2026-11-17",
+  "numeric_thresholds": {
+    "max_primary_ctas_per_fold": "1",
+    "min_measure_ch": "60",
+    "max_measure_ch": "65",
+    "spacing_scale_unit_px": "8",
+    "tight_inline_px": "4"
+  },
+  "entries": [
+    {
+      "entry_id": "KV-CONV-001",
+      "title": "One Primary CTA Per Fold & Clear Visual Hierarchy",
+      "category": "cta-architecture",
+      "tags": ["cta", "conversion", "above-the-fold", "hierarchy", "design-craft"],
+      "summary": "Focus reader attention on one primary action per fold while demoting competing buttons to secondary or link variants.",
+      "rules": [
+        "Limit each hero or conversion fold to 1 primary CTA button; demote extra primary buttons to secondary.",
+        "Use specific, outcome-driven CTA labels ('Claim Book 1 ($2.99)' or 'Order Direct Paperback ($14.99)') instead of vague verbs.",
+        "Keep body copy measure between 60ch and 65ch via live design tokens when available, and align padding/gaps to the 8pt spacing scale."
+      ],
+      "citations": ["GROXY-CRAFT-001..003", "playbook/design-craft.v1.json"],
+      "thresholds": {
+        "max_primary_ctas_per_fold": "1",
+        "min_measure_ch": "60",
+        "max_measure_ch": "65",
+        "spacing_scale_unit_px": "8",
+        "tight_inline_px": "4"
+      }
+    },
+    {
+      "entry_id": "KV-CONV-002",
+      "title": "Four-Beat Book Blurb & Direct-to-Reader Funnel Copy",
+      "category": "book-copywriting",
+      "tags": ["blurb", "hook", "stakes", "funnel", "kdp", "direct-to-reader"],
+      "summary": "Convert cold browsers into series binge-readers using a four-paragraph hook-stakes-collision-ultimatum blurb and clear price-tier framing.",
+      "rules": [
+        "Open Paragraph 1 with a 12-to-20-word punchy tagline hook establishing betrayal, urgency, or forbidden alliance.",
+        "Introduce protagonist stakes in Paragraph 2, counterpart collision in Paragraph 3, and a binary ultimatum + next-step CTA in Paragraph 4.",
+        "Anchor direct-to-reader value clearly alongside eBook ($2.99 / $4.99), bundle ($12.99), and paperback ($14.99 / $16.99) tiers."
+      ],
+      "citations": ["Plotific Press Commercial Fiction Funnel Guide", "GROXY-AI-SPEC-170"],
+      "thresholds": {
+        "hook_min_words": "12",
+        "hook_max_words": "20",
+        "direct_bundle_price_usd": "12.99"
+      }
+    }
+  ]
+}

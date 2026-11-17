@@ -1558,6 +1558,192 @@ def render_v170_html() -> str:
 """
 
 
+def render_v180_html() -> str:
+    return """<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Groxy AI v1.8.0 — Plain-English Architecture &amp; Walkthrough Guide</title>
+  <style>
+    @page { size: letter; margin: 0.6in; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      line-height: 1.5;
+      font-size: 10pt;
+      margin: 0;
+    }
+    header {
+      border-bottom: 3px solid #047857;
+      padding-bottom: 0.65rem;
+      margin-bottom: 1rem;
+    }
+    h1 { font-size: 19pt; margin: 0 0 0.25rem 0; color: #0f172a; }
+    h2 {
+      font-size: 13pt;
+      margin: 1.1rem 0 0.45rem 0;
+      color: #065f46;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 0.2rem;
+      page-break-after: avoid;
+    }
+    p { margin: 0.35rem 0 0.55rem 0; }
+    ul { margin: 0.3rem 0 0.65rem 1.25rem; padding: 0; }
+    li { margin-bottom: 0.28rem; }
+    .subtitle { color: #334155; font-size: 10.5pt; margin: 0; }
+    .meta { color: #475569; font-size: 9pt; margin-top: 0.35rem; }
+    .callout {
+      background: #ecfdf5;
+      border-left: 4px solid #047857;
+      padding: 0.65rem 0.85rem;
+      margin: 0.75rem 0;
+      border-radius: 0 6px 6px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.65rem 0 0.9rem 0;
+      font-size: 8.8pt;
+      page-break-inside: avoid;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 0.38rem 0.5rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #ecfdf5; color: #0f172a; font-weight: 700; }
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      background: #f1f5f9;
+      padding: 0.06rem 0.25rem;
+      border-radius: 4px;
+      font-size: 8.8pt;
+    }
+    footer {
+      margin-top: 1.2rem;
+      padding-top: 0.55rem;
+      border-top: 1px solid #e2e8f0;
+      color: #475569;
+      font-size: 8.8pt;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Groxy AI v1.8.0 Walkthrough Guide</h1>
+    <p class="subtitle">Baked-In Offline Knowledge Vault &bull; Allowlisted Real-Time Web Research (<code>GRAB-E402</code>) &bull; Google Search Console <code>gsc.readonly</code> &bull; Bestseller Radar</p>
+    <p class="meta">Post-1.0 Ecosystem Step 4 &bull; Built natively on GRAB v1.1.0 + Grex JS v1.0.0 + GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 &bull; Status: Complete</p>
+  </header>
+
+  <section class="callout">
+    <p><strong>What Groxy AI v1.8.0 Delivers in Plain English:</strong> Operators, authors, and publishers gain a built-in offline Knowledge Vault (five validated playbooks with zero network fees), an opt-in <code>GRAB-E402</code> SSRF-hardened Web Research engine, a read-only Google Search Console (<code>gsc.readonly</code>) PKCE integration with <code>AES-256-GCM</code> encrypted tokens, and a Bestseller Radar that compiles profit-ranked genre briefs with exact <code>ADR-025c</code> base-10 price tiers (<code>"2.99"</code>, <code>"4.99"</code>, <code>"12.99"</code>, <code>"14.99"</code>, <code>"16.99"</code>) and dispatches strictly behind single-use <code>rtok_res_&lt;hex&gt;</code> human approval tokens.</p>
+  </section>
+
+  <section>
+    <h2>1. Baked-In Offline Knowledge Vault &amp; Bestseller Radar Playbooks</h2>
+    <ul>
+      <li><strong>Five Fail-Closed Knowledge Datasets (<code>playbook/knowledge/*.v1.json</code>, <code>C1</code>, <code>C2</code>):</strong> <code>seo-rules.v1.json</code>, <code>schema-org-reference.v1.json</code>, <code>wcag-patterns.v1.json</code>, <code>conversion-copywriting.v1.json</code>, and <code>correctional-publishing.v1.json</code> (aligned 100% with <code>PLOTIFIC-SAFE-001</code> &amp; <code>LULU-USPS-001</code>: matte 60# uncoated perfect-bound paperback, USPS-only blocking UPS/FedEx/DHL, plain white-label packing slip). Validated at boot and runtime load via <code>POST /api/groxy/knowledge/query</code> with zero external network calls and exact <code>ADR-025c</code> wire strings (<code>"4.50"</code>, <code>"3.00"</code>).</li>
+      <li><strong>Bestseller Radar Playbook (<code>playbook/market/bestseller-radar.v1.json</code>):</strong> Validates exact base-10 pricing tiers (<code>"2.99"</code>, <code>"4.99"</code>, <code>"12.99"</code>, <code>"14.99"</code>, <code>"16.99"</code>), Lulu print costs, USPS postage, and net-margin strings (<code>422</code> rejection on JS floats), plus <code>&lt;/script&gt;</code>-escaped <code>schema.org/Book</code> JSON-LD previews (<code>C7</code>).</li>
+      <li><strong>Atomic Single-Winner Apply (<code>POST /api/groxy/research/apply</code>, <code>C5</code>, <code>C6</code>):</strong> Uses additive <code>version: 5</code> SQLite tables (<code>groxy_research_ledger</code>, <code>groxy_gsc_connections</code>) on <code>commerce</code> with <code>X-CSRF-Token</code> (<code>403</code>), target binding (<code>403</code>), Builder <code>slot_sha256</code> drift protection (<code>409 RESEARCH_SLOT_DRIFT</code>), and atomic <code>201</code>/<code>409</code> single-winner dispatch to GrabLab CMS drafts (<code>status_enforced: "draft"</code>), one-slot Grex Builder layouts (<code>actor: "groxy-ai"</code>, <code>Ctrl+Z</code> undo), or Groxy Desk signed draft receipts.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>2. Allowlisted Web Research (<code>GRAB-E402</code>), Google Search Console &amp; Pure Grex UI</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Capability</th>
+          <th>Endpoint / Module</th>
+          <th>Guarantees Enforced</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Allowlisted Web Research</strong></td>
+          <td><code>POST /api/groxy/research/search</code></td>
+          <td>Opt-in <code>groxy_web_research_enabled: true</code> (<code>403</code> when disabled); exact <code>https://</code> allowlist (DuckDuckGo, Wikipedia, OpenLibrary, configured SearXNG); blocks loopback, RFC-1918, ULA, link-local, and cloud metadata; <code>retries: 0</code> + <code>&lt;= 3</code> hop <code>3xx</code> redirect revalidation (<code>403 GRAB-E402</code>); HTML stripping + JSON prompt isolation before optional local Ollama.</td>
+        </tr>
+        <tr>
+          <td><strong>Read-Only Google Search Console</strong></td>
+          <td><code>GET/POST /api/groxy/gsc/connect</code>, <code>/callback</code>, <code>/metrics</code>, <code>/disconnect</code></td>
+          <td>PKCE <code>S256</code> with strictly <code>webmasters.readonly</code>; <code>AES-256-GCM</code> (<code>"v1:..."</code>) token storage via <code>use crypto</code>; zero secret leakage; GDPR/CCPA aggregated base-10 wire metrics only.</td>
+        </tr>
+        <tr>
+          <td><strong>Pure Grex Research &amp; Radar Studio</strong></td>
+          <td><code>/groxy</code> (<code>research-radar.js</code>)</td>
+          <td><code>divCount === 0</code>, <code>innerHTMLWriteCount === 0</code>, zero <code>eval()</code>, <code>Enter</code>/<code>Space</code>/<code>Escape</code> keyboard accessibility with focus restoration, and Light/Dark WCAG AA <code>&gt;= 4.5:1</code> contrast.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>3. Ecosystem Compatibility Matrix &amp; Verification Gates</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Ecosystem Layer</th>
+          <th>Repository</th>
+          <th>Required Version Range</th>
+          <th>Touched in Release?</th>
+          <th>Neighbor Upgrade Required?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Core Language, Bytecode VM &amp; Grisp Server</strong></td>
+          <td><code>urbanspress/grab</code></td>
+          <td><code>&gt;= v1.1.0 (&lt; v2.0.0)</code></td>
+          <td>No</td>
+          <td>No &bull; 100% drop-in compatible</td>
+        </tr>
+        <tr>
+          <td><strong>Reactive Frontend Runtime &amp; 20-Element Library</strong></td>
+          <td><code>urbanspress/grex-js</code></td>
+          <td><code>&gt;= v1.0.0 (&lt; v2.0.0)</code></td>
+          <td>No</td>
+          <td>No &bull; 100% drop-in compatible</td>
+        </tr>
+        <tr>
+          <td><strong>Flagship Zero-Plugin CMS</strong></td>
+          <td><code>urbanspress/grablab-cms</code></td>
+          <td><code>&gt;= v1.0.1 (&lt; v2.0.0)</code></td>
+          <td>No</td>
+          <td>No &bull; 100% drop-in compatible</td>
+        </tr>
+        <tr>
+          <td><strong>Exclusive <code>mode: "visual"</code> Theme &amp; Studio</strong></td>
+          <td><code>urbanspress/grex-builder</code></td>
+          <td><code>&gt;= v1.0.0 (&lt; v2.0.0)</code></td>
+          <td>No</td>
+          <td>No &bull; 100% drop-in compatible</td>
+        </tr>
+        <tr>
+          <td><strong>Autonomous Design, Content &amp; SEO Agent</strong></td>
+          <td><code>urbanspress/groxy-ai</code></td>
+          <td><code>&gt;= v0.1.0</code></td>
+          <td>Yes (<code>v1.8.0</code>)</td>
+          <td>No &bull; 100% drop-in compatible</td>
+        </tr>
+      </tbody>
+    </table>
+    <ul>
+      <li><strong>Verification Gates:</strong> <code>grab check</code> passed; byte-for-byte canonical <code>grab format</code> matched on both <code>.grab</code> files; <code>101/101</code> Node unit/DOM tests passed (including <code>tests/unit_research_radar.test.js</code>); full 4-layer integration suite (Gates 1, 2, 3A, 3B on <code>127.0.0.1</code>) passed 100% printing <code>release-ready: True</code>.</li>
+      <li><strong>Strict Sibling Boundary Protection:</strong> All 9 frozen sibling repositories in <code>C:\\Development\\*</code> verified clean with zero modifications.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <p>Groxy AI v1.8.0 &bull; Urban's Press / GRAB Ecosystem &bull; SemVer Tier: MINOR (1.x.0) &bull; Approved &amp; Frozen &mdash; Complete</p>
+  </footer>
+</body>
+</html>
+"""
+
+
 def main():
     version = sys.argv[1].lstrip("v") if len(sys.argv) > 1 else "1.0.0"
     renderers = {
@@ -1572,6 +1758,7 @@ def main():
         "1.5.0": render_v150_html,
         "1.6.0": render_v160_html,
         "1.7.0": render_v170_html,
+        "1.8.0": render_v180_html,
     }
     if version not in renderers:
         raise ValueError(f"Unsupported guide version '{version}'. Available: {', '.join(sorted(renderers))}")

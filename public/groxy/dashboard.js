@@ -5,7 +5,7 @@
  * Zero innerHTML writes, zero eval(), zero wrapper <div> elements.
  */
 
-export const GROXY_VERSION = "1.7.0";
+export const GROXY_VERSION = "1.8.0";
 
 import {
   auditAccessibility,
@@ -42,6 +42,7 @@ import { mountCommerceStudio } from "./commerce-engines.js";
 import { mountDbConsultant } from "./db-consultant.js";
 import { mountSectionCopilotStudio } from "./section-copilot.js";
 import { mountAuthorStudio } from "./author-studio.js";
+import { mountResearchRadarStudio } from "./research-radar.js";
 
 export const SAMPLE_AUDIT_PRESETS = Object.freeze({
   clean: {
@@ -2297,6 +2298,7 @@ export function mountGroxyDashboard(options = {}) {
   const dbConsultantStudio = mountDbConsultant({ root, document: doc, csrfToken, fetchFn });
   const sectionCopilotStudio = mountSectionCopilotStudio({ root, document: doc, csrfToken, fetchFn });
   const authorStudio = mountAuthorStudio({ root, document: doc, csrfToken, fetchFn });
+  const researchRadarStudio = mountResearchRadarStudio({ root, document: doc, csrfToken, fetchFn });
 
   return {
     auditDomSafety() {
@@ -2354,6 +2356,8 @@ export function mountGroxyDashboard(options = {}) {
     getSectionCopilotStudio() { return sectionCopilotStudio; },
     getAuthorStudioState() { return authorStudio.getStaged(); },
     getAuthorStudio() { return authorStudio; },
+    getResearchRadarState() { return researchRadarStudio.getStaged(); },
+    getResearchRadarStudio() { return researchRadarStudio; },
     runAudit: executeAudit,
     triggerPrePublishReview,
     triggerBoost,
@@ -2389,6 +2393,7 @@ export function mountGroxyDashboard(options = {}) {
       dbConsultantStudio.dispose();
       sectionCopilotStudio.dispose();
       authorStudio.dispose();
+      researchRadarStudio.dispose();
     },
   };
 }

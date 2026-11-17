@@ -1,7 +1,7 @@
 # GROXY-AI-SPEC-180 — Baked-In Offline Knowledge Vault, Allowlisted Real-Time Web Research & Bestseller Radar
 
 - **Version:** Groxy AI `v1.8.0`
-- **Status:** Approved; implementation in progress
+- **Status:** Approved & Frozen — Complete
 - **Draft Date:** 2026-11-17
 - **SemVer:** MINOR — backwards-compatible feature release (`ADR-027c`).
 - **Frozen baselines:** Groxy AI `v1.0.0` through `v1.7.0`; GRAB `v1.1.0`; Grex JS `v1.0.0`; GrabLab CMS `v1.0.1`; Grex Theme Builder `v1.0.0`; Gashboard `v1.0.0`; Groxy Desk `v1.0.0`.
@@ -135,7 +135,7 @@ Renders inside `views/dashboard.grab.html` + `public/groxy/research-studio.js` (
 
 ## 10. Owner Review & Next Phase
 
-**Approved; implementation in progress (2026-11-17).** Explicit project-owner approval received for `SPEC-180` as written. Stage 2 Pre-Implementation Cross-Layer Security & Contract Audit verdict: **`PASS`** (Section 11, Binding Conditions `C1–C8`). Next phase: switch to **`GPT-OSS 120B (High)`** (or **`Claude Sonnet (High)`** / **`Hydrogen (High)`**) for Stage 3 implementation and all Section 9 acceptance gates.
+**Approved & Frozen — Complete (2026-11-17).** Explicit project-owner approval received for `SPEC-180` as written; Stage 2 Pre-Implementation Cross-Layer Security & Contract Audit passed (`PASS`, Conditions `C1–C8`); Stage 3 implementation and all Section 9 acceptance gates (`grab check`, byte-for-byte `grab format`, `101/101` Node unit/DOM tests including `tests/unit_research_radar.test.js`, and live 4-layer Gate 3B with `release-ready: True`) passed 100% with synchronized dual-remote `v1.8.0` releases and walkthrough PDF.
 
 ---
 

@@ -1,9 +1,27 @@
 # HANDOFF.md — Groxy AI
 
-- **Current Owner:** Google Antigravity (`Orchestrator (Argon)` — Stage 2 `v1.8.0` Pre-Implementation Cross-Layer Security & Contract Audit `PASS`; ready for Stage 3 implementation on `GPT-OSS 120B (High)` or `Claude Sonnet (High)` / `Hydrogen (High)`)
-- **Current Milestone State:** `v1.0.0` through `v1.7.0` are `Approved & Frozen — Complete`.
-- **Current Milestone:** `v1.7.0` — Multi-Genre Storytelling Brain, Hemingway Readability Auditor & `schema.org/Book` JSON-LD Engine (`Approved & Frozen — Complete`). All Section 9 gates and Section 11 binding conditions (`C1–C8`) passed 100% with `release-ready: True` ([SPEC-170](specifications/GROXY-AI-SPEC-170.md)).
-- **Next Milestone Action:** Milestone `v1.8.0` (Baked-In Offline Knowledge Vault, Allowlisted Real-Time Web Research & Bestseller Radar) — **`Approved; implementation in progress`**, Stage 2 Pre-Implementation Cross-Layer Security & Contract Audit **`PASS`** ([SPEC-180](specifications/GROXY-AI-SPEC-180.md) Section 11, Binding Conditions `C1–C8`; [Roadmap](docs/ROADMAP.md)). Switch to **`GPT-OSS 120B (High)`** (or **`Claude Sonnet (High)`** / **`Hydrogen (High)`**) for Stage 3 implementation and all Section 9 acceptance gates.
+- **Current Owner:** Google Antigravity (`Gemini 4 Hydrogen (High)` — Stage 3 `v1.8.0` Implementation & All Section 9 Acceptance Gates `PASS` (`release-ready: True`); dual-remote `v1.8.0` release published)
+- **Current Milestone State:** `v1.0.0` through `v1.8.0` are `Approved & Frozen — Complete`.
+- **Current Milestone:** `v1.8.0` — Baked-In Offline Knowledge Vault, Allowlisted Real-Time Web Research, Google Search Console `gsc.readonly` & Bestseller Radar (`Approved & Frozen — Complete`). All Section 9 gates and Section 11 binding conditions (`C1–C8`) passed 100% with `release-ready: True` ([SPEC-180](specifications/GROXY-AI-SPEC-180.md)).
+- **Next Milestone Action:** No pending `v1.8.0` tasks remain; `v1.8.0` is promoted to both `origin` and `stable` with synchronized GitHub Releases, walkthrough PDF, release bundle, and `SHA256SUMS.txt`. For the next milestone (`v1.9.0`+), switch to **`Claude Sonnet (Medium)`** (or **`Hydrogen (Medium)`**) to draft the next specification per `AGENTS.md` Stage 1 routing.
+
+## `v1.8.0` Milestone Implementation & Section 9 Verification Sign-Off (`PASS`) — 2026-11-17
+- **Status:** **`Approved & Frozen — Complete`** — `Groxy AI v1.8.0` verified 100% against frozen **`GRAB v1.1.0`**, **`Grex JS v1.0.0`**, **`GrabLab CMS v1.0.1`**, and **`Grex Theme Builder v1.0.0`**.
+- **1. Baked-In Offline Knowledge Vault & Bestseller Radar Playbooks (`C1`, `C2`):**
+  - Created 5 fail-closed `groxy-knowledge-vault-v1.0` playbooks (`playbook/knowledge/seo-rules.v1.json`, `schema-org-reference.v1.json`, `wcag-patterns.v1.json`, `conversion-copywriting.v1.json`, and `correctional-publishing.v1.json` aligned 100% with `PLOTIFIC-SAFE-001` and `LULU-USPS-001`) plus `playbook/market/bestseller-radar.v1.json` (`groxy-bestseller-radar-v1.0` with exact `ADR-025c` tiers `"2.99"`, `"4.99"`, `"12.99"`, `"14.99"`, `"16.99"`, print costs, USPS postage, and net-margin wire strings).
+  - Enforced startup/runtime load validation (`422` float/XSS rejection) and updated `scripts/package_release.py` to bundle all `v1.8.0` datasets and modules.
+- **2. Backend Routes, `version: 5` Migration, `GRAB-E402` SSRF Guard & `AES-256-GCM` GSC OAuth2 (`C2–C8`):**
+  - Added `version: 5` (`groxy_research_ledger` and `groxy_gsc_connections`) in `scripts/migrate_commerce.grab` (and bumped `architect-quiz` next migration version to `6`).
+  - Implemented `POST /api/groxy/knowledge/query` (zero external network calls, exact `"4.50"`/`"3.00"` thresholds), `POST /api/groxy/research/search` (opt-in `GROXY_WEB_RESEARCH_ENABLED=true`, `GRAB-E402` exact-origin HTTPS allowlisting, pre-connect SSRF IP/host blocks, `retries: 0` + `<= 3` hop `3xx` `Location` revalidation, HTML stripping, JSON-encoded prompt isolation), `POST /api/groxy/research/bestseller-radar` & `/apply` (and `/bestseller-radar/apply` alias) with `rtok_res_<hex>` atomic single-winner race (`201`/`403`/`409 RESEARCH_SLOT_DRIFT`), `groxy_studio` Builder 1-click Undo, `grablab_cms` `create_entry_draft` (`status_enforced: "draft"`), and `groxy_desk` signed draft-only import receipt.
+  - Implemented `GET/POST /api/groxy/gsc/connect`, `GET /api/groxy/gsc/callback`, `POST /api/groxy/gsc/metrics`, `POST /api/groxy/gsc/disconnect` (plus `/api/groxy/research/gsc/*` aliases) using PKCE (`S256`), `webmasters.readonly`, `crypto.encrypt_aead` / `crypto.decrypt_aead` (`"v1:..."`), zero secret leakage, and GDPR/CCPA aggregated base-10 wire metrics.
+- **3. Pure `Grex JS v1.0.0` Research & Radar Studio Panel (`views/dashboard.grab.html`, `public/groxy/research-radar.js`, `assets/research-radar.js`, `public/groxy/dashboard.js`):** Zero `<div>` wrappers, zero `innerHTML` writes, zero `eval()`, keyboard `Enter`/`Space`/`Escape` navigation with focus restoration, and Light/Dark WCAG AA `>= 4.5:1`.
+- **4. Verification Gates (`100%` Pass):**
+  - `grab check --platform-config grab.platform.json src/groxy.grab` and `scripts/migrate_commerce.grab`: zero errors.
+  - Canonical `grab format` stdout matched `src/groxy.grab` and `scripts/migrate_commerce.grab` byte-for-byte.
+  - `node --test tests/*.test.js`: `101/101` passing (including `tests/unit_research_radar.test.js` and `tests/unit_v100_production_audit.test.js`).
+  - `python tests/integration_e2e.py`: Gates `1`, `2`, `3A`, and live 4-layer `3B` passed `100%` with `release-ready: True`.
+  - All 9 frozen sibling repositories in `C:\Development\*` verified clean with zero modifications.
+- **5. Releases & Sync:** Generated `docs/releases/pdf/Groxy-AI-v1.8.0-Guide.pdf`, `docs/releases/pdf/Groxy-AI-v1.8.0-RELEASE-NOTES.md`, `dist/groxy-ai-v1.8.0-bundle.zip`, and `dist/SHA256SUMS.txt`; pushed `main` and `v1.8.0` to `origin` and `stable` with synchronized GitHub Releases; ran `sync-notebook-sources.ps1` and `generate-codex-handoff.ps1`.
 
 ## `v1.8.0` Owner Approval & Stage 2 Pre-Implementation Cross-Layer Security & Contract Audit (`Orchestrator (Argon)` — `PASS`) — 2026-11-17
 - **Approval:** The project owner approved [SPEC-180](specifications/GROXY-AI-SPEC-180.md) as written. Status: `Approved; implementation in progress` in `SPEC-180` and [the roadmap](docs/ROADMAP.md).

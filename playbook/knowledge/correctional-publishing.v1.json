@@ -1,0 +1,75 @@
+{
+  "schema_version": "groxy-knowledge-vault-v1.0",
+  "domain_slug": "correctional-publishing",
+  "display_name": "Correctional-Facility & Direct-to-Reader Book Publishing Vault (PLOTIFIC-SAFE-001 / LULU-USPS-001)",
+  "updated_at": "2026-11-17",
+  "numeric_thresholds": {
+    "spine_factor_60_uncoated_in_per_page": "0.002252",
+    "cover_bleed_in": "0.125",
+    "safety_margin_in": "0.500",
+    "paperback_standard_price_usd": "14.99",
+    "paperback_premium_price_usd": "16.99",
+    "min_net_margin_percent": "25.00"
+  },
+  "entries": [
+    {
+      "entry_id": "KV-CORR-001",
+      "title": "PLOTIFIC-SAFE-001 Zero-Assumption Mailroom Gate",
+      "category": "mailroom-compliance",
+      "tags": ["plotific-safe-001", "correctional", "mailroom", "facility", "inmate-mail", "compliance"],
+      "summary": "Fail closed on any unknown or unverified correctional facility before generating or dispatching an inmate book shipment.",
+      "rules": [
+        "If the destination facility is missing from playbooks/facilities/ or has verification_status != 'verified', halt automated fulfillment and return status: 'requires_manual_mailroom_call'.",
+        "Enforce each facility's max_books_per_package, lenient_tier ('1', '2', or '3'), address_format_template (including inmate full name and register/ID number), and content_redlines.",
+        "Never include promotional flyers, bookmarks, staples, or unauthorized inserts inside facility-bound parcels."
+      ],
+      "citations": ["PLOTIFIC-EXPERT.md PLOTIFIC-SAFE-001"],
+      "thresholds": {
+        "lenient_tier_strictest": "1",
+        "lenient_tier_moderate": "2",
+        "lenient_tier_standard": "3"
+      }
+    },
+    {
+      "entry_id": "KV-CORR-002",
+      "title": "LULU-USPS-001 Print & Carrier Lock (White-Label Matte Paperback + USPS Only)",
+      "category": "print-and-carrier-lock",
+      "tags": ["lulu-usps-001", "lulu", "usps", "paperback", "matte", "white-label", "carrier-lock"],
+      "summary": "Restrict facility-eligible print editions strictly to Lulu Direct perfect-bound matte 60# uncoated paperbacks shipped exclusively via USPS with a plain white-label packing slip.",
+      "rules": [
+        "Lock physical specification to binding: 'perfect_bound_paperback', cover_finish: 'matte', paper_stock: '60# uncoated'.",
+        "Reject forbidden finishes and bindings at validation time: foil, glitter, embossing, spiral, hardcover, gloss_lamination.",
+        "Enforce plain white-label packing slip only (plain_white_label_only: true, zero_promotional_inserts: true, zero_staples: true).",
+        "Enforce accepted_carriers: ['USPS'] (Media Mail, Ground Advantage, Priority Mail) and block ['UPS', 'FedEx', 'DHL'] at validation time."
+      ],
+      "citations": ["PLOTIFIC-EXPERT.md LULU-USPS-001"],
+      "thresholds": {
+        "paper_weight_lb": "60",
+        "estimated_usps_media_mail_usd": "4.63"
+      }
+    },
+    {
+      "entry_id": "KV-CORR-003",
+      "title": "ADR-025c Unit Economics, Spine Width & Multi-Channel Distribution",
+      "category": "unit-economics",
+      "tags": ["adr-025c", "spine", "bleed", "margin", "kdp", "ingramspark", "direct-to-reader"],
+      "summary": "Compute exact base-10 spine width, cover bleed, and net margin floors across direct GrabLab + Lulu, IngramSpark, and KDP channels.",
+      "rules": [
+        "Compute spine width as exact base-10 Decimal(page_count) * Decimal('0.002252') for 60# uncoated paper, keeping bleed at '0.125' in and safety margin at '0.500' in.",
+        "Deduct Lulu print cost, USPS postage, and payment processing fees using exact base-10 arithmetic and block orders below min_net_profit_margin_floor_usd.",
+        "Pair GrabLab CMS + Lulu Direct paperback fulfillment ('14.99' / '16.99') with IngramSpark institutional catalog distribution and KDP outside-reader eBooks ('2.99' / '4.99')."
+      ],
+      "citations": ["PLOTIFIC-EXPERT.md ADR-025c & Multi-Channel Distribution"],
+      "thresholds": {
+        "spine_factor_60_uncoated_in_per_page": "0.002252",
+        "cover_bleed_in": "0.125",
+        "safety_margin_in": "0.500",
+        "ebook_entry_usd": "2.99",
+        "ebook_standard_usd": "4.99",
+        "bundle_usd": "12.99",
+        "paperback_standard_usd": "14.99",
+        "paperback_premium_usd": "16.99"
+      }
+    }
+  ]
+}

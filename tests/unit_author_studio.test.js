@@ -27,9 +27,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..");
 
 test("v1.7.0 author-studio exports match between public/groxy and assets", () => {
-  assert.equal(GROXY_VERSION, "1.7.0");
+  assert.equal(GROXY_VERSION, "1.8.0");
   assert.equal(AUTHOR_STUDIO_VERSION, "1.7.0");
-  assert.equal(assetAuthorStudio.GROXY_VERSION, "1.7.0");
+  assert.equal(assetAuthorStudio.GROXY_VERSION, "1.8.0");
   assert.equal(typeof assetAuthorStudio.mountAuthorStudio, "function");
 });
 

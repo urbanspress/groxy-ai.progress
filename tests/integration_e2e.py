@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Groxy AI v1.7.0 — Cross-Layer Regression, Multi-Genre Author Studio,
-Hemingway Readability, schema.org/Book JSON-LD & Database Gate Suite.
+Groxy AI v1.8.0 — Cross-Layer Regression, Knowledge Vault, Allowlisted Web Research,
+Bestseller Radar, Google Search Console (gsc.readonly) & Database Gate Suite.
 
 Runs 3 non-negotiable gates:
   Gate 1: Static analysis (grab check), non-destructive canonical formatting (grab format byte-for-byte),
@@ -11,7 +11,7 @@ Runs 3 non-negotiable gates:
             - Core GRAB v1.1.0 `grab mcp` stdio JSON-RPC 2.0 server
             - GrabLab CMS v1.0.1 (isolated temp copy)
             - Grex Theme Builder v1.0.0 (isolated temp copy)
-            - Groxy AI v1.7.0 (src/groxy.grab)
+            - Groxy AI v1.8.0 (src/groxy.grab)
 """
 
 import http.cookiejar
@@ -31,6 +31,7 @@ import tempfile
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -285,6 +286,7 @@ def gate_1_static_and_format(grab_bin: str):
         REPO_ROOT / "public" / "groxy" / "db-consultant.js",
         REPO_ROOT / "public" / "groxy" / "section-copilot.js",
         REPO_ROOT / "public" / "groxy" / "author-studio.js",
+        REPO_ROOT / "public" / "groxy" / "research-radar.js",
     ]:
         src = js_file.read_text(encoding="utf-8")
         code_only = re.sub(r"/\*[\s\S]*?\*/|//.*", "", src)
@@ -330,6 +332,7 @@ def gate_2_node_tests():
         "tests/unit_commerce_engines.test.js",
         "tests/unit_section_copilot.test.js",
         "tests/unit_author_studio.test.js",
+        "tests/unit_research_radar.test.js",
     ])
     print("  [PASS] Gate 2 complete (all unit & DOM tests passed).")
 
@@ -469,8 +472,78 @@ class MockDeskHandler(http.server.BaseHTTPRequestHandler):
         pass
 
 
+class MockResearchAndGscHandler(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path.startswith("/research"):
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            payload = {
+                "docs": [
+                    {
+                        "title": "<b>Urban Fiction</b> Hit Saga",
+                        "first_sentence": "<script>alert(1)</script>Fast-paced street-lit trilogy.",
+                        "key": "/works/OL180W",
+                    }
+                ]
+            }
+            self.wfile.write(json.dumps(payload).encode("utf-8"))
+        elif self.path.startswith("/redirect-ssrf"):
+            self.send_response(302)
+            self.send_header("Location", "http://169.254.169.254/latest/meta-data")
+            self.end_headers()
+        elif self.path.startswith("/redirect-evil"):
+            self.send_response(302)
+            self.send_header("Location", "https://evil.unallowlisted.example/steal")
+            self.end_headers()
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def do_POST(self):
+        content_len = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(content_len).decode("utf-8", "replace") if content_len > 0 else ""
+        if self.path == "/token":
+            assert "grant_type=authorization_code" in body and "code_verifier=" in body, f"Unexpected token body: {body}"
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "access_token": "gsc-secret-access-token-e2e",
+                "refresh_token": "gsc-secret-refresh-token-e2e",
+                "scope": "https://www.googleapis.com/auth/webmasters.readonly",
+                "token_type": "Bearer",
+            }).encode("utf-8"))
+        elif self.path.startswith("/webmasters/v3/sites/") and self.path.endswith("/searchAnalytics/query"):
+            auth = self.headers.get("Authorization", "")
+            if auth != "Bearer gsc-secret-access-token-e2e":
+                self.send_response(401)
+                self.end_headers()
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "rows": [
+                    {
+                        "keys": ["urban fiction matte paperback", "/books/urban-fiction"],
+                        "clicks": 142,
+                        "impressions": 3850,
+                        "ctr": 0.0369,
+                        "position": 4.2,
+                    }
+                ]
+            }).encode("utf-8"))
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def log_message(self, format, *args):
+        pass
+
+
 def gate_3b_live_cross_layer(grab_bin: str):
-    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v1.7.0...")
+    print("[Gate 3B] Starting live GrabLab CMS v1.0.1 + Grex Theme Builder v1.0.0 + Groxy AI v1.8.0...")
     cms_src = Path(os.environ.get("GRABLAB_CMS_DIR", r"C:\Development\grablab-cms"))
     builder_src = Path(os.environ.get("GREX_BUILDER_DIR", r"C:\Development\grex-builder"))
     if not (cms_src / "src" / "app.grab").exists():
@@ -489,6 +562,11 @@ def gate_3b_live_cross_layer(grab_bin: str):
     desk_server = http.server.ThreadingHTTPServer(("127.0.0.1", 9490), MockDeskHandler)
     desk_thread = threading.Thread(target=desk_server.serve_forever, daemon=True)
     desk_thread.start()
+    research_server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), MockResearchAndGscHandler)
+    research_port = research_server.server_address[1]
+    mock_research_url = f"http://127.0.0.1:{research_port}"
+    research_thread = threading.Thread(target=research_server.serve_forever, daemon=True)
+    research_thread.start()
     groxy_url = f"http://127.0.0.1:{groxy_port}"
 
     procs = []
@@ -652,12 +730,12 @@ def gate_3b_live_cross_layer(grab_bin: str):
                 "--allow-write",
                 "storage",
                 "--allow-net",
-                f"127.0.0.1:{cms_port},127.0.0.1:{builder_port},127.0.0.1:9490",
+                f"127.0.0.1:{cms_port},127.0.0.1:{builder_port},127.0.0.1:9490,127.0.0.1:{research_port}",
                 "--allow-env",
-                "GROXY_CMS_URL,GROXY_CMS_MCP_TOKEN,GROXY_BUILDER_URL,GROXY_OPERATOR_ID,GROXY_DB_CONSULTANT_ENABLED,GROXY_EMAIL_FLOWS_BYOK_URL,GROXY_EMAIL_FLOWS_ALLOW_ORIGIN,GROXY_EMAIL_FLOWS_API_KEY,GROXY_COMMERCE_BYOK_URL,GROXY_COMMERCE_BYOK_ALLOW_ORIGIN,GROXY_COMMERCE_BYOK_API_KEY,GROXY_COMMERCE_BYOK_MODEL,GROXY_AUTHOR_BYOK_URL,GROXY_AUTHOR_BYOK_ALLOW_ORIGIN,GROXY_AUTHOR_BYOK_API_KEY,GROXY_AUTHOR_BYOK_MODEL",
+                "GROXY_CMS_URL,GROXY_CMS_MCP_TOKEN,GROXY_BUILDER_URL,GROXY_OPERATOR_ID,GROXY_DB_CONSULTANT_ENABLED,GROXY_EMAIL_FLOWS_BYOK_URL,GROXY_EMAIL_FLOWS_ALLOW_ORIGIN,GROXY_EMAIL_FLOWS_API_KEY,GROXY_COMMERCE_BYOK_URL,GROXY_COMMERCE_BYOK_ALLOW_ORIGIN,GROXY_COMMERCE_BYOK_API_KEY,GROXY_COMMERCE_BYOK_MODEL,GROXY_AUTHOR_BYOK_URL,GROXY_AUTHOR_BYOK_ALLOW_ORIGIN,GROXY_AUTHOR_BYOK_API_KEY,GROXY_AUTHOR_BYOK_MODEL,GROXY_WEB_RESEARCH_ENABLED,GROXY_RESEARCH_TEST_ORIGIN,GROXY_GSC_TEST_BASE_URL,GROXY_MASTER_KEY",
                 "src/groxy.grab",
             ]
-        groxy_environment = {**os.environ, "GROXY_CMS_URL": cms_url, "GROXY_CMS_MCP_TOKEN": cms_token, "GROXY_BUILDER_URL": builder_url, "GROXY_OPERATOR_ID": "e2e-admin", "GROXY_DB_CONSULTANT_ENABLED": "", "GROXY_EMAIL_FLOWS_BYOK_URL": "https://169.254.169.254/latest/meta-data", "GROXY_EMAIL_FLOWS_ALLOW_ORIGIN": "https://169.254.169.254", "GROXY_EMAIL_FLOWS_API_KEY": "e2e-only-secret", "GROXY_COMMERCE_BYOK_URL": "https://169.254.169.254/latest/meta-data", "GROXY_COMMERCE_BYOK_ALLOW_ORIGIN": "https://169.254.169.254", "GROXY_COMMERCE_BYOK_API_KEY": "e2e-only-secret", "GROXY_COMMERCE_BYOK_MODEL": "test-model", "GROXY_AUTHOR_BYOK_URL": "https://169.254.169.254/latest/meta-data", "GROXY_AUTHOR_BYOK_ALLOW_ORIGIN": "https://169.254.169.254", "GROXY_AUTHOR_BYOK_API_KEY": "e2e-only-secret", "GROXY_AUTHOR_BYOK_MODEL": "test-model"}
+        groxy_environment = {**os.environ, "GROXY_CMS_URL": cms_url, "GROXY_CMS_MCP_TOKEN": cms_token, "GROXY_BUILDER_URL": builder_url, "GROXY_OPERATOR_ID": "e2e-admin", "GROXY_DB_CONSULTANT_ENABLED": "", "GROXY_EMAIL_FLOWS_BYOK_URL": "https://169.254.169.254/latest/meta-data", "GROXY_EMAIL_FLOWS_ALLOW_ORIGIN": "https://169.254.169.254", "GROXY_EMAIL_FLOWS_API_KEY": "e2e-only-secret", "GROXY_COMMERCE_BYOK_URL": "https://169.254.169.254/latest/meta-data", "GROXY_COMMERCE_BYOK_ALLOW_ORIGIN": "https://169.254.169.254", "GROXY_COMMERCE_BYOK_API_KEY": "e2e-only-secret", "GROXY_COMMERCE_BYOK_MODEL": "test-model", "GROXY_AUTHOR_BYOK_URL": "https://169.254.169.254/latest/meta-data", "GROXY_AUTHOR_BYOK_ALLOW_ORIGIN": "https://169.254.169.254", "GROXY_AUTHOR_BYOK_API_KEY": "e2e-only-secret", "GROXY_AUTHOR_BYOK_MODEL": "test-model", "GROXY_WEB_RESEARCH_ENABLED": "false", "GROXY_RESEARCH_TEST_ORIGIN": mock_research_url, "GROXY_GSC_TEST_BASE_URL": mock_research_url, "GROXY_MASTER_KEY": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}
         groxy_proc = subprocess.Popen(
             groxy_command,
             cwd=str(groxy_tmp),
@@ -682,7 +760,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         st, _, html = http_request(f"{groxy_url}/groxy")
         assert st == 200
         assert re.search(r"<div\b", html, re.IGNORECASE) is None, "/groxy HTML must have zero <div> elements"
-        assert '<meta name="groxy-version" content="1.7.0">' in html, "Missing groxy-version 1.7.0 meta tag"
+        assert '<meta name="groxy-version" content="1.8.0">' in html, "Missing groxy-version 1.8.0 meta tag"
         m = re.search(r'<meta\s+name="groxy-csrf"\s+content="([^"]+)"', html)
         assert m, "Missing groxy-csrf meta tag in /groxy HTML"
         groxy_csrf = m.group(1)
@@ -699,6 +777,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
             "/static/groxy/vision-clone.js",
             "/static/groxy/section-copilot.js",
             "/static/groxy/author-studio.js",
+            "/static/groxy/research-radar.js",
             "/static/groxy/brand-dna.js",
             "/static/groxy/batch-campaign.js",
             "/static/groxy/booster.js",
@@ -714,7 +793,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         pb = json.loads(pb_body)
         assert len(pb.get("rules", [])) == 22
         assert pb.get("playbook_version") == "1.0.0"
-        assert pb.get("service_version") == "1.7.0"
+        assert pb.get("service_version") == "1.8.0"
 
         # Verify CSRF enforcement on all POST routes
         for post_path in [
@@ -741,6 +820,13 @@ def gate_3b_live_cross_layer(grab_bin: str):
             "/api/groxy/author/readability-audit",
             "/api/groxy/author/generate",
             "/api/groxy/author/apply",
+            "/api/groxy/knowledge/query",
+            "/api/groxy/research/search",
+            "/api/groxy/research/bestseller-radar",
+            "/api/groxy/research/apply",
+            "/api/groxy/gsc/connect",
+            "/api/groxy/gsc/metrics",
+            "/api/groxy/gsc/disconnect",
         ]:
             st_no_csrf, _, _ = http_request(f"{groxy_url}{post_path}", method="POST", json_body={"entry": {}})
             assert st_no_csrf == 403, f"Expected 403 without CSRF on {post_path}, got {st_no_csrf}"
@@ -882,7 +968,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         assert st_insp == 200, f"/api/groxy/mcp/inspect failed ({st_insp}): {insp_body}"
         insp = json.loads(insp_body)
         assert insp["ok"] is True
-        assert insp["version"] == "1.7.0"
+        assert insp["version"] == "1.8.0"
         assert insp["grablab_cms"]["connected"] is True
         assert insp["grablab_cms"]["elements_count"] == 20
         assert "create_entry_draft" in insp["grablab_cms"]["tools"]
@@ -2077,7 +2163,7 @@ def gate_3b_live_cross_layer(grab_bin: str):
         log_files.append(groxy_worker_fh)
         groxy_worker_command = list(groxy_command)
         groxy_worker_command[groxy_worker_command.index("--addr") + 1] = f"127.0.0.1:{groxy_worker_port}"
-        groxy_worker_env = {**groxy_environment, "GROXY_DB_CONSULTANT_ENABLED": "true"}
+        groxy_worker_env = {**groxy_environment, "GROXY_DB_CONSULTANT_ENABLED": "true", "GROXY_WEB_RESEARCH_ENABLED": "true"}
         groxy_worker_proc = subprocess.Popen(
             groxy_worker_command,
             cwd=str(groxy_tmp),
@@ -3225,17 +3311,308 @@ def gate_3b_live_cross_layer(grab_bin: str):
         )
         assert st_grid_fail_replay == 409
 
+        # v1.8.0: Knowledge Vault, Allowlisted Web Research (GRAB-E402), GSC (AES-256-GCM) & Bestseller Radar
+
+        # 1. Offline Knowledge Vault query + 422 float limit rejection
+        st_kv, _, kv_raw = http_request(
+            f"{groxy_url}/api/groxy/knowledge/query", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"query": "LULU-USPS-001 matte paperback", "domain_slug": "correctional-publishing", "limit": "3"},
+        )
+        assert st_kv == 200, f"Knowledge vault query failed ({st_kv}): {kv_raw}"
+        kv_doc = json.loads(kv_raw)
+        assert kv_doc["offline_only"] is True and kv_doc["network_calls"] == "0" and int(kv_doc["count"]) >= 1
+        assert kv_doc["results"][0]["domain_slug"] == "correctional-publishing"
+
+        st_kv_wcag, _, kv_wcag_raw = http_request(
+            f"{groxy_url}/api/groxy/knowledge/query", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"query": "contrast 4.50", "domain_slug": "wcag-aa-patterns", "limit": "5"},
+        )
+        assert st_kv_wcag == 200
+        kv_wcag = json.loads(kv_wcag_raw)
+        assert kv_wcag["results"][0]["thresholds"]["normal_text_min_contrast"] == "4.50"
+        assert kv_wcag["results"][0]["thresholds"]["large_text_min_contrast"] == "3.00"
+
+        st_kv_float, _, _ = http_request(
+            f"{groxy_url}/api/groxy/knowledge/query", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"query": "seo", "limit": 3.5},
+        )
+        assert st_kv_float == 422, f"Expected 422 on float limit, got {st_kv_float}"
+
+        # 2. Opt-in disabled 403 on primary worker + allowlisted search & GRAB-E402 SSRF/redirect blocks on worker
+        st_res_disabled, _, res_dis_raw = http_request(
+            f"{groxy_url}/api/groxy/research/search", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"query": "urban fiction", "provider": "openlibrary"},
+        )
+        assert st_res_disabled == 403 and json.loads(res_dis_raw).get("code") == "RESEARCH_DISABLED"
+
+        st_res_ok, _, res_ok_raw = http_request(
+            f"{groxy_worker_url}/api/groxy/research/search", method="POST",
+            headers={"X-CSRF-Token": worker_csrf},
+            json_body={"query": "urban fiction", "provider": "openlibrary", "limit": "2"},
+        )
+        assert st_res_ok == 200, f"Allowlisted research search failed ({st_res_ok}): {res_ok_raw}"
+        res_ok_doc = json.loads(res_ok_raw)
+        assert res_ok_doc["result_count"] == "1"
+        assert "<script" not in res_ok_raw and "<b>" not in res_ok_raw
+
+        for blocked_url in [
+            "http://169.254.169.254/latest/meta-data",
+            "https://10.0.0.5/internal",
+            "https://metadata.google.internal/computeMetadata/v1/",
+            "https://unallowlisted.example/feed.json",
+            f"{mock_research_url}/redirect-ssrf",
+            f"{mock_research_url}/redirect-evil",
+        ]:
+            st_ssrf, _, ssrf_raw = http_request(
+                f"{groxy_worker_url}/api/groxy/research/search", method="POST",
+                headers={"X-CSRF-Token": worker_csrf},
+                json_body={"query": "ssrf check", "provider": "openlibrary", "target_url": blocked_url},
+            )
+            assert st_ssrf == 403 and json.loads(ssrf_raw).get("code") == "GRAB-E402", (
+                f"Expected 403 GRAB-E402 for {blocked_url}, got {st_ssrf}: {ssrf_raw}"
+            )
+
+        # 3. Google Search Console gsc.readonly PKCE S256 + AES-256-GCM "v1:..." encryption + aggregated metrics
+        st_gsc_start, _, gsc_start_raw = http_request(
+            f"{groxy_url}/api/groxy/gsc/connect", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"site_url": "https://plotific.example", "action": "start"},
+        )
+        assert st_gsc_start == 200, f"GSC connect start failed ({st_gsc_start}): {gsc_start_raw}"
+        gsc_start = json.loads(gsc_start_raw)
+        assert gsc_start["pkce"]["code_challenge_method"] == "S256"
+        assert "webmasters.readonly" in gsc_start["pkce"]["scope"]
+
+        st_gsc_cb, _, gsc_cb_raw = http_request(
+            f"{groxy_url}/api/groxy/gsc/callback?state={urllib.parse.quote(gsc_start['pkce']['state'])}&code=e2e-gsc-auth-code&site_url=https%3A%2F%2Fplotific.example"
+        )
+        assert st_gsc_cb == 200, f"GSC callback failed ({st_gsc_cb}): {gsc_cb_raw}"
+        gsc_cb = json.loads(gsc_cb_raw)
+        assert gsc_cb["connected"] is True and gsc_cb["token_encrypted"] is True and gsc_cb["encryption_scheme"] == "AES-256-GCM"
+        assert "gsc-secret-access-token-e2e" not in gsc_cb_raw and "gsc-secret-refresh-token-e2e" not in gsc_cb_raw
+
+        with sqlite3.connect(groxy_tmp / "storage" / "groxy-commerce.db") as commerce_db:
+            gsc_row = commerce_db.execute(
+                "SELECT access_token_enc, refresh_token_enc, scope FROM groxy_gsc_connections WHERE site_url = ?",
+                ("https://plotific.example",),
+            ).fetchone()
+        assert gsc_row is not None
+        assert gsc_row[0].startswith("v1:") and gsc_row[1].startswith("v1:"), f"Tokens must use AES-256-GCM v1: envelope, got {gsc_row}"
+        assert gsc_row[2] == "https://www.googleapis.com/auth/webmasters.readonly"
+
+        st_gsc_met, _, gsc_met_raw = http_request(
+            f"{groxy_url}/api/groxy/gsc/metrics", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"site_url": "https://plotific.example", "start_date": "2026-11-01", "end_date": "2026-11-17", "row_limit": "10"},
+        )
+        assert st_gsc_met == 200, f"GSC metrics query failed ({st_gsc_met}): {gsc_met_raw}"
+        gsc_met = json.loads(gsc_met_raw)
+        assert gsc_met["gdpr_ccpa_aggregated_only"] is True and gsc_met["pii_collected"] is False
+        assert gsc_met["rows"][0]["clicks"] == "142" and gsc_met["rows"][0]["impressions"] == "3850"
+        assert gsc_met["rows"][0]["ctr"] == "0.0369" and gsc_met["rows"][0]["position"] == "4.2000"
+
+        st_gsc_float, _, _ = http_request(
+            f"{groxy_url}/api/groxy/gsc/metrics", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"site_url": "https://plotific.example", "start_date": "2026-11-01", "end_date": "2026-11-17", "row_limit": 10.5},
+        )
+        assert st_gsc_float == 422
+
+        st_gsc_disc, _, _ = http_request(
+            f"{groxy_url}/api/groxy/gsc/disconnect", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"site_url": "https://plotific.example"},
+        )
+        assert st_gsc_disc == 200
+
+        # 4. Bestseller Radar: 422 float rejection, </script>-safe JSON-LD, 403 mismatch, 2-worker 201+409 race -> CMS draft + Desk receipt + Builder 409 drift & 1-click Undo
+        st_rad_float, _, _ = http_request(
+            f"{groxy_url}/api/groxy/research/bestseller-radar", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"genre_slug": "urban-fiction", "price_tier_usd": 14.99},
+        )
+        assert st_rad_float == 422
+
+        st_rad_xss, _, _ = http_request(
+            f"{groxy_url}/api/groxy/research/bestseller-radar", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "genre_slug": "self-help-reentry",
+                "target_consumer": "grablab_cms",
+                "book_meta": {"title": "<script>alert(1)</script>", "price": "16.99", "numberOfPages": "260"},
+            },
+        )
+        assert st_rad_xss == 422
+
+        st_rad_cms, _, rad_cms_raw = http_request(
+            f"{groxy_url}/api/groxy/research/bestseller-radar", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "genre_slug": "self-help-reentry",
+                "target_consumer": "grablab_cms",
+                "price_tier_usd": "16.99",
+                "book_meta": {"title": "Day One Blueprint & Re-Entry", "price": "16.99", "numberOfPages": "260"},
+            },
+        )
+        assert st_rad_cms == 200, f"Bestseller Radar CMS stage failed ({st_rad_cms}): {rad_cms_raw}"
+        rad_cms = json.loads(rad_cms_raw)
+        assert rad_cms["radar_plan_id"].startswith("rplan-") and rad_cms["approval_token"].startswith("rtok_res_")
+        assert "</script>" not in rad_cms["schema_org_json_ld"]["json_ld_escaped"]
+        assert "\\u0026" in rad_cms["schema_org_json_ld"]["json_ld_escaped"]
+        assert rad_cms["schema_org_json_ld"]["resolved_price"] == "16.99"
+
+        with sqlite3.connect(groxy_tmp / "storage" / "groxy-commerce.db") as commerce_db:
+            rad_wire = commerce_db.execute("SELECT payload_json FROM groxy_research_ledger WHERE plan_id = ?", (rad_cms["radar_plan_id"],)).fetchone()[0]
+        canonical_rad_bytes = json.dumps(json.loads(rad_wire), ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        assert hashlib.sha256(canonical_rad_bytes).hexdigest() == rad_cms["payload_sha256"]
+
+        rad_apply_body = {
+            "radar_plan_id": rad_cms["radar_plan_id"],
+            "genre_slug": rad_cms["genre_slug"],
+            "target_consumer": rad_cms["target_consumer"],
+            "target_slot": rad_cms["target_slot"],
+            "payload_sha256": rad_cms["payload_sha256"],
+            "approval_token": rad_cms["approval_token"],
+        }
+        st_rad_403, _, _ = http_request(
+            f"{groxy_url}/api/groxy/research/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf}, json_body={**rad_apply_body, "target_consumer": "groxy_desk"},
+        )
+        assert st_rad_403 == 403
+
+        def apply_radar_once(url, csrf):
+            return http_request(
+                f"{url}/api/groxy/research/apply", method="POST",
+                headers={"X-CSRF-Token": csrf}, json_body=rad_apply_body,
+            )
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            rad_race = list(pool.map(lambda args: apply_radar_once(*args), [(groxy_url, groxy_csrf), (groxy_worker_url, worker_csrf)]))
+        assert sorted(r[0] for r in rad_race) == [201, 409], f"Two-worker radar race must yield [201, 409], got {rad_race}"
+        rad_winner = json.loads(next(r[2] for r in rad_race if r[0] == 201))
+        assert rad_winner["status_enforced"] == "draft" and rad_winner["entry"]["status"] == "draft"
+
+        # Groxy Desk draft-only signed import receipt
+        st_desk_rad, _, desk_rad_raw = http_request(
+            f"{groxy_url}/api/groxy/research/bestseller-radar", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"genre_slug": "urban-fiction", "target_consumer": "groxy_desk", "price_tier_usd": "14.99"},
+        )
+        assert st_desk_rad == 200
+        desk_rad = json.loads(desk_rad_raw)
+        st_desk_rad_apply, _, desk_rad_app_raw = http_request(
+            f"{groxy_url}/api/groxy/research/bestseller-radar/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "radar_plan_id": desk_rad["radar_plan_id"],
+                "genre_slug": desk_rad["genre_slug"],
+                "target_consumer": "groxy_desk",
+                "target_slot": desk_rad["target_slot"],
+                "payload_sha256": desk_rad["payload_sha256"],
+                "approval_token": desk_rad["approval_token"],
+            },
+        )
+        assert st_desk_rad_apply == 201
+        desk_rad_app = json.loads(desk_rad_app_raw)
+        assert desk_rad_app["status_enforced"] == "draft" and desk_rad_app["human_confirmation_required"] is True
+
+        # Groxy Studio Builder slot drift 409 + clean apply + 1-click Undo
+        _, _, rad_b_pre_raw = http_request(f"{builder_url}/api/studio/state")
+        rad_b_pre = json.loads(rad_b_pre_raw)
+        rad_home_before = copy.deepcopy(rad_b_pre["draft"]["templates"]["home"])
+        rad_b_csrf = rad_b_pre["csrf_token"]
+
+        st_rad_b, _, rad_b_raw = http_request(
+            f"{groxy_url}/api/groxy/research/bestseller-radar", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"genre_slug": "thriller", "target_consumer": "groxy_studio", "target_slot": "home", "price_tier_usd": "14.99"},
+        )
+        assert st_rad_b == 200
+        rad_b = json.loads(rad_b_raw)
+        assert rad_b["audit_report"]["overall_score"] >= 90 and rad_b["audit_report"]["publish_safe"] is True
+        for tier in ("2.99", "4.99", "12.99", "14.99", "16.99"):
+            assert tier in json.dumps(rad_b["grex_layout"])
+
+        rad_drift_home = copy.deepcopy(rad_home_before)
+        rad_drift_home["children"][1]["children"][1]["children"][0]["props"]["text"] = "Radar Sibling Drift Edit"
+        http_request(
+            f"{builder_url}/api/mcp/layout", method="POST",
+            headers={"X-CSRF-Token": rad_b_csrf},
+            json_body={"slot": "home", "actor": "designer", "summary": "Radar drift test", "layout": rad_drift_home},
+        )
+        st_rad_drift, _, rad_drift_raw = http_request(
+            f"{groxy_url}/api/groxy/research/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "radar_plan_id": rad_b["radar_plan_id"],
+                "genre_slug": rad_b["genre_slug"],
+                "target_consumer": "groxy_studio",
+                "target_slot": "home",
+                "payload_sha256": rad_b["payload_sha256"],
+                "approval_token": rad_b["approval_token"],
+            },
+        )
+        assert st_rad_drift == 409 and json.loads(rad_drift_raw).get("code") == "RESEARCH_SLOT_DRIFT"
+
+        http_request(
+            f"{builder_url}/api/mcp/layout", method="POST",
+            headers={"X-CSRF-Token": rad_b_csrf},
+            json_body={"slot": "home", "actor": "designer-restore", "summary": "Restore home", "layout": rad_home_before},
+        )
+        st_rad_b2, _, rad_b2_raw = http_request(
+            f"{groxy_url}/api/groxy/research/bestseller-radar", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={"genre_slug": "thriller", "target_consumer": "groxy_studio", "target_slot": "home", "price_tier_usd": "14.99"},
+        )
+        assert st_rad_b2 == 200
+        rad_b2 = json.loads(rad_b2_raw)
+        st_rad_b2_apply, _, rad_b2_app_raw = http_request(
+            f"{groxy_url}/api/groxy/research/apply", method="POST",
+            headers={"X-CSRF-Token": groxy_csrf},
+            json_body={
+                "radar_plan_id": rad_b2["radar_plan_id"],
+                "genre_slug": rad_b2["genre_slug"],
+                "target_consumer": "groxy_studio",
+                "target_slot": "home",
+                "payload_sha256": rad_b2["payload_sha256"],
+                "approval_token": rad_b2["approval_token"],
+            },
+        )
+        assert st_rad_b2_apply == 201
+        rad_b2_app = json.loads(rad_b2_app_raw)
+        assert rad_b2_app["actor"] == "groxy-ai" and rad_b2_app["command_stack_action"] == "applyAiLayout" and rad_b2_app["undo_available"] is True
+
+        _, _, rad_cmds_raw = http_request(f"{builder_url}/api/studio/commands")
+        latest_rad_cmd = json.loads(json.loads(rad_cmds_raw)["commands"][0]["command_json"])
+        assert latest_rad_cmd["actor"] == "groxy-ai" and latest_rad_cmd["slot"] == "home"
+        http_request(
+            f"{builder_url}/api/mcp/layout", method="POST",
+            headers={"X-CSRF-Token": rad_b_csrf},
+            json_body={"slot": "home", "actor": "designer-undo", "summary": "Undo v1.8.0 radar", "layout": latest_rad_cmd["inverse"]["nextTree"]},
+        )
+        _, _, rad_restored_raw = http_request(f"{builder_url}/api/studio/state")
+        assert json.loads(rad_restored_raw)["draft"]["templates"]["home"] == rad_home_before
+
         for log_fh in log_files:
             log_fh.flush()
             log_bytes = Path(log_fh.name).read_bytes()
             assert b"e2e-only-secret" not in log_bytes, f"Provider key leaked into service log {Path(log_fh.name).name}"
-        print("  [PASS] Gate 3B complete (live GrabLab CMS + Grex Theme Builder + Groxy AI v1.7.0 Author Studio, Hemingway & JSON-LD).")
+            assert b"gsc-secret-access-token-e2e" not in log_bytes, f"GSC token leaked into service log {Path(log_fh.name).name}"
+            assert b"gsc-secret-refresh-token-e2e" not in log_bytes, f"GSC refresh token leaked into service log {Path(log_fh.name).name}"
+        print("  [PASS] Gate 3B complete (live GrabLab CMS + Grex Theme Builder + Groxy AI v1.8.0 Knowledge Vault, Research, GSC & Bestseller Radar).")
     finally:
         for p in reversed(procs):
             terminate_process(p)
         desk_server.shutdown()
         desk_server.server_close()
         desk_thread.join(timeout=2)
+        research_server.shutdown()
+        research_server.server_close()
+        research_thread.join(timeout=2)
         builder_proxy.shutdown()
         builder_proxy.server_close()
         builder_proxy_thread.join(timeout=2)
@@ -3254,7 +3631,7 @@ def main():
     gate_2_node_tests()
     gate_3a_grab_mcp_stdio(grab_bin)
     gate_3b_live_cross_layer(grab_bin)
-    print("\nAll regression gates and v1.7.0 Multi-Genre Author Studio, Hemingway & JSON-LD gates passed; release-ready: True")
+    print("\nAll regression gates and v1.8.0 Knowledge Vault, Web Research, GSC & Bestseller Radar gates passed; release-ready: True")
 
 
 if __name__ == "__main__":

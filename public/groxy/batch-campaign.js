@@ -1,5 +1,5 @@
 /** Groxy AI v1.3.0 — deterministic, review-first campaign helpers. */
-export const GROXY_VERSION = "1.7.0";
+export const GROXY_VERSION = "1.8.0";
 export const BATCH_CAMPAIGN_VERSION = "1.3.0";
 const DECIMAL = /^(?:0|[1-9]\d*)(?:\.\d+)?$/;
 

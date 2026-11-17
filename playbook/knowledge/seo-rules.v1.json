@@ -1,0 +1,92 @@
+{
+  "schema_version": "groxy-knowledge-vault-v1.0",
+  "domain_slug": "seo-rules",
+  "display_name": "SEO Rules & Search Intent Vault (Semrush / Ahrefs / Google Search Central)",
+  "updated_at": "2026-11-17",
+  "numeric_thresholds": {
+    "title_min_chars": "30",
+    "title_max_chars": "60",
+    "meta_description_min_chars": "120",
+    "meta_description_max_chars": "160",
+    "min_body_words": "300",
+    "max_redirect_hops": "1",
+    "max_redirect_loops": "0",
+    "min_wcag_contrast_ratio": "4.50"
+  },
+  "entries": [
+    {
+      "entry_id": "KV-SEO-001",
+      "title": "Search Intent & Primary Keyword Alignment",
+      "category": "on-page-seo",
+      "tags": ["seo", "title", "meta", "keyword", "search-intent", "semrush"],
+      "summary": "Align H1, page title (30 to 60 characters), slug, and opening 100 words to a single primary search intent without keyword stuffing.",
+      "rules": [
+        "Place the primary keyword naturally in the H1, page title (30 to 60 chars), and clean lowercase hyphenated slug.",
+        "Keep meta descriptions compelling between 120 and 160 characters with a concrete value proposition.",
+        "Avoid duplicate titles across published pages and eliminate thin pages under 300 words on editorial hubs."
+      ],
+      "citations": ["Google Search Central SEO Starter Guide", "Semrush On-Page SEO Checklist", "playbook/seo-playbook.v1.json"],
+      "thresholds": {
+        "title_min_chars": "30",
+        "title_max_chars": "60",
+        "meta_description_min_chars": "120",
+        "meta_description_max_chars": "160",
+        "min_body_words": "300"
+      }
+    },
+    {
+      "entry_id": "KV-SEO-002",
+      "title": "AnswerThePublic Question Clusters & Featured Snippet Structure",
+      "category": "keyword-research",
+      "tags": ["questions", "faq", "long-tail", "ahrefs", "answerthepublic", "featured-snippet"],
+      "summary": "Capture long-tail discovery traffic by pairing question-based H2 subheadings with concise 40-to-60-word direct answers and FAQPage JSON-LD.",
+      "rules": [
+        "Group reader questions by intent modifier (how, why, best, cost, delivery, reading order).",
+        "Answer each question cleanly in the first two sentences immediately following the H2 or Accordion summary.",
+        "Pair visible semantic Accordion FAQs with XSS-escaped FAQPage JSON-LD without hiding text off-screen."
+      ],
+      "citations": ["Ahrefs Question Keyword Framework", "Google Search Central Structured Data Policies"],
+      "thresholds": {
+        "snippet_target_min_words": "40",
+        "snippet_target_max_words": "60"
+      }
+    },
+    {
+      "entry_id": "KV-SEO-003",
+      "title": "Internal Linking Graph, 301 Redirect Hygiene & Orphan Rescue",
+      "category": "technical-seo",
+      "tags": ["internal-links", "301", "redirects", "orphans", "anchors", "ahrefs"],
+      "summary": "Maintain zero orphan pages, descriptive anchor text, at most 1 redirect hop, and zero 301 redirect loops across SITE-CONTEXT.md.",
+      "rules": [
+        "Every published book, series, or article must receive at least 1 contextual internal link from a hub or sibling entry.",
+        "Replace generic anchor text ('click here', 'read more') with descriptive topic-specific phrases.",
+        "Resolve 301 redirect chains to direct canonical destinations and exclude loop targets before emitting link suggestions."
+      ],
+      "citations": ["Ahrefs Site Audit Redirect Standards", "Google Search Central Crawlable Links"],
+      "thresholds": {
+        "max_redirect_hops": "1",
+        "max_redirect_loops": "0"
+      }
+    },
+    {
+      "entry_id": "KV-SEO-004",
+      "title": "ADR-025c Merchant & Book Offer Numeric Exactness",
+      "category": "structured-commerce-seo",
+      "tags": ["adr-025c", "pricing", "merchant", "grabdecimal", "google-merchant"],
+      "summary": "Preserve exact base-10 GrabDecimal wire strings for all storefront prices, discounts, shipping costs, and SKU counts so Google Merchant and checkout stay identical.",
+      "rules": [
+        "Always transmit monetary prices and inventory counts as exact base-10 wire strings ('2.99', '4.99', '12.99', '14.99', '16.99').",
+        "Reject IEEE-754 floating-point numbers and scientific notation with HTTP 422 before staging or publishing.",
+        "Ensure visible storefront price text matches schema.org Offer.price character-for-character."
+      ],
+      "citations": ["GRAB ADR-025c", "Google Merchant Center Price Accuracy"],
+      "thresholds": {
+        "entry_ebook_tier_usd": "2.99",
+        "standard_ebook_tier_usd": "4.99",
+        "bundle_tier_usd": "12.99",
+        "paperback_tier_usd": "14.99",
+        "premium_paperback_tier_usd": "16.99"
+      }
+    }
+  ]
+}

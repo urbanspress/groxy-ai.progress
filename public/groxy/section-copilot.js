@@ -4,7 +4,7 @@
  * Zero wrapper <div> elements, zero innerHTML writes, zero eval()/new Function().
  */
 
-export const GROXY_VERSION = "1.7.0";
+export const GROXY_VERSION = "1.8.0";
 export const SECTION_COPILOT_VERSION = "1.6.0";
 
 import {

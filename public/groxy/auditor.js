@@ -4,7 +4,7 @@
  * deterministically across all 22 rules in `playbook/seo-playbook.v1.json`.
  */
 
-export const GROXY_VERSION = "1.7.0";
+export const GROXY_VERSION = "1.8.0";
 
 import { auditAccessibility, computeContrastRatio } from "./grex.js";
 import {

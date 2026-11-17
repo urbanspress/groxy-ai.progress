@@ -1,0 +1,568 @@
+{
+  "schema_version": "groxy-bestseller-radar-v1.0",
+  "radar_id": "plotific-groxy-bestseller-radar-v1",
+  "display_name": "Groxy AI Bestseller Radar & Direct-to-Reader Unit Economics Playbook",
+  "updated_at": "2026-11-17",
+  "pricing_tiers_usd": ["2.99", "4.99", "12.99", "14.99", "16.99"],
+  "lulu_usps_constraints": {
+    "rule_ids": ["PLOTIFIC-SAFE-001", "LULU-USPS-001"],
+    "binding": "perfect_bound_paperback",
+    "cover_finish": "matte",
+    "paper_stock": "60# uncoated",
+    "forbidden_finishes_and_bindings": ["foil", "glitter", "embossing", "spiral", "hardcover", "gloss_lamination"],
+    "accepted_carriers": ["USPS"],
+    "usps_services": ["Media Mail", "Ground Advantage", "Priority Mail"],
+    "blocked_carriers": ["UPS", "FedEx", "DHL"],
+    "plain_white_label_only": true,
+    "zero_promotional_inserts": true,
+    "zero_staples": true
+  },
+  "genres": [
+    {
+      "genre_slug": "urban-fiction",
+      "display_name": "Urban Fiction",
+      "demand_signal_score": "96.40",
+      "competition_index": "64.20",
+      "recommended_price_tier_usd": "14.99",
+      "keyword_clusters": [
+        "urban fiction trilogy paperback",
+        "street lit series binge read",
+        "atlanta kingpin queenpin saga",
+        "direct to reader urban drama"
+      ],
+      "series_hook_positioning": "Launch Book 1 at $2.99 eBook + $14.99 Lulu matte USPS paperback, convert Book 2/3 at $4.99, and anchor VIP trilogy bundles at $12.99.",
+      "recommended_book_concepts": [
+        {
+          "concept_id": "UF-RADAR-01",
+          "working_title": "Crown of Concrete: Ledger of Blood",
+          "format_focus": "3-Book Rapid-Release Saga + Matte Paperback Edition",
+          "hook": "An empire accountant uncovers a family setup and flips the ledger in 72 hours.",
+          "target_pages": "300"
+        },
+        {
+          "concept_id": "UF-RADAR-02",
+          "working_title": "Southside Sovereignty",
+          "format_focus": "Direct-to-Reader Trilogy Bundle ($12.99) + Facility-Safe Print ($14.99)",
+          "hook": "A queenpin defending legitimate real estate deals against an inner-circle informant.",
+          "target_pages": "320"
+        }
+      ],
+      "tier_economics": [
+        {
+          "price_usd": "2.99",
+          "channel": "KDP / Direct Book 1 Hook eBook",
+          "unit_print_cost_usd": "0.00",
+          "usps_postage_usd": "0.00",
+          "payment_fee_usd": "0.39",
+          "net_margin_usd": "2.60",
+          "net_margin_percent": "86.96"
+        },
+        {
+          "price_usd": "4.99",
+          "channel": "KDP / Direct Book 2-3 Standard eBook",
+          "unit_print_cost_usd": "0.00",
+          "usps_postage_usd": "0.00",
+          "payment_fee_usd": "0.44",
+          "net_margin_usd": "4.55",
+          "net_margin_percent": "91.18"
+        },
+        {
+          "price_usd": "12.99",
+          "channel": "Direct GrabLab CMS Trilogy Digital Bundle",
+          "unit_print_cost_usd": "0.00",
+          "usps_postage_usd": "0.00",
+          "payment_fee_usd": "0.68",
+          "net_margin_usd": "12.31",
+          "net_margin_percent": "94.77"
+        },
+        {
+          "price_usd": "14.99",
+          "channel": "Lulu Direct Matte Paperback + USPS Media Mail",
+          "unit_print_cost_usd": "4.15",
+          "usps_postage_usd": "4.63",
+          "payment_fee_usd": "0.73",
+          "net_margin_usd": "5.48",
+          "net_margin_percent": "36.56"
+        },
+        {
+          "price_usd": "16.99",
+          "channel": "Lulu Direct Large-Print Matte Paperback + USPS Media Mail",
+          "unit_print_cost_usd": "4.45",
+          "usps_postage_usd": "4.63",
+          "payment_fee_usd": "0.79",
+          "net_margin_usd": "7.12",
+          "net_margin_percent": "41.91"
+        }
+      ],
+      "schema_org_book_defaults": {
+        "@context": "https://schema.org",
+        "@type": "Book",
+        "genre": "Urban Fiction",
+        "inLanguage": "en-US",
+        "bookFormat": "https://schema.org/Paperback",
+        "typicalAgeRange": "18-",
+        "offers_defaults": {
+          "@type": "Offer",
+          "priceCurrency": "USD",
+          "price": "14.99",
+          "availability": "https://schema.org/InStock"
+        }
+      }
+    },
+    {
+      "genre_slug": "thriller",
+      "display_name": "Thriller / Mystery",
+      "demand_signal_score": "93.80",
+      "competition_index": "68.50",
+      "recommended_price_tier_usd": "14.99",
+      "keyword_clusters": [
+        "forensic suspense thriller paperback",
+        "ticking clock detective series",
+        "legal conspiracy mystery book",
+        "clean matte crime novel"
+      ],
+      "series_hook_positioning": "Anchor 48-hour ticking-clock chapters with $2.99 series starters and $14.99 / $16.99 USPS-fulfilled matte paperbacks.",
+      "recommended_book_concepts": [
+        {
+          "concept_id": "TH-RADAR-01",
+          "working_title": "The Dead-Drop Audit",
+          "format_focus": "Forensic Financial Thriller ($4.99 eBook / $14.99 Matte Paperback)",
+          "hook": "A compliance auditor finds her own signature on three missing evidence transfers.",
+          "target_pages": "312"
+        },
+        {
+          "concept_id": "TH-RADAR-02",
+          "working_title": "Zero Witness Protocol",
+          "format_focus": "3-Book Casefile Bundle ($12.99) + Print ($16.99)",
+          "hook": "Two estranged investigators race a 36-hour storm to clear a wrongly convicted witness.",
+          "target_pages": "340"
+        }
+      ],
+      "tier_economics": [
+        {
+          "price_usd": "2.99",
+          "channel": "Book 1 Launch eBook",
+          "unit_print_cost_usd": "0.00",
+          "usps_postage_usd": "0.00",
+          "payment_fee_usd": "0.39",
+          "net_margin_usd": "2.60",
+          "net_margin_percent": "86.96"
+        },
+        {
+          "price_usd": "4.99",
+          "channel": "Series Sequel eBook",
+          "unit_print_cost_usd": "0.00",
+          "usps_postage_usd": "0.00",
+          "payment_fee_usd": "0.44",
+          "net_margin_usd": "4.55",
+          "net_margin_percent": "91.18"
+        },
+        {
+          "price_usd": "12.99",
+          "channel": "Casefile Trilogy Digital Bundle",
+          "unit_print_cost_usd": "0.00",
+          "usps_postage_usd": "0.00",
+          "payment_fee_usd": "0.68",
+          "net_margin_usd": "12.31",
+          "net_margin_percent": "94.77"
+        },
+        {
+          "price_usd": "14.99",
+          "channel": "Lulu Direct Matte Paperback + USPS Media Mail",
+          "unit_print_cost_usd": "4.25",
+          "usps_postage_usd": "4.63",
+          "payment_fee_usd": "0.73",
+          "net_margin_usd": "5.38",
+          "net_margin_percent": "35.89"
+        },
+        {
+          "price_usd": "16.99",
+          "channel": "Lulu Direct Expanded Thriller Paperback + USPS Media Mail",
+          "unit_print_cost_usd": "4.55",
+          "usps_postage_usd": "4.63",
+          "payment_fee_usd": "0.79",
+          "net_margin_usd": "7.02",
+          "net_margin_percent": "41.32"
+        }
+      ],
+      "schema_org_book_defaults": {
+        "@context": "https://schema.org",
+        "@type": "Book",
+        "genre": "Thriller",
+        "inLanguage": "en-US",
+        "bookFormat": "https://schema.org/Paperback",
+        "typicalAgeRange": "18-",
+        "offers_defaults": {
+          "@type": "Offer",
+          "priceCurrency": "USD",
+          "price": "14.99",
+          "availability": "https://schema.org/InStock"
+        }
+      }
+    },
+    {
+      "genre_slug": "romance",
+      "display_name": "Romance",
+      "demand_signal_score": "95.20",
+      "competition_index": "71.10",
+      "recommended_price_tier_usd": "12.99",
+      "keyword_clusters": [
+        "second chance romance series",
+        "high heat contemporary romance bundle",
+        "protective hero hea trilogy",
+        "direct storefront bonus epilogue"
+      ],
+      "series_hook_positioning": "Capture binge read-through with $2.99 openers, $4.99 interconnected standalones, and $12.99 bonus-epilogue bundles.",
+      "recommended_book_concepts": [
+        {
+          "concept_id": "RO-RADAR-01",
+          "working_title": "Harbor Lights & Second Chances",
+          "format_focus": "Digital Box Set ($12.99) + Matte Trade Paperback ($14.99)",
+          "hook": "Rival coastal architects co-inherit a historic boathouse with a 60-day restoration deadline.",
+          "target_pages": "290"
+        },
+        {
+          "concept_id": "RO-RADAR-02",
+          "working_title": "Vows in Emerald Ink",
+          "format_focus": "Book 1 Hook ($2.99) -> Sequel ($4.99) -> Collector Paperback ($16.99)",
+          "hook": "A bookstore owner and a reclusive publisher strike a fake-partnership truce for festival week.",
+          "target_pages": "310"
+        }
+      ],
+      "tier_economics": [
+        {
+          "price_usd": "2.99",
+          "channel": "Book 1 Opener eBook",
+          "unit_print_cost_usd": "0.00",
+          "usps_postage_usd": "0.00",
+          "payment_fee_usd": "0.39",
+          "net_margin_usd": "2.60",
+          "net_margin_percent": "86.96"
+        },
+        {
+          "price_usd": "4.99",
+          "channel": "Interconnected Standalone eBook",
+          "unit_print_cost_usd": "0.00",
+          "usps_postage_usd": "0.00",
+          "payment_fee_usd": "0.44",
+          "net_margin_usd": "4.55",
+          "net_margin_percent": "91.18"
+        },
+        {
+          "price_usd": "12.99",
+          "channel": "Direct Storefront Bonus Epilogue Trilogy Bundle",
+          "unit_print_cost_usd": "0.00",
+          "usps_postage_usd": "0.00",
+          "payment_fee_usd": "0.68",
+          "net_margin_usd": "12.31",
+          "net_margin_percent": "94.77"
+        },
+        {
+          "price_usd": "14.99",
+          "channel": "Lulu Direct Matte Paperback + USPS Media Mail",
+          "unit_print_cost_usd": "4.05",
+          "usps_postage_usd": "4.63",
+          "payment_fee_usd": "0.73",
+          "net_margin_usd": "5.58",
+          "net_margin_percent": "37.22"
+        },
+        {
+          "price_usd": "16.99",
+          "channel": "Lulu Direct Extended Edition Paperback + USPS Media Mail",
+          "unit_print_cost_usd": "4.35",
+          "usps_postage_usd": "4.63",
+          "payment_fee_usd": "0.79",
+          "net_margin_usd": "7.22",
+          "net_margin_percent": "42.50"
+        }
+      ],
+      "schema_org_book_defaults": {
+        "@context": "https://schema.org",
+        "@type": "Book",
+        "genre": "Romance",
+        "inLanguage": "en-US",
+        "bookFormat": "https://schema.org/EBook",
+        "typicalAgeRange": "18-",
+        "offers_defaults": {
+          "@type": "Offer",
+          "priceCurrency": "USD",
+          "price": "12.99",
+          "availability": "https://schema.org/InStock"
+        }
+      }
+    },
+    {
+      "genre_slug": "sci-fi-fantasy",
+      "display_name": "Sci-Fi / Fantasy",
+      "demand_signal_score": "91.60",
+      "competition_index": "59.80",
+      "recommended_price_tier_usd": "16.99",
+      "keyword_clusters": [
+        "progression fantasy omnibus paperback",
+        "hard sci fi trilogy box set",
+        "orbital colony survival saga",
+        "worldbuilding magic system novel"
+      ],
+      "series_hook_positioning": "Monetize high-page-count worldbuilding via $4.99 individual eBooks, $12.99 omnibus bundles, and $16.99 400-page matte paperbacks.",
+      "recommended_book_concepts": [
+        {
+          "concept_id": "SF-RADAR-01",
+          "working_title": "Orbital Horizon: Signal Zero",
+          "format_focus": "Long-Form Paperback ($16.99) + Trilogy Bundle ($12.99)",
+          "hook": "A relay engineer discovers the colony beacon has been broadcasting a decoy map for forty years.",
+          "target_pages": "380"
+        },
+        {
+          "concept_id": "SF-RADAR-02",
+          "working_title": "Foundry of Ash & Cipher",
+          "format_focus": "Progression Fantasy Series ($4.99 eBook / $14.99 Print)",
+          "hook": "An apprentice archivist binds a forgotten rune-engine that costs one memory per spell.",
+          "target_pages": "350"
+        }
+      ],
+      "tier_economics": [
+        {
+          "price_usd": "2.99",
+          "channel": "Book 1 Starter eBook",
+          "unit_print_cost_usd": "0.00",
+          "usps_postage_usd": "0.00",
+          "payment_fee_usd": "0.39",
+          "net_margin_usd": "2.60",
+          "net_margin_percent": "86.96"
+        },
+        {
+          "price_usd": "4.99",
+          "channel": "Standard Installment eBook",
+          "unit_print_cost_usd": "0.00",
+          "usps_postage_usd": "0.00",
+          "payment_fee_usd": "0.44",
+          "net_margin_usd": "4.55",
+          "net_margin_percent": "91.18"
+        },
+        {
+          "price_usd": "12.99",
+          "channel": "Direct Trilogy Omnibus Digital Bundle",
+          "unit_print_cost_usd": "0.00",
+          "usps_postage_usd": "0.00",
+          "payment_fee_usd": "0.68",
+          "net_margin_usd": "12.31",
+          "net_margin_percent": "94.77"
+        },
+        {
+          "price_usd": "14.99",
+          "channel": "Lulu Direct Trade Paperback + USPS Media Mail",
+          "unit_print_cost_usd": "4.50",
+          "usps_postage_usd": "4.63",
+          "payment_fee_usd": "0.73",
+          "net_margin_usd": "5.13",
+          "net_margin_percent": "34.22"
+        },
+        {
+          "price_usd": "16.99",
+          "channel": "Lulu Direct 380p+ Matte Paperback + USPS Media Mail",
+          "unit_print_cost_usd": "4.85",
+          "usps_postage_usd": "4.63",
+          "payment_fee_usd": "0.79",
+          "net_margin_usd": "6.72",
+          "net_margin_percent": "39.55"
+        }
+      ],
+      "schema_org_book_defaults": {
+        "@context": "https://schema.org",
+        "@type": "Book",
+        "genre": "Science Fiction",
+        "inLanguage": "en-US",
+        "bookFormat": "https://schema.org/Paperback",
+        "typicalAgeRange": "14-",
+        "offers_defaults": {
+          "@type": "Offer",
+          "priceCurrency": "USD",
+          "price": "16.99",
+          "availability": "https://schema.org/InStock"
+        }
+      }
+    },
+    {
+      "genre_slug": "self-help-reentry",
+      "display_name": "Self-Help / Re-Entry & Financial Literacy",
+      "demand_signal_score": "94.90",
+      "competition_index": "48.30",
+      "recommended_price_tier_usd": "16.99",
+      "keyword_clusters": [
+        "reentry workbook paperback inmate",
+        "facility mailroom compliant self help book",
+        "post release small business blueprint",
+        "usps media mail paperback workbook"
+      ],
+      "series_hook_positioning": "High institutional & family-gift demand for LULU-USPS-001 compliant matte 60# uncoated workbooks at $14.99 and $16.99.",
+      "recommended_book_concepts": [
+        {
+          "concept_id": "RE-RADAR-01",
+          "working_title": "Day One Blueprint: Credit, Trade & Re-Entry Playbook",
+          "format_focus": "Facility-Compliant Matte Paperback ($16.99) + Family Digital Companion ($4.99)",
+          "hook": "Step-by-step 90-day housing, credential, and small-business launch checklists built for plain-English action.",
+          "target_pages": "260"
+        },
+        {
+          "concept_id": "RE-RADAR-02",
+          "working_title": "Clean Slate Ledger: Personal Finance & Entrepreneurship",
+          "format_focus": "Direct-to-Facility Matte Paperback ($14.99)",
+          "hook": "Practical base-10 budgeting, trade licensing, and debt-rebuild templates without jargon.",
+          "target_pages": "240"
+        }
+      ],
+      "tier_economics": [
+        {
+          "price_usd": "2.99",
+          "channel": "Quick-Start Digital Guide",
+          "unit_print_cost_usd": "0.00",
+          "usps_postage_usd": "0.00",
+          "payment_fee_usd": "0.39",
+          "net_margin_usd": "2.60",
+          "net_margin_percent": "86.96"
+        },
+        {
+          "price_usd": "4.99",
+          "channel": "Family Companion Digital Edition",
+          "unit_print_cost_usd": "0.00",
+          "usps_postage_usd": "0.00",
+          "payment_fee_usd": "0.44",
+          "net_margin_usd": "4.55",
+          "net_margin_percent": "91.18"
+        },
+        {
+          "price_usd": "12.99",
+          "channel": "3-Workbook Digital Resource Pack",
+          "unit_print_cost_usd": "0.00",
+          "usps_postage_usd": "0.00",
+          "payment_fee_usd": "0.68",
+          "net_margin_usd": "12.31",
+          "net_margin_percent": "94.77"
+        },
+        {
+          "price_usd": "14.99",
+          "channel": "Lulu Direct Matte 60# Uncoated Paperback + USPS Media Mail",
+          "unit_print_cost_usd": "3.85",
+          "usps_postage_usd": "4.63",
+          "payment_fee_usd": "0.73",
+          "net_margin_usd": "5.78",
+          "net_margin_percent": "38.56"
+        },
+        {
+          "price_usd": "16.99",
+          "channel": "Lulu Direct Complete Re-Entry Workbook + USPS Media Mail",
+          "unit_print_cost_usd": "4.05",
+          "usps_postage_usd": "4.63",
+          "payment_fee_usd": "0.79",
+          "net_margin_usd": "7.52",
+          "net_margin_percent": "44.26"
+        }
+      ],
+      "schema_org_book_defaults": {
+        "@context": "https://schema.org",
+        "@type": "Book",
+        "genre": "Self-Help",
+        "inLanguage": "en-US",
+        "bookFormat": "https://schema.org/Paperback",
+        "typicalAgeRange": "18-",
+        "offers_defaults": {
+          "@type": "Offer",
+          "priceCurrency": "USD",
+          "price": "16.99",
+          "availability": "https://schema.org/InStock"
+        }
+      }
+    },
+    {
+      "genre_slug": "true-crime",
+      "display_name": "True Crime",
+      "demand_signal_score": "90.75",
+      "competition_index": "61.40",
+      "recommended_price_tier_usd": "14.99",
+      "keyword_clusters": [
+        "documented cold case nonfiction paperback",
+        "courtroom trial chronicle book",
+        "investigative true crime series",
+        "verified case file narrative"
+      ],
+      "series_hook_positioning": "Pair verified public-record timelines with $4.99 eBooks, $12.99 casefile anthologies, and $14.99 matte paperbacks.",
+      "recommended_book_concepts": [
+        {
+          "concept_id": "TC-RADAR-01",
+          "working_title": "The County Vault: Unsealed Trial Transcripts",
+          "format_focus": "Documented Investigation ($4.99 eBook / $14.99 Matte Paperback)",
+          "hook": "How three overlooked clerk timestamps overturned a twenty-year conviction.",
+          "target_pages": "296"
+        },
+        {
+          "concept_id": "TC-RADAR-02",
+          "working_title": "Midwest Cold Case Dossier",
+          "format_focus": "3-Volume Digital Anthology ($12.99) + Print ($16.99)",
+          "hook": "Public-record reconstructions of unsolved regional financial and heist mysteries.",
+          "target_pages": "330"
+        }
+      ],
+      "tier_economics": [
+        {
+          "price_usd": "2.99",
+          "channel": "Single Case Brief eBook",
+          "unit_print_cost_usd": "0.00",
+          "usps_postage_usd": "0.00",
+          "payment_fee_usd": "0.39",
+          "net_margin_usd": "2.60",
+          "net_margin_percent": "86.96"
+        },
+        {
+          "price_usd": "4.99",
+          "channel": "Full Investigation eBook",
+          "unit_print_cost_usd": "0.00",
+          "usps_postage_usd": "0.00",
+          "payment_fee_usd": "0.44",
+          "net_margin_usd": "4.55",
+          "net_margin_percent": "91.18"
+        },
+        {
+          "price_usd": "12.99",
+          "channel": "3-Volume Case Dossier Bundle",
+          "unit_print_cost_usd": "0.00",
+          "usps_postage_usd": "0.00",
+          "payment_fee_usd": "0.68",
+          "net_margin_usd": "12.31",
+          "net_margin_percent": "94.77"
+        },
+        {
+          "price_usd": "14.99",
+          "channel": "Lulu Direct Matte Paperback + USPS Media Mail",
+          "unit_print_cost_usd": "4.10",
+          "usps_postage_usd": "4.63",
+          "payment_fee_usd": "0.73",
+          "net_margin_usd": "5.53",
+          "net_margin_percent": "36.89"
+        },
+        {
+          "price_usd": "16.99",
+          "channel": "Lulu Direct Annotated Dossier Paperback + USPS Media Mail",
+          "unit_print_cost_usd": "4.40",
+          "usps_postage_usd": "4.63",
+          "payment_fee_usd": "0.79",
+          "net_margin_usd": "7.17",
+          "net_margin_percent": "42.20"
+        }
+      ],
+      "schema_org_book_defaults": {
+        "@context": "https://schema.org",
+        "@type": "Book",
+        "genre": "True Crime",
+        "inLanguage": "en-US",
+        "bookFormat": "https://schema.org/Paperback",
+        "typicalAgeRange": "18-",
+        "offers_defaults": {
+          "@type": "Offer",
+          "priceCurrency": "USD",
+          "price": "14.99",
+          "availability": "https://schema.org/InStock"
+        }
+      }
+    }
+  ]
+}

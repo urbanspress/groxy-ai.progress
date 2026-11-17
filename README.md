@@ -2,8 +2,8 @@
 
 **Step 4 of the Post-1.0 GRAB Ecosystem:** Autonomous Design, Content & SEO Intelligence Agent built natively on **GRAB `v1.1.0`**, **Grex JS `v1.0.0`**, **GrabLab CMS `v1.0.1`**, and **Grex Theme Builder `v1.0.0`**.
 
-- **Current Release:** `v1.7.0` (**Approved & Frozen — Complete**)
-- **Delivered Capabilities:** Multi-Genre Storytelling Brain (`playbook/genres/*.v1.json` + `.agents/skills/genre-research/SKILL.md`), Author Mode Co-Writer (`POST /api/groxy/author/generate` & `/apply`), Hemingway Clarity & Readability Auditor (`POST /api/groxy/author/readability-audit`), XSS-safe `schema.org/Book` & `BookSeries` JSON-LD Engine, and Pure `Grex JS v1.0.0` Author Studio panel (plus all frozen `v1.0.0`–`v1.6.0` SEO, Visual Generator, Vision Clone, Brand DNA, Email Flow, Commerce, Store Schema, and Section Co-Pilot capabilities).
+- **Current Release:** `v1.8.0` (**Approved & Frozen — Complete**)
+- **Delivered Capabilities:** Baked-In Offline Knowledge Vault (`playbook/knowledge/*.v1.json`, `POST /api/groxy/knowledge/query`), Allowlisted Real-Time Web Research (`POST /api/groxy/research/search`, `GRAB-E402` SSRF & `3xx` redirect revalidation), Bestseller Radar (`playbook/market/bestseller-radar.v1.json`, `POST /api/groxy/research/bestseller-radar` & `/apply`, `ADR-025c` exact tiers `"2.99"`, `"4.99"`, `"12.99"`, `"14.99"`, `"16.99"`, single-use `rtok_res_<hex>`), OAuth2 Read-Only Google Search Console (`gsc.readonly` PKCE `S256` + `AES-256-GCM` `"v1:..."` tokens), and Pure `Grex JS v1.0.0` Research & Radar Studio panel (plus all frozen `v1.0.0`–`v1.7.0` SEO, Visual Generator, Vision Clone, Brand DNA, Email Flow, Commerce, Store Schema, Section Co-Pilot, and Author Mode capabilities).
 - **Frozen `v1.x` Contract:** All `22` routes in `src/groxy.grab`, 22-rule Playbook (`playbook/seo-playbook.v1.json`), `8 × 5` (`40`) WCAG AA Style Pack × Blueprint combinations, `GROXY-SAFE-001`, and `ADR-025c` wire precision are frozen under SemVer `v1.x` (`ADR-027c`).
 - **Development Repo (`origin`):** `https://github.com/urbanspress/groxy-ai.progress`
 - **Production Release Repo (`stable`):** `https://github.com/urbanspress/groxy-ai.stable`

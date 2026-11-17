@@ -6,7 +6,7 @@
  * and strict GROXY-SAFE-001 human-in-the-loop approval enforcement.
  */
 
-export const GROXY_VERSION = "1.7.0";
+export const GROXY_VERSION = "1.8.0";
 
 import {
   auditEntryAndLayout,

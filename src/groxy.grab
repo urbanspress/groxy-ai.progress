@@ -39,6 +39,17 @@ set author_ledger_claim to data.prepare using commerce_db, "UPDATE groxy_author_
 set author_ledger_finish to data.prepare using commerce_db, "UPDATE groxy_author_ledger SET status = :status, outcome_json = :outcome_json WHERE plan_id = :plan_id AND status = 'applying'", record {params: record {plan_id: "text", status: "text", outcome_json: "text"}, columns: record {}}
 set author_ledger_expire_stale to data.prepare using commerce_db, "UPDATE groxy_author_ledger SET status = 'expired' WHERE operator_id = :operator_id AND status = 'staged' AND expires_at <= :now_iso", record {params: record {operator_id: "text", now_iso: "text"}, columns: record {}}
 set author_ledger_count_pending to data.prepare using commerce_db, "SELECT plan_id FROM groxy_author_ledger WHERE operator_id = :operator_id AND status = 'staged'", record {params: record {operator_id: "text"}, columns: record {plan_id: "text"}}
+set research_ledger_insert to data.prepare using commerce_db, "INSERT INTO groxy_research_ledger (plan_id, genre_slug, target_consumer, target_slot, builder_slot, slot_sha256, payload_sha256, payload_json, token_verifier, operator_id, site_id, status, created_at, expires_at, outcome_json) VALUES (:plan_id, :genre_slug, :target_consumer, :target_slot, :builder_slot, :slot_sha256, :payload_sha256, :payload_json, :token_verifier, :operator_id, :site_id, :status, :created_at, :expires_at, :outcome_json)", record {params: record {plan_id: "text", genre_slug: "text", target_consumer: "text", target_slot: "text", builder_slot: "text", slot_sha256: "text", payload_sha256: "text", payload_json: "text", token_verifier: "text", operator_id: "text", site_id: "text", status: "text", created_at: "text", expires_at: "text", outcome_json: "text"}, columns: record {}}
+set research_ledger_read to data.prepare using commerce_db, "SELECT plan_id, genre_slug, target_consumer, target_slot, builder_slot, slot_sha256, payload_sha256, payload_json, token_verifier, operator_id, site_id, status, created_at, expires_at, outcome_json FROM groxy_research_ledger WHERE plan_id = :plan_id", record {params: record {plan_id: "text"}, columns: record {plan_id: "text", genre_slug: "text", target_consumer: "text", target_slot: "text", builder_slot: "text", slot_sha256: "text", payload_sha256: "text", payload_json: "text", token_verifier: "text", operator_id: "text", site_id: "text", status: "text", created_at: "text", expires_at: "text", outcome_json: "text"}}
+set research_ledger_claim to data.prepare using commerce_db, "UPDATE groxy_research_ledger SET status = 'applying' WHERE plan_id = :plan_id AND status = 'staged'", record {params: record {plan_id: "text"}, columns: record {}}
+set research_ledger_finish to data.prepare using commerce_db, "UPDATE groxy_research_ledger SET status = :status, outcome_json = :outcome_json WHERE plan_id = :plan_id AND status = 'applying'", record {params: record {plan_id: "text", status: "text", outcome_json: "text"}, columns: record {}}
+set research_ledger_expire_stale to data.prepare using commerce_db, "UPDATE groxy_research_ledger SET status = 'expired' WHERE operator_id = :operator_id AND status = 'staged' AND expires_at <= :now_iso", record {params: record {operator_id: "text", now_iso: "text"}, columns: record {}}
+set research_ledger_count_pending to data.prepare using commerce_db, "SELECT plan_id FROM groxy_research_ledger WHERE operator_id = :operator_id AND status = 'staged'", record {params: record {operator_id: "text"}, columns: record {plan_id: "text"}}
+set gsc_conn_insert to data.prepare using commerce_db, "INSERT INTO groxy_gsc_connections (site_url, operator_id, scope, access_token_enc, refresh_token_enc, token_type, expires_at, connected_at, updated_at) VALUES (:site_url, :operator_id, :scope, :access_token_enc, :refresh_token_enc, :token_type, :expires_at, :connected_at, :updated_at)", record {params: record {site_url: "text", operator_id: "text", scope: "text", access_token_enc: "text", refresh_token_enc: "text", token_type: "text", expires_at: "text", connected_at: "text", updated_at: "text"}, columns: record {}}
+set gsc_conn_update to data.prepare using commerce_db, "UPDATE groxy_gsc_connections SET operator_id = :operator_id, scope = :scope, access_token_enc = :access_token_enc, refresh_token_enc = :refresh_token_enc, token_type = :token_type, expires_at = :expires_at, updated_at = :updated_at WHERE site_url = :site_url", record {params: record {site_url: "text", operator_id: "text", scope: "text", access_token_enc: "text", refresh_token_enc: "text", token_type: "text", expires_at: "text", updated_at: "text"}, columns: record {}}
+set gsc_conn_read to data.prepare using commerce_db, "SELECT site_url, operator_id, scope, access_token_enc, refresh_token_enc, token_type, expires_at, connected_at, updated_at FROM groxy_gsc_connections WHERE site_url = :site_url", record {params: record {site_url: "text"}, columns: record {site_url: "text", operator_id: "text", scope: "text", access_token_enc: "text", refresh_token_enc: "text", token_type: "text", expires_at: "text", connected_at: "text", updated_at: "text"}}
+set gsc_conn_list to data.prepare using commerce_db, "SELECT site_url, operator_id, scope, token_type, expires_at, connected_at, updated_at FROM groxy_gsc_connections ORDER BY updated_at DESC", record {params: record {}, columns: record {site_url: "text", operator_id: "text", scope: "text", token_type: "text", expires_at: "text", connected_at: "text", updated_at: "text"}}
+set gsc_conn_delete to data.prepare using commerce_db, "DELETE FROM groxy_gsc_connections WHERE site_url = :site_url", record {params: record {site_url: "text"}, columns: record {}}
 
 make safe_asset_url using raw_path
   try
@@ -4373,7 +4384,7 @@ make render_site_dna_md_grab using dna
 end
 
 route "GET" "/_health"
-  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "1.7.0"}
+  give back server.json using 200, record {status: "ok", service: "groxy-ai", version: "1.8.0"}
 end
 
 route "GET" "/_ready"
@@ -4387,7 +4398,15 @@ route "GET" "/_ready"
     if not genres_chk.ok
       give back server.json using 503, record {status: "not_ready", error: genres_chk.error}
     end
-    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "1.7.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt, genre_playbook_count: (collections.length using genres_chk.genres)}
+    set kv_chk to call load_knowledge_vault_registry
+    if not kv_chk.ok
+      give back server.json using 503, record {status: "not_ready", error: kv_chk.error}
+    end
+    set radar_chk to call load_bestseller_radar_playbook
+    if not radar_chk.ok
+      give back server.json using 503, record {status: "not_ready", error: radar_chk.error}
+    end
+    give back server.json using 200, record {status: "ready", service: "groxy-ai", version: "1.8.0", playbook_version: (pb at "playbook_version"), rule_count: rule_cnt, genre_playbook_count: (collections.length using genres_chk.genres), knowledge_vault_count: (collections.length using kv_chk.vaults), bestseller_radar_ready: yes}
   catch err
     give back server.json using 503, record {status: "not_ready", error: err.message}
   end
@@ -4407,7 +4426,7 @@ end
 route "GET" "/api/groxy/playbook"
   set pb to load_playbook_doc using groxy_cache
   set pb_out to copy_to_map using pb
-  set pb_out to collections.put using pb_out, "service_version", "1.7.0"
+  set pb_out to collections.put using pb_out, "service_version", "1.8.0"
   give back server.json using 200, pb_out
 end
 
@@ -4504,7 +4523,7 @@ route "POST" "/api/groxy/mcp/inspect" using req
       end
     end
 
-    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "1.7.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
+    give back server.json using 200, record {ok: yes, service: "groxy-ai", version: "1.8.0", read_only: yes, grab_cli_tools: grab_cli_tools, grablab_tools_expected: grablab_expected, grablab_cms: cms_result, grex_builder: builder_result}
   catch err
     give back server.json using 400, record {ok: no, error: err.message}
   end
@@ -7972,8 +7991,8 @@ route "POST" "/api/groxy/db/architect-quiz" using req
     set base_mig_records to ""
     set mig_version to "1"
     if target_id is "commerce" or target_id is "commerce_inspect"
-      set base_mig_records to "record {version: 1, name: \"create_commerce_approval_ledger\", steps: [\"CREATE TABLE groxy_commerce_plans (plan_id TEXT PRIMARY KEY, engine TEXT NOT NULL, target_slot TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\"]}, record {version: 2, name: \"create_db_consultant_ledger\", steps: [\"CREATE TABLE db_consultant_ledger (plan_id TEXT PRIMARY KEY, target_id TEXT NOT NULL, origin TEXT NOT NULL, migration_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, risk_level TEXT NOT NULL, risk_acknowledged INTEGER NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\", \"CREATE TABLE db_target_locks (target_id TEXT PRIMARY KEY, locked_by_plan TEXT NOT NULL, locked_at TEXT NOT NULL)\"]}, record {version: 3, name: \"create_section_refine_ledger\", steps: [\"CREATE TABLE groxy_section_refine_ledger (refine_id TEXT PRIMARY KEY, slot TEXT NOT NULL, builder_slot TEXT NOT NULL, section_id TEXT NOT NULL, subtree_sha256 TEXT NOT NULL, slot_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\"]}, record {version: 4, name: \"create_author_ledger\", steps: [\"CREATE TABLE groxy_author_ledger (plan_id TEXT PRIMARY KEY, genre_slug TEXT NOT NULL, artifact_type TEXT NOT NULL, target_slot TEXT NOT NULL, builder_slot TEXT NOT NULL, slot_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\"]}, "
-      set mig_version to "5"
+      set base_mig_records to "record {version: 1, name: \"create_commerce_approval_ledger\", steps: [\"CREATE TABLE groxy_commerce_plans (plan_id TEXT PRIMARY KEY, engine TEXT NOT NULL, target_slot TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\"]}, record {version: 2, name: \"create_db_consultant_ledger\", steps: [\"CREATE TABLE db_consultant_ledger (plan_id TEXT PRIMARY KEY, target_id TEXT NOT NULL, origin TEXT NOT NULL, migration_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, risk_level TEXT NOT NULL, risk_acknowledged INTEGER NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\", \"CREATE TABLE db_target_locks (target_id TEXT PRIMARY KEY, locked_by_plan TEXT NOT NULL, locked_at TEXT NOT NULL)\"]}, record {version: 3, name: \"create_section_refine_ledger\", steps: [\"CREATE TABLE groxy_section_refine_ledger (refine_id TEXT PRIMARY KEY, slot TEXT NOT NULL, builder_slot TEXT NOT NULL, section_id TEXT NOT NULL, subtree_sha256 TEXT NOT NULL, slot_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\"]}, record {version: 4, name: \"create_author_ledger\", steps: [\"CREATE TABLE groxy_author_ledger (plan_id TEXT PRIMARY KEY, genre_slug TEXT NOT NULL, artifact_type TEXT NOT NULL, target_slot TEXT NOT NULL, builder_slot TEXT NOT NULL, slot_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\"]}, record {version: 5, name: \"create_research_and_gsc_ledgers\", steps: [\"CREATE TABLE groxy_research_ledger (plan_id TEXT PRIMARY KEY, genre_slug TEXT NOT NULL, target_consumer TEXT NOT NULL, target_slot TEXT NOT NULL, builder_slot TEXT NOT NULL, slot_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL, payload_json TEXT NOT NULL, token_verifier TEXT NOT NULL, operator_id TEXT NOT NULL, site_id TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, outcome_json TEXT NOT NULL)\", \"CREATE TABLE groxy_gsc_connections (site_url TEXT PRIMARY KEY, operator_id TEXT NOT NULL, scope TEXT NOT NULL, access_token_enc TEXT NOT NULL, refresh_token_enc TEXT NOT NULL, token_type TEXT NOT NULL, expires_at TEXT NOT NULL, connected_at TEXT NOT NULL, updated_at TEXT NOT NULL)\"]}, "
+      set mig_version to "6"
     end
     set migration_text to "use data\n\nset store_db to data.open using \"" joined with target_db_alias joined with "\"\nset result to data.migrate using store_db, [" joined with base_mig_records joined with "record {version: " joined with mig_version joined with ", name: \"groxy_store_schema_v1\", steps: [" joined with mig_steps_json joined with "]}]\nshow result\n"
     set migration_sha to crypto.sha256_hex using migration_text
@@ -8211,13 +8230,21 @@ route "POST" "/api/groxy/db/apply" using req
 
     set db_locked to no
     set db_lock_try to 0
-    while (not db_locked) and db_lock_try is less than 8
+    while (not db_locked) and db_lock_try is less than 24
       set db_lock_try to db_lock_try plus 1
       try
         call data.execute using db_target_lock_acquire, record {target_id: target_id, locked_by_plan: plan_id, locked_at: now_value.iso}
         set db_locked to yes
       catch lock_err
-        if lock_err.message is "database conflict" and db_lock_try is less than 8
+        if lock_err.message is "database conflict" and db_lock_try is less than 24
+          try
+            set held_locks to data.query using db_target_lock_read, record {target_id: target_id}
+            if (collections.length using held_locks) is greater than 0
+              give back server.json using 409, record {ok: no, code: "DB_TARGET_LOCKED", error: "The target database is locked by an ongoing database operation."}
+            end
+          catch rl_err
+            set ignored_rl to rl_err.message
+          end
           call sqlite_jitter_backoff using plan_id
         otherwise
           give back server.json using 409, record {ok: no, code: "DB_TARGET_LOCKED", error: "The target database is locked by an ongoing database operation."}
@@ -11484,4 +11511,1708 @@ route "POST" "/api/groxy/author/apply" using req
   set applied_cms_out to json.stringify using record {status: "applied", author_plan_id: author_plan_id, draft_id: draft_id, content_type_used: ct_slug_used, status_enforced: "draft", applied_at: now_val.iso}
   call data.execute using author_ledger_finish, record {plan_id: author_plan_id, status: "applied", outcome_json: applied_cms_out}
   give back server.json using 201, record {ok: yes, schema_version: "1.7.0", approved: yes, author_plan_id: author_plan_id, genre_slug: gslug, artifact_type: artifact_type, target_slot: target_slot, payload_sha256: payload_sha, status: "applied", status_enforced: "draft", draft_id: draft_id, content_type_used: ct_slug_used, entry: (draft_data at "entry"), schema_org_json_ld: immutable.schema_org_json_ld}
+end
+
+# ---------------------------------------------------------------------------
+# Groxy AI v1.8.0 — Baked-In Offline Knowledge Vault, Allowlisted Real-Time
+# Web Research (GRAB-E402), Google Search Console gsc.readonly (AES-256-GCM)
+# & Bestseller Radar (rtok_res_<hex>)
+# ---------------------------------------------------------------------------
+
+make research_url_encode using raw
+  set s to text.from using raw
+  set s to text.replace using s, "%", "%25"
+  set s to text.replace using s, " ", "%20"
+  set s to text.replace using s, "!", "%21"
+  set s to text.replace using s, "\"", "%22"
+  set s to text.replace using s, "#", "%23"
+  set s to text.replace using s, "$", "%24"
+  set s to text.replace using s, "&", "%26"
+  set s to text.replace using s, "'", "%27"
+  set s to text.replace using s, "(", "%28"
+  set s to text.replace using s, ")", "%29"
+  set s to text.replace using s, "*", "%2A"
+  set s to text.replace using s, "+", "%2B"
+  set s to text.replace using s, ",", "%2C"
+  set s to text.replace using s, "/", "%2F"
+  set s to text.replace using s, ":", "%3A"
+  set s to text.replace using s, ";", "%3B"
+  set s to text.replace using s, "=", "%3D"
+  set s to text.replace using s, "?", "%3F"
+  set s to text.replace using s, "@", "%40"
+  set s to text.replace using s, "[", "%5B"
+  set s to text.replace using s, "]", "%5D"
+  give back s
+end
+
+make research_is_json_number using val
+  if val is nothing
+    give back no
+  end
+  set w to json.stringify using val
+  if (text.starts_with using w, "\"") or (text.starts_with using w, "{") or (text.starts_with using w, "[") or w is "true" or w is "false" or w is "null"
+    give back no
+  end
+  give back yes
+end
+
+make research_scan_dataset using val, path_label
+  if research_is_json_number using val
+    give back record {ok: no, status: 422, code: "ADR025C_WIRE_REQUIRED", error: ("Raw JS number/float not allowed in " joined with path_label joined with "; ADR-025c requires exact base-10 wire strings.")}
+  end
+  if is_text_value using val
+    if author_string_has_xss using (text.from using val)
+      give back record {ok: no, status: 422, code: "KNOWLEDGE_VAULT_XSS", error: ("Unsafe HTML or script payload in " joined with path_label)}
+    end
+    give back record {ok: yes, status: 200, code: "", error: ""}
+  end
+  if is_list_value using val
+    set idx to 0
+    for each item in val
+      set r to research_scan_dataset using item, (path_label joined with "[" joined with (text.from using idx) joined with "]")
+      if not r.ok
+        give back r
+      end
+      set idx to idx plus 1
+    end
+    give back record {ok: yes, status: 200, code: "", error: ""}
+  end
+  if is_record_value using val
+    for each k in (collections.keys using val)
+      set r to research_scan_dataset using (val at k), (path_label joined with "." joined with k)
+      if not r.ok
+        give back r
+      end
+    end
+  end
+  give back record {ok: yes, status: 200, code: "", error: ""}
+end
+
+make research_required_knowledge_slugs
+  give back ["seo-rules", "schema-org-reference", "wcag-patterns", "conversion-copywriting", "correctional-publishing"]
+end
+
+make research_validate_knowledge_vault using doc, expected_slug
+  if not (is_record_value using doc)
+    give back record {ok: no, error: "Knowledge vault must be a JSON object."}
+  end
+  if (map_get_str using doc, "schema_version", "") is not "groxy-knowledge-vault-v1.0"
+    give back record {ok: no, error: "Knowledge vault schema_version must be groxy-knowledge-vault-v1.0."}
+  end
+  set dslug to map_get_str using doc, "domain_slug", ""
+  if not (is_valid_slug_format using dslug) or (expected_slug is not "" and dslug is not expected_slug)
+    give back record {ok: no, error: ("Invalid or mismatched domain_slug: " joined with dslug)}
+  end
+  if (text.trim using (map_get_str using doc, "display_name", "")) is "" or (text.trim using (map_get_str using doc, "updated_at", "")) is ""
+    give back record {ok: no, error: "Knowledge vault missing display_name or updated_at."}
+  end
+  if not (has_map_key using doc, "entries") or not (is_list_value using (doc at "entries")) or (collections.length using (doc at "entries")) is 0
+    give back record {ok: no, error: "Knowledge vault entries must be a non-empty array."}
+  end
+  set scan to research_scan_dataset using doc, ("knowledge." joined with dslug)
+  if not scan.ok
+    give back record {ok: no, error: scan.error}
+  end
+  if (has_map_key using doc, "numeric_thresholds") and (is_record_value using (doc at "numeric_thresholds"))
+    set nth to doc at "numeric_thresholds"
+    for each tk in (collections.keys using nth)
+      if not (is_strict_decimal_wire_str using (nth at tk))
+        give back record {ok: no, error: ("numeric_thresholds." joined with tk joined with " must be an exact ADR-025c base-10 wire string.")}
+      end
+    end
+  end
+  for each entry in (doc at "entries")
+    if not (is_record_value using entry)
+      give back record {ok: no, error: "Knowledge vault entry must be an object."}
+    end
+    for each reqk in ["entry_id", "title", "category", "summary"]
+      if (text.trim using (map_get_str using entry, reqk, "")) is ""
+        give back record {ok: no, error: ("Knowledge entry missing " joined with reqk)}
+      end
+    end
+    for each arrk in ["tags", "rules", "citations"]
+      if not (has_map_key using entry, arrk) or not (is_list_value using (entry at arrk)) or (collections.length using (entry at arrk)) is 0
+        give back record {ok: no, error: ("Knowledge entry missing non-empty " joined with arrk)}
+      end
+    end
+    if (has_map_key using entry, "thresholds") and (is_record_value using (entry at "thresholds"))
+      set eth to entry at "thresholds"
+      for each etk in (collections.keys using eth)
+        if not (is_strict_decimal_wire_str using (eth at etk))
+          give back record {ok: no, error: ("entry.thresholds." joined with etk joined with " must be an exact base-10 wire string.")}
+        end
+      end
+    end
+  end
+  if dslug is "correctional-publishing"
+    set raw_txt to json.stringify using doc
+    for each req_tok in ["PLOTIFIC-SAFE-001", "LULU-USPS-001", "perfect_bound_paperback", "matte", "60# uncoated", "USPS", "UPS", "FedEx", "DHL", "requires_manual_mailroom_call", "0.002252"]
+      if not (text.contains using raw_txt, req_tok)
+        give back record {ok: no, error: ("correctional-publishing missing Plotific invariant: " joined with req_tok)}
+      end
+    end
+  end
+  give back record {ok: yes, error: ""}
+end
+
+make load_knowledge_vault_registry
+  set slugs to call research_required_knowledge_slugs
+  set loaded to {}
+  set ordered to []
+  for each slug in slugs
+    set fpath to "playbook/knowledge/" joined with slug joined with ".v1.json"
+    if not (files.exists using fpath)
+      give back record {ok: no, error: ("Missing knowledge vault file: " joined with fpath)}
+    end
+    try
+      set raw to files.read_text using fpath
+      if json_has_duplicate_keys using raw
+        give back record {ok: no, error: ("Duplicate JSON keys in " joined with fpath)}
+      end
+      set parsed to json.parse using raw
+      set chk to research_validate_knowledge_vault using parsed, slug
+      if not chk.ok
+        give back record {ok: no, error: (fpath joined with ": " joined with chk.error)}
+      end
+      set loaded to collections.put using loaded, slug, parsed
+      set ordered to collections.append using ordered, parsed
+    catch err
+      give back record {ok: no, error: ("Failed loading " joined with fpath joined with ": " joined with err.message)}
+    end
+  end
+  give back record {ok: yes, by_slug: loaded, vaults: ordered}
+end
+
+make research_validate_bestseller_radar using doc
+  if not (is_record_value using doc)
+    give back record {ok: no, error: "Bestseller radar must be a JSON object."}
+  end
+  if (map_get_str using doc, "schema_version", "") is not "groxy-bestseller-radar-v1.0"
+    give back record {ok: no, error: "Bestseller radar schema_version must be groxy-bestseller-radar-v1.0."}
+  end
+  set scan to research_scan_dataset using doc, "bestseller_radar"
+  if not scan.ok
+    give back record {ok: no, error: scan.error}
+  end
+  if not (has_map_key using doc, "pricing_tiers_usd") or not (is_list_value using (doc at "pricing_tiers_usd"))
+    give back record {ok: no, error: "Bestseller radar missing pricing_tiers_usd."}
+  end
+  set tiers to doc at "pricing_tiers_usd"
+  for each tv in tiers
+    if not (is_strict_decimal_wire_str using tv)
+      give back record {ok: no, error: "pricing_tiers_usd entries must be exact ADR-025c strings."}
+    end
+  end
+  for each req_t in ["2.99", "4.99", "12.99", "14.99", "16.99"]
+    if not (list_contains using tiers, req_t)
+      give back record {ok: no, error: ("pricing_tiers_usd missing required tier " joined with req_t)}
+    end
+  end
+  if not (has_map_key using doc, "lulu_usps_constraints") or not (is_record_value using (doc at "lulu_usps_constraints"))
+    give back record {ok: no, error: "Missing lulu_usps_constraints."}
+  end
+  set lulu to doc at "lulu_usps_constraints"
+  if (map_get_str using lulu, "binding", "") is not "perfect_bound_paperback" or (map_get_str using lulu, "cover_finish", "") is not "matte" or (map_get_str using lulu, "paper_stock", "") is not "60# uncoated"
+    give back record {ok: no, error: "lulu_usps_constraints violates LULU-USPS-001 print lock."}
+  end
+  if not (has_map_key using lulu, "accepted_carriers") or not (list_contains using (lulu at "accepted_carriers"), "USPS")
+    give back record {ok: no, error: "lulu_usps_constraints must accept USPS."}
+  end
+  if not (has_map_key using lulu, "blocked_carriers") or not (list_contains using (lulu at "blocked_carriers"), "UPS") or not (list_contains using (lulu at "blocked_carriers"), "FedEx") or not (list_contains using (lulu at "blocked_carriers"), "DHL")
+    give back record {ok: no, error: "lulu_usps_constraints must block UPS, FedEx, and DHL."}
+  end
+  if not (has_map_key using doc, "genres") or not (is_list_value using (doc at "genres")) or (collections.length using (doc at "genres")) is 0
+    give back record {ok: no, error: "Bestseller radar missing genres."}
+  end
+  set by_slug to {}
+  for each g in (doc at "genres")
+    set gs to map_get_str using g, "genre_slug", ""
+    if not (is_valid_slug_format using gs)
+      give back record {ok: no, error: ("Invalid radar genre_slug: " joined with gs)}
+    end
+    for each gf in ["demand_signal_score", "competition_index", "recommended_price_tier_usd"]
+      if not (has_map_key using g, gf) or not (is_strict_decimal_wire_str using (g at gf))
+        give back record {ok: no, error: (gs joined with "." joined with gf joined with " must be exact base-10 string.")}
+      end
+    end
+    if not (has_map_key using g, "tier_economics") or not (is_list_value using (g at "tier_economics"))
+      give back record {ok: no, error: (gs joined with " missing tier_economics.")}
+    end
+    set seen_t to []
+    for each te in (g at "tier_economics")
+      for each tf in ["price_usd", "unit_print_cost_usd", "usps_postage_usd", "payment_fee_usd", "net_margin_usd", "net_margin_percent"]
+        if not (has_map_key using te, tf) or not (is_strict_decimal_wire_str using (te at tf))
+          give back record {ok: no, error: (gs joined with " tier_economics." joined with tf joined with " must be exact base-10 string.")}
+        end
+      end
+      set seen_t to collections.append using seen_t, (text.from using (te at "price_usd"))
+    end
+    for each req_t in ["2.99", "4.99", "12.99", "14.99", "16.99"]
+      if not (list_contains using seen_t, req_t)
+        give back record {ok: no, error: (gs joined with " tier_economics missing tier " joined with req_t)}
+      end
+    end
+    set s_org to g at "schema_org_book_defaults"
+    if (map_get_str using s_org, "@context", "") is not "https://schema.org" or (map_get_str using s_org, "@type", "") is not "Book"
+      give back record {ok: no, error: (gs joined with " schema_org_book_defaults invalid.")}
+    end
+    set off_d to s_org at "offers_defaults"
+    if not (has_map_key using off_d, "price") or not (is_strict_decimal_wire_str using (off_d at "price"))
+      give back record {ok: no, error: (gs joined with " offers_defaults.price must be exact base-10 string.")}
+    end
+    set by_slug to collections.put using by_slug, gs, g
+  end
+  give back record {ok: yes, error: "", by_slug: by_slug}
+end
+
+make load_bestseller_radar_playbook
+  set fpath to "playbook/market/bestseller-radar.v1.json"
+  if not (files.exists using fpath)
+    give back record {ok: no, error: ("Missing bestseller radar playbook: " joined with fpath)}
+  end
+  try
+    set raw to files.read_text using fpath
+    if json_has_duplicate_keys using raw
+      give back record {ok: no, error: ("Duplicate JSON keys in " joined with fpath)}
+    end
+    set parsed to json.parse using raw
+    set chk to research_validate_bestseller_radar using parsed
+    if not chk.ok
+      give back record {ok: no, error: (fpath joined with ": " joined with chk.error)}
+    end
+    give back record {ok: yes, playbook: parsed, by_slug: chk.by_slug}
+  catch err
+    give back record {ok: no, error: ("Failed loading " joined with fpath joined with ": " joined with err.message)}
+  end
+end
+
+set kv_boot to call load_knowledge_vault_registry
+set radar_boot to call load_bestseller_radar_playbook
+
+make research_is_ssrf_blocked_host using raw_host
+  set h to text.lower using (text.trim using (text.from using raw_host))
+  if h is ""
+    give back yes
+  end
+  if (text.starts_with using h, "[") and (text.contains using h, "]")
+    set h to text.replace using h, "[", ""
+    set h to (text.split using h, "]") at 0
+  end
+  if text.contains using h, "%"
+    set h to (text.split using h, "%") at 0
+  end
+  if h is "localhost" or (text.ends_with using h, ".localhost") or (text.ends_with using h, ".local") or h is "metadata.google.internal" or h is "metadata.goog" or h is "0.0.0.0" or h is "::1" or h is "::" or h is "::0"
+    give back yes
+  end
+  if (text.starts_with using h, "127.") or (text.starts_with using h, "10.") or (text.starts_with using h, "192.168.") or (text.starts_with using h, "169.254.") or (text.starts_with using h, "0.")
+    give back yes
+  end
+  if (text.starts_with using h, "fe80:") or (text.starts_with using h, "fc") or (text.starts_with using h, "fd") or (text.starts_with using h, "::ffff:")
+    give back yes
+  end
+  if text.starts_with using h, "172."
+    set parts to text.split using h, "."
+    if (collections.length using parts) is at least 2
+      try
+        set oct2 to text.to_integer using (parts at 1)
+        if oct2 is at least 16 and oct2 is at most 31
+          give back yes
+        end
+      catch e172
+        give back yes
+      end
+    end
+  end
+  if text.starts_with using h, "0x"
+    give back yes
+  end
+  set digits_only to yes
+  for each ch in (text.split using h, "")
+    if not (text.contains using "0123456789", ch)
+      set digits_only to no
+    end
+  end
+  if digits_only
+    give back yes
+  end
+  give back no
+end
+
+make research_extract_host_port using raw_url
+  set u to text.trim using (text.from using raw_url)
+  set scheme to ""
+  set rest to ""
+  if text.starts_with using (text.lower using u), "https://"
+    set scheme to "https"
+    set rest to text.join using (collections.slice using (text.split using u, ""), 8, (text.length using u)), ""
+  otherwise if text.starts_with using (text.lower using u), "http://"
+    set scheme to "http"
+    set rest to text.join using (collections.slice using (text.split using u, ""), 7, (text.length using u)), ""
+  otherwise
+    give back record {ok: no, scheme: "", origin: "", host: ""}
+  end
+  set authority to (text.split using rest, "/") at 0
+  set authority to (text.split using authority, "?") at 0
+  set authority to (text.split using authority, "#") at 0
+  if authority is "" or (text.contains using authority, "@")
+    give back record {ok: no, scheme: scheme, origin: "", host: ""}
+  end
+  set host to authority
+  if text.starts_with using authority, "["
+    set bparts to text.split using authority, "]"
+    set host to (bparts at 0) joined with "]"
+  otherwise if text.contains using authority, ":"
+    set host to (text.split using authority, ":") at 0
+  end
+  give back record {ok: yes, scheme: scheme, origin: (scheme joined with "://" joined with (text.lower using authority)), host: (text.lower using host)}
+end
+
+make research_allowed_origins
+  set out to ["https://api.duckduckgo.com", "https://en.wikipedia.org", "https://openlibrary.org"]
+  set searx to resolve_env_opt using "GROXY_SEARXNG_ORIGIN"
+  if searx is not ""
+    set sp to research_extract_host_port using searx
+    if sp.ok and sp.scheme is "https" and not (research_is_ssrf_blocked_host using sp.host)
+      set out to collections.append using out, sp.origin
+    end
+  end
+  give back out
+end
+
+make research_test_origin_opt
+  set raw to resolve_env_opt using "GROXY_RESEARCH_TEST_ORIGIN"
+  if raw is not "" and (text.starts_with using raw, "http://127.0.0.1:")
+    give back text.lower using raw
+  end
+  give back ""
+end
+
+make research_validate_outbound_url using raw_url, allowed_origins, test_origin
+  set u to text.trim using (text.from using raw_url)
+  if u is "" or (text.contains using u, " ") or (text.contains using u, "\n") or (text.contains using u, "\r")
+    give back record {ok: no, code: "GRAB-E402", error: "Malformed or empty outbound URL."}
+  end
+  set parsed to research_extract_host_port using u
+  if not parsed.ok
+    give back record {ok: no, code: "GRAB-E402", error: "Invalid scheme or embedded URL credentials."}
+  end
+  if test_origin is not "" and parsed.origin is test_origin
+    give back record {ok: yes, origin: parsed.origin, host: parsed.host}
+  end
+  if parsed.scheme is not "https"
+    give back record {ok: no, code: "GRAB-E402", error: "Outbound research URLs must use https://."}
+  end
+  if research_is_ssrf_blocked_host using parsed.host
+    give back record {ok: no, code: "GRAB-E402", error: ("SSRF guard blocked host: " joined with parsed.host)}
+  end
+  if not (list_contains using allowed_origins, parsed.origin)
+    give back record {ok: no, code: "GRAB-E402", error: ("Origin is not in the GRAB-E402 exact-origin allowlist: " joined with parsed.origin)}
+  end
+  give back record {ok: yes, origin: parsed.origin, host: parsed.host}
+end
+
+make research_strip_html using raw_txt, max_len
+  set s to text.from using raw_txt
+  set s to text.replace using s, "<script", " "
+  set s to text.replace using s, "</script>", " "
+  set s to text.replace using s, "<", " "
+  set s to text.replace using s, ">", " "
+  set s to text.replace using s, "javascript:", " "
+  set s to text.replace using s, "vbscript:", " "
+  set s to text.replace using s, "\r", " "
+  set s to text.replace using s, "\n", " "
+  set s to text.trim using s
+  if (text.length using s) is greater than max_len
+    set s to text.join using (collections.slice using (text.split using s, ""), 0, max_len), ""
+  end
+  give back s
+end
+
+make research_safe_http_get using target_url, allowed_origins, test_origin
+  set chk to research_validate_outbound_url using target_url, allowed_origins, test_origin
+  if not chk.ok
+    give back record {ok: no, status: 403, code: "GRAB-E402", error: chk.error}
+  end
+  set cur_url to target_url
+  set hop to 0
+  while hop is at most 3
+    set resp to nothing
+    try
+      set resp to http.get using cur_url, record {headers: {"Accept": "application/json", "User-Agent": "Groxy-AI/1.8.0"}, timeout_ms: 8000, retries: 0}
+    catch net_err
+      give back record {ok: no, status: 403, code: "GRAB-E402", error: ("GRAB denied or blocked outbound request: " joined with net_err.message)}
+    end
+    if has_map_key using resp, "url"
+      set final_u to text.from using (resp at "url")
+      set post_chk to research_validate_outbound_url using final_u, allowed_origins, test_origin
+      if not post_chk.ok
+        give back record {ok: no, status: 403, code: "GRAB-E402", error: post_chk.error}
+      end
+    end
+    if resp.status is at least 300 and resp.status is less than 400
+      if hop is 3
+        give back record {ok: no, status: 403, code: "GRAB-E402", error: "Exceeded maximum 3xx redirect hops (3)."}
+      end
+      set loc to ""
+      if has_map_key using resp.headers, "location"
+        set loc to text.trim using (text.from using (resp.headers at "location"))
+      end
+      if loc is ""
+        give back record {ok: no, status: 403, code: "GRAB-E402", error: "Redirect missing Location header."}
+      end
+      set loc_chk to research_validate_outbound_url using loc, allowed_origins, test_origin
+      if not loc_chk.ok
+        give back record {ok: no, status: 403, code: "GRAB-E402", error: loc_chk.error}
+      end
+      set cur_url to loc
+      set hop to hop plus 1
+    otherwise
+      give back record {ok: yes, status: resp.status, ok_http: resp.ok, body: resp.body, url: (map_get_str using resp, "url", cur_url)}
+    end
+  end
+  give back record {ok: no, status: 403, code: "GRAB-E402", error: "Exceeded maximum 3xx redirect hops."}
+end
+
+make research_build_book_jsonld using radar_genre, book_meta, site_url
+  set s_def to radar_genre at "schema_org_book_defaults"
+  set off_def to s_def at "offers_defaults"
+  set concepts to radar_genre at "recommended_book_concepts"
+  set c0 to concepts at 0
+  set title to text.trim using (map_get_str using book_meta, "title", (map_get_str using c0, "working_title", "Untitled Book"))
+  set author_name to text.trim using (map_get_str using book_meta, "author_name", "Plotific Press")
+  set isbn to text.trim using (map_get_str using book_meta, "isbn", "978-0-00-000000-0")
+  set pages_val to map_get_str using c0, "target_pages", "300"
+  if has_map_key using book_meta, "numberOfPages"
+    set pages_raw to book_meta at "numberOfPages"
+    if not (is_exact_integer_wire_str using pages_raw)
+      give back record {ok: no, status: 422, code: "ADR025C_WIRE_REQUIRED", error: "book_meta.numberOfPages must be an exact base-10 integer wire string."}
+    end
+    set pages_val to text.from using pages_raw
+  end
+  set price_val to map_get_str using radar_genre, "recommended_price_tier_usd", (map_get_str using off_def, "price", "14.99")
+  if has_map_key using book_meta, "price"
+    set price_raw to book_meta at "price"
+    if not (is_strict_decimal_wire_str using price_raw)
+      give back record {ok: no, status: 422, code: "ADR025C_WIRE_REQUIRED", error: "book_meta.price must be an exact ADR-025c base-10 wire string."}
+    end
+    set price_val to text.from using price_raw
+  end
+  set xss_chk to author_scan_xss_tree using record {title: title, author_name: author_name, isbn: isbn}, "book_meta"
+  if not xss_chk.ok
+    give back record {ok: no, status: 422, code: "GREX-SEC-003", error: xss_chk.error}
+  end
+  set clean_site to text.trim using site_url
+  if text.ends_with using clean_site, "/"
+    set c_chars to text.split using clean_site, ""
+    set clean_site to text.join using (collections.slice using c_chars, 0, ((collections.length using c_chars) minus 1)), ""
+  end
+  set gslug to map_get_str using radar_genre, "genre_slug", "urban-fiction"
+  set book_obj to {"@context": "https://schema.org", "@type": "Book", "name": title, "author": {"@type": "Person", "name": author_name}, "bookFormat": (map_get_str using s_def, "bookFormat", "https://schema.org/Paperback"), "isbn": isbn, "numberOfPages": pages_val, "inLanguage": (map_get_str using s_def, "inLanguage", "en-US"), "genre": (map_get_str using s_def, "genre", (map_get_str using radar_genre, "display_name", "Fiction")), "typicalAgeRange": (map_get_str using s_def, "typicalAgeRange", "18-"), "isAccessibleForFree": no, "offers": {"@type": "Offer", "priceCurrency": (map_get_str using off_def, "priceCurrency", "USD"), "price": price_val, "availability": (map_get_str using off_def, "availability", "https://schema.org/InStock"), "url": (clean_site joined with "/books/" joined with gslug)}}
+  set raw_json to json.stringify using book_obj
+  set escaped_json to escape_jsonld_for_script using raw_json
+  set preview_tag to "<script type=\"application/ld+json\">\n" joined with escaped_json joined with "\n</script>"
+  give back record {ok: yes, schema_type: "Book", json_ld_object: book_obj, json_ld_escaped: escaped_json, script_tag_preview: preview_tag, resolved_price: price_val, resolved_pages: pages_val}
+end
+
+make research_build_radar_layout using radar_genre, ds_md, cms_types, seo_pb
+  set gslug to map_get_str using radar_genre, "genre_slug", "urban-fiction"
+  set dname to map_get_str using radar_genre, "display_name", "Fiction"
+  set loop_ct to "post"
+  if cms_types is not nothing
+    for each ct in cms_types
+      if (map_get_str using ct, "slug", "") is "book"
+        set loop_ct to "book"
+      end
+    end
+  end
+  set ds_modes to parse_design_system_modes using ds_md
+  set sp_tok to sec_nearest_8pt_token using 24, ds_modes.all_tokens
+  set sp_val to "24px"
+  if sp_tok is not ""
+    set sp_val to "var(" joined with sp_tok joined with ")"
+  end
+  set cards to []
+  set idx to 0
+  for each te in (radar_genre at "tier_economics")
+    set pid to text.from using idx
+    set var_btn to "secondary"
+    set cta_txt to "Inspect Tier ($" joined with te.price_usd joined with ")"
+    if te.price_usd is "14.99"
+      set var_btn to "primary"
+      set cta_txt to "Order Matte Paperback ($" joined with te.price_usd joined with ")"
+    end
+    set card_node to record {element: "Card", tag: "article", props: record {id: ("radar-tier-card-" joined with pid), price: te.price_usd}, styles: record {base: {"padding": sp_val, "background-color": "#ffffff", "color": "#0f172a"}}, children: [record {element: "Heading", props: record {id: ("radar-tier-h3-" joined with pid), level: 3, text: (te.channel joined with " — $" joined with te.price_usd)}}, record {element: "Text", tag: "p", props: record {id: ("radar-tier-econ-" joined with pid), text: ("Print $" joined with te.unit_print_cost_usd joined with " | USPS $" joined with te.usps_postage_usd joined with " | Fee $" joined with te.payment_fee_usd joined with " | Net Margin $" joined with te.net_margin_usd joined with " (" joined with te.net_margin_percent joined with "%)")}}, record {element: "Link", props: record {id: ("radar-tier-cta-" joined with pid), href: ("/books/" joined with gslug), text: cta_txt, variant: var_btn}}]}
+    set cards to collections.append using cards, card_node
+    set idx to idx plus 1
+  end
+  set hero_sec to record {element: "Section", tag: "section", props: {"id": "radar-hero-section", "aria-label": (dname joined with " Bestseller Radar")}, styles: record {base: {"padding": sp_val, "gap": sp_val}}, children: [record {element: "Heading", props: record {id: "radar-hero-h1", level: 1, text: (dname joined with " — Bestseller Radar & Exact Margin Ladder")}}, record {element: "Text", tag: "p", props: record {id: "radar-hero-lead", text: ((radar_genre at "series_hook_positioning") joined with " Demand Signal: " joined with (radar_genre at "demand_signal_score") joined with "/100.")}}]}
+  set grid_node to record {element: "Grid", props: record {id: "radar-tiers-grid", columns: "2"}, styles: record {base: {"gap": sp_val}}, children: cards}
+  set loop_node to record {element: "ForEach", props: record {id: "radar-cms-loop", query: record {content_type: loop_ct, per_page: "6", sort_by: "published_at", sort_dir: "desc"}}, children: [record {element: "Text", tag: "p", props: record {id: "radar-loop-title", text: "{title}"}}]}
+  set tiers_sec to record {element: "Section", tag: "section", props: {"id": "radar-tiers-section", "aria-label": "Unit Economics Price Tiers"}, styles: record {base: {"padding": sp_val, "gap": sp_val}}, children: [record {element: "Heading", props: record {id: "radar-tiers-h2", level: 2, text: "ADR-025c Price Tiers & USPS Print Economics"}}, grid_node, loop_node]}
+  set layout_tree to record {element: "Container", tag: "main", props: record {id: "radar-showcase-main"}, styles: record {base: {"padding": sp_val, "background-color": "#ffffff", "color": "#0f172a"}}, children: [hero_sec, tiers_sec]}
+  set strict_chk to sec_validate_subtree_strict using layout_tree, ds_modes.all_tokens, ds_modes.registered_classes, 1
+  if not strict_chk.ok
+    give back record {ok: no, code: strict_chk.code, error: strict_chk.error}
+  end
+  set craft_res to sec_audit_design_craft using layout_tree, ds_modes, cms_types
+  if not craft_res.ok or not craft_res.valid
+    give back record {ok: no, code: "DESIGN_CRAFT_FAILED", error: "Radar layout failed Golden-Ratio Design-Craft validation."}
+  end
+  set audit_rep to sec_audit_spliced_slot using craft_res.repaired_subtree, {}, ds_md, seo_pb, "home"
+  if (not audit_rep.publish_safe) or (audit_rep.overall_score is less than 90)
+    give back record {ok: no, code: "RADAR_LAYOUT_AUDIT_FAILED", error: "Radar layout failed the 22-rule Grade A/A+ quality gate."}
+  end
+  give back record {ok: yes, layout: craft_res.repaired_subtree, design_craft: craft_res, audit_report: audit_rep}
+end
+
+route "POST" "/api/groxy/knowledge/query" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  if has_map_key using req, "body"
+    if json_has_duplicate_keys using (req at "body")
+      give back server.json using 400, record {ok: no, code: "KNOWLEDGE_DUPLICATE_KEY", error: "Duplicate JSON keys are not permitted."}
+    end
+  end
+  set payload to nothing
+  try
+    set payload to server.parse_json using req
+  catch parse_err
+    give back server.json using 400, record {ok: no, code: "KNOWLEDGE_INVALID_JSON", error: "Request body must be valid JSON."}
+  end
+  if not (is_record_value using payload)
+    give back server.json using 400, record {ok: no, code: "KNOWLEDGE_INVALID_JSON", error: "Request body must be a JSON object."}
+  end
+  for each rk in (collections.keys using payload)
+    if rk is not "query" and rk is not "domain_slug" and rk is not "category" and rk is not "limit"
+      give back server.json using 400, record {ok: no, code: "KNOWLEDGE_UNKNOWN_FIELD", error: ("Unsupported request field: " joined with rk)}
+    end
+  end
+  if not (has_map_key using payload, "query") or not (is_text_value using (payload at "query"))
+    give back server.json using 400, record {ok: no, code: "KNOWLEDGE_QUERY_REQUIRED", error: "query must be a non-empty string."}
+  end
+  set q_str to text.trim using (text.from using (payload at "query"))
+  if q_str is "" or (text.length using q_str) is greater than 500
+    give back server.json using 400, record {ok: no, code: "KNOWLEDGE_QUERY_BOUNDS", error: "query must be 1 to 500 characters."}
+  end
+  if author_string_has_xss using q_str
+    give back server.json using 422, record {ok: no, code: "GREX-SEC-003", error: "Unsafe HTML/script markup in query."}
+  end
+
+  set lim_num to 10
+  if has_map_key using payload, "limit"
+    set lim_raw to payload at "limit"
+    if not (is_exact_integer_wire_str using lim_raw)
+      give back server.json using 422, record {ok: no, code: "ADR025C_WIRE_REQUIRED", error: "limit must be an exact base-10 integer wire string."}
+    end
+    set lim_num to text.to_integer using (text.from using lim_raw)
+    if lim_num is less than 1 or lim_num is greater than 25
+      give back server.json using 400, record {ok: no, code: "KNOWLEDGE_LIMIT_BOUNDS", error: "limit must be between 1 and 25."}
+    end
+  end
+
+  set dslug to text.lower using (text.trim using (map_get_str using payload, "domain_slug", ""))
+  if dslug is "schema-org-types"
+    set dslug to "schema-org-reference"
+  otherwise if dslug is "wcag-aa-patterns"
+    set dslug to "wcag-patterns"
+  end
+  set cat_filt to text.lower using (text.trim using (map_get_str using payload, "category", ""))
+
+  set reg to call load_knowledge_vault_registry
+  if not reg.ok
+    give back server.json using 503, record {ok: no, code: "KNOWLEDGE_VAULT_INVALID", error: reg.error}
+  end
+
+  set q_tokens to author_tokenize_words using q_str
+  set matched to []
+  for each vdoc in reg.vaults
+    set vslug to map_get_str using vdoc, "domain_slug", ""
+    if dslug is "" or vslug is dslug
+      for each entry in (vdoc at "entries")
+        set ecat to text.lower using (map_get_str using entry, "category", "")
+        if cat_filt is "" or ecat is cat_filt
+          set t_low to text.lower using (map_get_str using entry, "title", "")
+          set s_low to text.lower using (map_get_str using entry, "summary", "")
+          set r_low to text.lower using (text.join using (entry at "rules"), " ")
+          set tags_low to text.lower using (text.join using (entry at "tags"), " ")
+          set score to 0
+          for each tok in q_tokens
+            if (text.length using tok) is at least 2
+              if text.contains using tags_low, tok
+                set score to score plus 10
+              end
+              if text.contains using t_low, tok
+                set score to score plus 8
+              end
+              if text.contains using ecat, tok
+                set score to score plus 6
+              end
+              if text.contains using s_low, tok
+                set score to score plus 4
+              end
+              if text.contains using r_low, tok
+                set score to score plus 3
+              end
+            end
+          end
+          if score is greater than 0 or ((collections.length using q_tokens) is 0 and dslug is not "")
+            set item_rec to record {entry_id: entry.entry_id, domain_slug: vslug, category: entry.category, title: entry.title, summary: entry.summary, rules: entry.rules, citations: entry.citations, thresholds: (map_get_str using entry, "thresholds", "")}
+            if has_map_key using entry, "thresholds"
+              set item_rec to record {entry_id: entry.entry_id, domain_slug: vslug, category: entry.category, title: entry.title, summary: entry.summary, rules: entry.rules, citations: entry.citations, thresholds: (entry at "thresholds"), relevance_score: (text.from using score)}
+            otherwise
+              set item_rec to record {entry_id: entry.entry_id, domain_slug: vslug, category: entry.category, title: entry.title, summary: entry.summary, rules: entry.rules, citations: entry.citations, thresholds: {}, relevance_score: (text.from using score)}
+            end
+            set matched to collections.append using matched, item_rec
+          end
+        end
+      end
+    end
+  end
+
+  set sorted_res to []
+  set remaining to matched
+  while (collections.length using remaining) is greater than 0 and (collections.length using sorted_res) is less than lim_num
+    set best_idx to 0
+    set best_score to -1
+    set cur_idx to 0
+    for each m in remaining
+      set sc_n to text.to_integer using m.relevance_score
+      if sc_n is greater than best_score
+        set best_score to sc_n
+        set best_idx to cur_idx
+      end
+      set cur_idx to cur_idx plus 1
+    end
+    set sorted_res to collections.append using sorted_res, (remaining at best_idx)
+    set next_rem to []
+    set r_idx to 0
+    for each m in remaining
+      if r_idx is not best_idx
+        set next_rem to collections.append using next_rem, m
+      end
+      set r_idx to r_idx plus 1
+    end
+    set remaining to next_rem
+  end
+
+  give back server.json using 200, record {ok: yes, schema_version: "1.8.0", offline_only: yes, network_calls: "0", count: (text.from using (collections.length using sorted_res)), results: sorted_res}
+end
+
+route "POST" "/api/groxy/research/search" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  if has_map_key using req, "body"
+    if json_has_duplicate_keys using (req at "body")
+      give back server.json using 400, record {ok: no, code: "RESEARCH_DUPLICATE_KEY", error: "Duplicate JSON keys are not permitted."}
+    end
+  end
+  set payload to nothing
+  try
+    set payload to server.parse_json using req
+  catch parse_err
+    give back server.json using 400, record {ok: no, code: "RESEARCH_INVALID_JSON", error: "Request body must be valid JSON."}
+  end
+  if not (is_record_value using payload)
+    give back server.json using 400, record {ok: no, code: "RESEARCH_INVALID_JSON", error: "Request body must be a JSON object."}
+  end
+  for each rk in (collections.keys using payload)
+    if rk is not "query" and rk is not "provider" and rk is not "limit" and rk is not "target_url" and rk is not "groxy_web_research_enabled" and rk is not "synthesize_with_ollama"
+      give back server.json using 400, record {ok: no, code: "RESEARCH_UNKNOWN_FIELD", error: ("Unsupported request field: " joined with rk)}
+    end
+  end
+
+  set enabled_env to text.lower using (resolve_env_opt using "GROXY_WEB_RESEARCH_ENABLED")
+  set req_opt_in to yes
+  if has_map_key using payload, "groxy_web_research_enabled"
+    if (payload at "groxy_web_research_enabled") is no
+      set req_opt_in to no
+    end
+  end
+  if (enabled_env is not "true" and enabled_env is not "yes" and enabled_env is not "1") or (not req_opt_in)
+    give back server.json using 403, record {ok: no, code: "RESEARCH_DISABLED", error: "Live web research is opt-in and currently disabled (groxy_web_research_enabled: false)."}
+  end
+
+  if not (has_map_key using payload, "query") or not (is_text_value using (payload at "query"))
+    give back server.json using 400, record {ok: no, code: "RESEARCH_QUERY_REQUIRED", error: "query must be a non-empty string."}
+  end
+  set q_str to text.trim using (text.from using (payload at "query"))
+  if q_str is "" or (text.length using q_str) is greater than 400
+    give back server.json using 400, record {ok: no, code: "RESEARCH_QUERY_BOUNDS", error: "query must be 1 to 400 characters."}
+  end
+  if author_string_has_xss using q_str
+    give back server.json using 422, record {ok: no, code: "GREX-SEC-003", error: "Unsafe HTML/script markup in query."}
+  end
+
+  set lim_num to 5
+  if has_map_key using payload, "limit"
+    if not (is_exact_integer_wire_str using (payload at "limit"))
+      give back server.json using 422, record {ok: no, code: "ADR025C_WIRE_REQUIRED", error: "limit must be an exact base-10 integer wire string."}
+    end
+    set lim_num to text.to_integer using (text.from using (payload at "limit"))
+    if lim_num is less than 1 or lim_num is greater than 10
+      give back server.json using 400, record {ok: no, code: "RESEARCH_LIMIT_BOUNDS", error: "limit must be between 1 and 10."}
+    end
+  end
+
+  set provider to text.lower using (text.trim using (map_get_str using payload, "provider", "openlibrary"))
+  if not (list_contains using ["duckduckgo", "wikipedia", "openlibrary", "searxng"], provider)
+    give back server.json using 400, record {ok: no, code: "RESEARCH_INVALID_PROVIDER", error: "provider must be duckduckgo, wikipedia, openlibrary, or searxng."}
+  end
+
+  set allowed_origins to call research_allowed_origins
+  set test_origin to call research_test_origin_opt
+  set encoded_q to research_url_encode using q_str
+  set base_ep to "https://openlibrary.org/search.json?q=" joined with encoded_q joined with "&limit=" joined with (text.from using lim_num)
+  if provider is "duckduckgo"
+    set base_ep to "https://api.duckduckgo.com/?q=" joined with encoded_q joined with "&format=json&no_html=1"
+  otherwise if provider is "wikipedia"
+    set base_ep to "https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=" joined with encoded_q joined with "&format=json"
+  otherwise if provider is "searxng"
+    set searx to resolve_env_opt using "GROXY_SEARXNG_ORIGIN"
+    if searx is ""
+      give back server.json using 403, record {ok: no, code: "GRAB-E402", error: "GROXY_SEARXNG_ORIGIN is not configured in allowlist."}
+    end
+    set base_ep to searx joined with "/search?q=" joined with encoded_q joined with "&format=json"
+  end
+
+  if test_origin is not "" and not (has_map_key using payload, "target_url")
+    set base_ep to test_origin joined with "/research?provider=" joined with provider joined with "&q=" joined with encoded_q joined with "&limit=" joined with (text.from using lim_num)
+  end
+  if has_map_key using payload, "target_url"
+    set base_ep to text.trim using (map_get_str using payload, "target_url", "")
+  end
+
+  set fetch_res to research_safe_http_get using base_ep, allowed_origins, test_origin
+  if not fetch_res.ok
+    give back server.json using fetch_res.status, record {ok: no, code: fetch_res.code, error: fetch_res.error}
+  end
+
+  set results to []
+  try
+    set parsed to json.parse using fetch_res.body
+    if is_record_value using parsed
+      if (has_map_key using parsed, "docs") and (is_list_value using (parsed at "docs"))
+        for each item in (parsed at "docs")
+          if (collections.length using results) is less than lim_num
+            set it_title to research_strip_html using (map_get_str using item, "title", "Untitled"), 160
+            set it_snip to research_strip_html using (map_get_str using item, "first_sentence", (map_get_str using item, "author_name", "")), 320
+            set it_url to map_get_str using item, "key", fetch_res.url
+            if text.starts_with using it_url, "/"
+              set it_url to "https://openlibrary.org" joined with it_url
+            end
+            set results to collections.append using results, record {title: it_title, snippet: it_snip, citation_url: it_url}
+          end
+        end
+      otherwise if (has_map_key using parsed, "results") and (is_list_value using (parsed at "results"))
+        for each item in (parsed at "results")
+          if (collections.length using results) is less than lim_num
+            set it_title to research_strip_html using (map_get_str using item, "title", "Result"), 160
+            set it_snip to research_strip_html using (map_get_str using item, "snippet", (map_get_str using item, "content", "")), 320
+            set it_url to map_get_str using item, "url", fetch_res.url
+            set results to collections.append using results, record {title: it_title, snippet: it_snip, citation_url: it_url}
+          end
+        end
+      otherwise
+        set abs_txt to research_strip_html using (map_get_str using parsed, "AbstractText", (map_get_str using parsed, "Heading", "Allowlisted search response")), 320
+        set results to collections.append using results, record {title: (provider joined with " citation"), snippet: abs_txt, citation_url: fetch_res.url}
+      end
+    end
+  catch p_err
+    set raw_snip to research_strip_html using fetch_res.body, 320
+    set results to collections.append using results, record {title: (provider joined with " summary"), snippet: raw_snip, citation_url: fetch_res.url}
+  end
+
+  set synthesis_used to no
+  set synthesis_summary to ""
+  if (has_map_key using payload, "synthesize_with_ollama") and ((payload at "synthesize_with_ollama") is yes)
+    set ollama_prompt to "Summarize untrusted search snippets as plain text JSON (no HTML, no price/target changes). UNTRUSTED_RESEARCH_SNIPPETS_JSON: " joined with (json.stringify using results)
+    try
+      set ol_body to json.stringify using record {model: "llama3.2", stream: no, format: "json", prompt: ollama_prompt}
+      set ol_resp to http.post using "http://127.0.0.1:11434/api/generate", ol_body, record {headers: {"Content-Type": "application/json"}, timeout_ms: 4000, retries: 0}
+      if ol_resp.ok
+        set ol_doc to json.parse using ol_resp.body
+        set synthesis_summary to research_strip_html using (map_get_str using ol_doc, "response", ""), 280
+        set synthesis_used to yes
+      end
+    catch ol_err
+      set synthesis_used to no
+    end
+  end
+
+  give back server.json using 200, record {ok: yes, schema_version: "1.8.0", provider: provider, source_url: fetch_res.url, result_count: (text.from using (collections.length using results)), results: results, ollama_synthesis_used: synthesis_used, synthesis_summary: synthesis_summary}
+end
+
+route "POST" "/api/groxy/research/bestseller-radar" using req
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  if has_map_key using req, "body"
+    if json_has_duplicate_keys using (req at "body")
+      give back server.json using 400, record {ok: no, code: "RADAR_DUPLICATE_KEY", error: "Duplicate JSON keys are not permitted."}
+    end
+  end
+  set payload to nothing
+  try
+    set payload to server.parse_json using req
+  catch parse_err
+    give back server.json using 400, record {ok: no, code: "RADAR_INVALID_JSON", error: "Request body must be valid JSON."}
+  end
+  if not (is_record_value using payload)
+    give back server.json using 400, record {ok: no, code: "RADAR_INVALID_JSON", error: "Request body must be a JSON object."}
+  end
+  for each rk in (collections.keys using payload)
+    if rk is not "genre_slug" and rk is not "target_consumer" and rk is not "target_slot" and rk is not "price_tier_usd" and rk is not "include_live_feeds" and rk is not "book_meta"
+      give back server.json using 400, record {ok: no, code: "RADAR_UNKNOWN_FIELD", error: ("Unsupported request field: " joined with rk)}
+    end
+  end
+
+  set radar_reg to call load_bestseller_radar_playbook
+  if not radar_reg.ok
+    give back server.json using 503, record {ok: no, code: "RADAR_PLAYBOOK_INVALID", error: radar_reg.error}
+  end
+
+  if not (has_map_key using payload, "genre_slug") or not (is_text_value using (payload at "genre_slug"))
+    give back server.json using 400, record {ok: no, code: "RADAR_INVALID_GENRE", error: "genre_slug is required."}
+  end
+  set gslug to text.trim using (map_get_str using payload, "genre_slug", "")
+  if not (has_map_key using radar_reg.by_slug, gslug)
+    give back server.json using 404, record {ok: no, code: "RADAR_GENRE_NOT_FOUND", error: ("Unknown genre_slug: " joined with gslug)}
+  end
+  set rgenre to radar_reg.by_slug at gslug
+
+  set target_consumer to text.trim using (map_get_str using payload, "target_consumer", "groxy_studio")
+  if not (list_contains using ["groxy_studio", "grablab_cms", "groxy_desk"], target_consumer)
+    give back server.json using 400, record {ok: no, code: "RADAR_INVALID_CONSUMER", error: "target_consumer must be groxy_studio, grablab_cms, or groxy_desk."}
+  end
+
+  set default_slot to "home"
+  if target_consumer is "grablab_cms"
+    set default_slot to "cms-draft"
+  otherwise if target_consumer is "groxy_desk"
+    set default_slot to "desk-copilot"
+  end
+  set target_slot to text.trim using (map_get_str using payload, "target_slot", default_slot)
+  if not (sec_valid_identifier using target_slot, 64, yes)
+    give back server.json using 400, record {ok: no, code: "RADAR_INVALID_SLOT", error: "Invalid target_slot identifier."}
+  end
+  set builder_slot to map_gen_builder_slot using target_slot
+
+  set sel_tier to map_get_str using rgenre, "recommended_price_tier_usd", "14.99"
+  if has_map_key using payload, "price_tier_usd"
+    set pt_raw to payload at "price_tier_usd"
+    if not (is_strict_decimal_wire_str using pt_raw)
+      give back server.json using 422, record {ok: no, code: "ADR025C_WIRE_REQUIRED", error: "price_tier_usd must be an exact ADR-025c base-10 wire string."}
+    end
+    set sel_tier to text.from using pt_raw
+    if not (list_contains using ["2.99", "4.99", "12.99", "14.99", "16.99"], sel_tier)
+      give back server.json using 422, record {ok: no, code: "RADAR_UNSUPPORTED_TIER", error: "price_tier_usd must be one of 2.99, 4.99, 12.99, 14.99, 16.99."}
+    end
+  end
+
+  set book_meta to {}
+  if has_map_key using payload, "book_meta"
+    if not (is_record_value using (payload at "book_meta"))
+      give back server.json using 400, record {ok: no, code: "BOOK_META_INVALID", error: "book_meta must be a JSON object."}
+    end
+    set book_meta to payload at "book_meta"
+  end
+  if not (has_map_key using book_meta, "price")
+    set book_meta to collections.put using book_meta, "price", sel_tier
+  end
+
+  set live_feed_used to no
+  set live_citations to []
+  if (has_map_key using payload, "include_live_feeds") and ((payload at "include_live_feeds") is yes)
+    set enabled_env to text.lower using (resolve_env_opt using "GROXY_WEB_RESEARCH_ENABLED")
+    if enabled_env is not "true" and enabled_env is not "yes" and enabled_env is not "1"
+      give back server.json using 403, record {ok: no, code: "RESEARCH_DISABLED", error: "Live feeds require groxy_web_research_enabled: true."}
+    end
+    set allowed_origins to call research_allowed_origins
+    set test_origin to call research_test_origin_opt
+    set feed_url to "https://openlibrary.org/search.json?q=" joined with (research_url_encode using gslug) joined with "&limit=3"
+    if test_origin is not ""
+      set feed_url to test_origin joined with "/research?provider=openlibrary&q=" joined with (research_url_encode using gslug)
+    end
+    set feed_res to research_safe_http_get using feed_url, allowed_origins, test_origin
+    if not feed_res.ok
+      give back server.json using feed_res.status, record {ok: no, code: feed_res.code, error: feed_res.error}
+    end
+    set live_feed_used to yes
+    set live_citations to collections.append using live_citations, feed_res.url
+  end
+
+  set jsonld_res to research_build_book_jsonld using rgenre, book_meta, "https://example.com"
+  if not jsonld_res.ok
+    give back server.json using jsonld_res.status, record {ok: no, code: jsonld_res.code, error: jsonld_res.error}
+  end
+
+  set ds_md to "## 1. Active `--grex-*` Design Tokens\n### Base `:root` Tokens\n| Token | Value |\n|---|---|\n| `--grex-bg` | `#ffffff` |\n| `--grex-ink` | `#0f172a` |\n| `--grex-space-md` | `24px` |\n"
+  set slot_sha to "cms-draft"
+  set cms_types to nothing
+  set cms_url to resolve_env_opt using "GROXY_CMS_URL"
+  if cms_url is not ""
+    set cms_token to resolve_env_opt using "GROXY_CMS_MCP_TOKEN"
+    set lct_res to call_cms_mcp_tool using cms_url, cms_token, "list_content_types", {}, 1801
+    if lct_res.ok and (has_map_key using lct_res.data, "content_types")
+      set cms_types to lct_res.data at "content_types"
+    end
+  end
+
+  set is_builder_target to (target_consumer is "groxy_studio") and (target_slot is not "cms-draft")
+  if is_builder_target
+    set builder_url to resolve_env_opt using "GROXY_BUILDER_URL"
+    if builder_url is not ""
+      set b_state_resp to nothing
+      set ds_resp to nothing
+      try
+        set b_state_resp to http.get using (builder_url joined with "/api/studio/state")
+        set ds_resp to http.get using (builder_url joined with "/api/design-system.md")
+      catch b_net_err
+        give back server.json using 503, record {ok: no, code: "BUILDER_UNAVAILABLE", error: "Grex Theme Builder is unreachable."}
+      end
+      if not b_state_resp.ok or not ds_resp.ok
+        give back server.json using 503, record {ok: no, code: "BUILDER_UNAVAILABLE", error: "Grex Theme Builder state or design-system.md is unavailable."}
+      end
+      set b_state to json.parse using b_state_resp.body
+      set ds_md to text.from using ds_resp.body
+      set slot_tree to author_extract_slot_tree using b_state.draft, builder_slot
+      if slot_tree is nothing
+        give back server.json using 404, record {ok: no, code: "SLOT_NOT_FOUND", error: ("Target slot \"" joined with target_slot joined with "\" was not found in Builder draft.")}
+      end
+      set slot_sha to crypto.sha256_hex using (canonical_json using slot_tree)
+    end
+  end
+  set ds_sha to crypto.sha256_hex using ds_md
+  set seo_pb_res to load_playbook_doc using groxy_cache
+  set layout_res to research_build_radar_layout using rgenre, ds_md, cms_types, seo_pb_res
+  if not layout_res.ok
+    give back server.json using 422, record {ok: no, code: layout_res.code, error: layout_res.error}
+  end
+  set layout_sha to crypto.sha256_hex using (canonical_json using layout_res.layout)
+
+  set brief_obj to record {genre_slug: gslug, display_name: rgenre.display_name, demand_signal_score: rgenre.demand_signal_score, competition_index: rgenre.competition_index, selected_price_tier_usd: sel_tier, keyword_clusters: rgenre.keyword_clusters, series_hook_positioning: rgenre.series_hook_positioning, recommended_book_concepts: rgenre.recommended_book_concepts, tier_economics: rgenre.tier_economics, lulu_usps_constraints: (radar_reg.playbook at "lulu_usps_constraints"), live_feed_used: live_feed_used, live_citations: live_citations}
+
+  set radar_plan_id to "rplan-" joined with (crypto.random_hex using 16)
+  set approval_token to "rtok_res_" joined with (crypto.random_hex using 32)
+  set operator_id to resolve_env_opt using "GROXY_OPERATOR_ID"
+  if operator_id is ""
+    set operator_id to "local-operator"
+  end
+  set site_id to resolve_env_opt using "GROXY_SITE_ID"
+  if site_id is ""
+    set site_id to "configured-site"
+  end
+
+  set now_val to call dates.now_utc
+  set expires_val to dates.from_unix using (now_val.unix plus 900)
+  try
+    call data.execute using research_ledger_expire_stale, record {operator_id: operator_id, now_iso: now_val.iso}
+    set pending_rows to data.query using research_ledger_count_pending, record {operator_id: operator_id}
+    if (collections.length using pending_rows) is at least 20
+      give back server.json using 429, record {ok: no, code: "RESEARCH_PENDING_LIMIT", error: "Maximum 20 pending radar proposals per operator reached."}
+    end
+  catch cap_err
+    give back server.json using 503, record {ok: no, code: "LEDGER_UNAVAILABLE", error: "Research ledger is unavailable."}
+  end
+
+  set immutable to record {schema_version: "1.8.0", radar_plan_id: radar_plan_id, genre_slug: gslug, target_consumer: target_consumer, target_slot: target_slot, builder_slot: builder_slot, slot_sha256: slot_sha, layout_sha256: layout_sha, design_system_sha256: ds_sha, operator_id: operator_id, site_id: site_id, brief: brief_obj, schema_org_json_ld: jsonld_res, grex_layout: layout_res.layout}
+  set canonical_payload to canonical_json using immutable
+  set payload_sha to crypto.sha256_hex using canonical_payload
+  set binding to approval_token joined with "|" joined with radar_plan_id joined with "|" joined with gslug joined with "|" joined with target_consumer joined with "|" joined with target_slot joined with "|" joined with payload_sha joined with "|" joined with site_id joined with "|" joined with operator_id
+  set token_verifier to crypto.hash_password using (crypto.sha256_hex using binding)
+
+  try
+    call data.execute using research_ledger_insert, record {plan_id: radar_plan_id, genre_slug: gslug, target_consumer: target_consumer, target_slot: target_slot, builder_slot: builder_slot, slot_sha256: slot_sha, payload_sha256: payload_sha, payload_json: canonical_payload, token_verifier: token_verifier, operator_id: operator_id, site_id: site_id, status: "staged", created_at: now_val.iso, expires_at: expires_val.iso, outcome_json: "{}"}
+  catch ins_err
+    give back server.json using 503, record {ok: no, code: "LEDGER_PERSISTENCE_FAILED", error: "Failed to persist staged bestseller radar."}
+  end
+
+  give back server.json using 200, record {ok: yes, schema_version: "1.8.0", radar_plan_id: radar_plan_id, genre_slug: gslug, target_consumer: target_consumer, target_slot: target_slot, builder_slot: builder_slot, selected_price_tier_usd: sel_tier, payload_sha256: payload_sha, approval_required: yes, approval_token: approval_token, expires_at: expires_val.iso, brief: brief_obj, schema_org_json_ld: jsonld_res, grex_layout: layout_res.layout, design_craft: layout_res.design_craft, audit_report: layout_res.audit_report}
+end
+
+make handle_research_apply using req, groxy_cache, research_ledger_read, research_ledger_claim, research_ledger_finish
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  if has_map_key using req, "body"
+    if json_has_duplicate_keys using (req at "body")
+      give back server.json using 400, record {ok: no, code: "RESEARCH_APPLY_DUPLICATE_KEY", error: "Duplicate JSON keys are not permitted."}
+    end
+  end
+  set payload to nothing
+  try
+    set payload to server.parse_json using req
+  catch parse_err
+    give back server.json using 400, record {ok: no, code: "RESEARCH_APPLY_INVALID_JSON", error: "Request body must be valid JSON."}
+  end
+  if not (is_record_value using payload)
+    give back server.json using 400, record {ok: no, code: "RESEARCH_APPLY_INVALID_JSON", error: "Request body must be a JSON object."}
+  end
+  for each ak in (collections.keys using payload)
+    if ak is not "radar_plan_id" and ak is not "genre_slug" and ak is not "target_consumer" and ak is not "target_slot" and ak is not "payload_sha256" and ak is not "approval_token"
+      give back server.json using 400, record {ok: no, code: "RESEARCH_APPLY_UNKNOWN_FIELD", error: ("Unsupported apply field: " joined with ak)}
+    end
+  end
+
+  set radar_plan_id to map_get_str using payload, "radar_plan_id", ""
+  set gslug to map_get_str using payload, "genre_slug", ""
+  set target_consumer to map_get_str using payload, "target_consumer", ""
+  set target_slot to map_get_str using payload, "target_slot", ""
+  set payload_sha to map_get_str using payload, "payload_sha256", ""
+  set approval_token to map_get_str using payload, "approval_token", ""
+  if not (text.starts_with using radar_plan_id, "rplan-") or (text.length using radar_plan_id) is not 38 or (text.length using payload_sha) is not 64 or not (text.starts_with using approval_token, "rtok_res_") or (text.length using approval_token) is not 73
+    give back server.json using 403, record {ok: no, code: "RESEARCH_APPROVAL_INVALID", error: "Invalid radar plan binding or approval token."}
+  end
+
+  set rows to []
+  try
+    set rows to data.query using research_ledger_read, record {plan_id: radar_plan_id}
+  catch q_err
+    give back server.json using 503, record {ok: no, code: "LEDGER_UNAVAILABLE", error: "Research ledger is unavailable."}
+  end
+  if (collections.length using rows) is 0
+    give back server.json using 403, record {ok: no, code: "RESEARCH_APPROVAL_INVALID", error: "Staged bestseller radar proposal does not exist."}
+  end
+  set staged to rows at 0
+  if staged.genre_slug is not gslug or staged.target_consumer is not target_consumer or staged.target_slot is not target_slot or staged.payload_sha256 is not payload_sha
+    give back server.json using 403, record {ok: no, code: "RESEARCH_TARGET_MISMATCH", error: "genre_slug, target_consumer, target_slot, or payload_sha256 does not match staged approval."}
+  end
+
+  set operator_id to resolve_env_opt using "GROXY_OPERATOR_ID"
+  if operator_id is ""
+    set operator_id to "local-operator"
+  end
+  set site_id to resolve_env_opt using "GROXY_SITE_ID"
+  if site_id is ""
+    set site_id to "configured-site"
+  end
+  if staged.operator_id is not operator_id or staged.site_id is not site_id
+    give back server.json using 403, record {ok: no, code: "RESEARCH_APPROVAL_INVALID", error: "Proposal belongs to a different operator or site."}
+  end
+
+  set immutable to json.parse using staged.payload_json
+  if (crypto.sha256_hex using (canonical_json using immutable)) is not staged.payload_sha256
+    give back server.json using 403, record {ok: no, code: "RESEARCH_DIGEST_INVALID", error: "Staged radar payload failed canonical digest verification."}
+  end
+
+  set binding to approval_token joined with "|" joined with radar_plan_id joined with "|" joined with gslug joined with "|" joined with target_consumer joined with "|" joined with target_slot joined with "|" joined with payload_sha joined with "|" joined with site_id joined with "|" joined with operator_id
+  if not (crypto.verify_password using (crypto.sha256_hex using binding), staged.token_verifier)
+    give back server.json using 403, record {ok: no, code: "RESEARCH_APPROVAL_INVALID", error: "Approval token is not bound to this bestseller radar proposal."}
+  end
+
+  if staged.status is not "staged"
+    give back server.json using 409, record {ok: no, code: "RESEARCH_APPROVAL_REPLAY", error: "This radar approval token has already been used or invalidated."}
+  end
+
+  set now_val to call dates.now_utc
+  if now_val.iso is greater than staged.expires_at
+    give back server.json using 403, record {ok: no, code: "RESEARCH_APPROVAL_EXPIRED", error: "Approval token expired; regenerate radar proposal."}
+  end
+
+  set builder_url to resolve_env_opt using "GROXY_BUILDER_URL"
+  set cms_url to resolve_env_opt using "GROXY_CMS_URL"
+  set cms_token to resolve_env_opt using "GROXY_CMS_MCP_TOKEN"
+  set is_builder_dispatch to (target_consumer is "groxy_studio") and (target_slot is not "cms-draft")
+  set live_cms_types to []
+
+  if is_builder_dispatch
+    if builder_url is ""
+      give back server.json using 503, record {ok: no, code: "BUILDER_UNAVAILABLE", error: "Grex Theme Builder is not configured; token remains unconsumed."}
+    end
+    set pre_state_resp to nothing
+    set pre_ds_resp to nothing
+    try
+      set pre_state_resp to http.get using (builder_url joined with "/api/studio/state")
+      set pre_ds_resp to http.get using (builder_url joined with "/api/design-system.md")
+    catch pre_err
+      give back server.json using 503, record {ok: no, code: "BUILDER_UNAVAILABLE", error: "Grex Theme Builder is unreachable; token remains unconsumed."}
+    end
+    if not pre_state_resp.ok or not pre_ds_resp.ok
+      give back server.json using 503, record {ok: no, code: "BUILDER_UNAVAILABLE", error: "Grex Theme Builder preflight failed; token remains unconsumed."}
+    end
+    set pre_state to json.parse using pre_state_resp.body
+    set pre_slot_tree to author_extract_slot_tree using pre_state.draft, staged.builder_slot
+    if pre_slot_tree is nothing or (crypto.sha256_hex using (canonical_json using pre_slot_tree)) is not staged.slot_sha256
+      give back server.json using 409, record {ok: no, code: "RESEARCH_SLOT_DRIFT", error: "The target Builder slot changed after staging; regenerate radar proposal."}
+    end
+    if (crypto.sha256_hex using (text.from using pre_ds_resp.body)) is not immutable.design_system_sha256
+      give back server.json using 409, record {ok: no, code: "RESEARCH_DESIGN_STALE", error: "The design system changed after staging; regenerate radar proposal."}
+    end
+  otherwise if target_consumer is not "groxy_desk"
+    if cms_url is ""
+      give back server.json using 503, record {ok: no, code: "CMS_UNAVAILABLE", error: "GrabLab CMS is not configured; token remains unconsumed."}
+    end
+    set lct_res to call_cms_mcp_tool using cms_url, cms_token, "list_content_types", {}, 1802
+    if not lct_res.ok or not (has_map_key using lct_res.data, "content_types")
+      give back server.json using 503, record {ok: no, code: "CMS_UNAVAILABLE", error: "GrabLab CMS content types are unavailable; token remains unconsumed."}
+    end
+    set live_cms_types to lct_res.data at "content_types"
+  end
+
+  set claimed_ok to no
+  set claim_attempt to 0
+  while (not claimed_ok) and claim_attempt is less than 24
+    set claim_attempt to claim_attempt plus 1
+    try
+      set claim_res to data.execute using research_ledger_claim, record {plan_id: radar_plan_id}
+      if claim_res.rows_affected is 0
+        give back server.json using 409, record {ok: no, code: "RESEARCH_APPROVAL_REPLAY", error: "This radar approval is already being applied or was already consumed."}
+      end
+      set claimed_ok to yes
+    catch claim_err
+      if claim_err.message is "database conflict" and claim_attempt is less than 24
+        try
+          set recheck_rows to data.query using research_ledger_read, record {plan_id: radar_plan_id}
+          if (collections.length using recheck_rows) is greater than 0
+            if ((recheck_rows at 0) at "status") is not "staged"
+              give back server.json using 409, record {ok: no, code: "RESEARCH_APPROVAL_REPLAY", error: "This radar approval is already being applied or was already consumed."}
+            end
+          end
+        catch rc_err
+          set ignored_rc to rc_err.message
+        end
+        call sqlite_jitter_backoff using radar_plan_id
+      otherwise
+        give back server.json using 409, record {ok: no, code: "RESEARCH_APPROVAL_REPLAY", error: "This radar approval is already being applied or was already consumed."}
+      end
+    end
+  end
+  if not claimed_ok
+    give back server.json using 409, record {ok: no, code: "RESEARCH_APPROVAL_REPLAY", error: "This radar approval is already being applied or was already consumed."}
+  end
+
+  if is_builder_dispatch
+    set post_state_resp to nothing
+    try
+      set post_state_resp to http.get using (builder_url joined with "/api/studio/state")
+    catch post_err
+      call data.execute using research_ledger_finish, record {plan_id: radar_plan_id, status: "dispatch_failed", outcome_json: (json.stringify using record {status: "dispatch_failed", reason: "builder_reread_failed"})}
+      give back server.json using 502, record {ok: no, code: "RESEARCH_DISPATCH_FAILED", status: "dispatch_failed", error: "Builder state re-read failed after approval claim."}
+    end
+    if not post_state_resp.ok
+      call data.execute using research_ledger_finish, record {plan_id: radar_plan_id, status: "dispatch_failed", outcome_json: (json.stringify using record {status: "dispatch_failed", reason: "builder_reread_http_error"})}
+      give back server.json using 502, record {ok: no, code: "RESEARCH_DISPATCH_FAILED", status: "dispatch_failed", error: "Builder state re-read failed after approval claim."}
+    end
+    set post_state to json.parse using post_state_resp.body
+    set builder_csrf to map_get_str using post_state, "csrf_token", ""
+    set post_slot_tree to author_extract_slot_tree using post_state.draft, staged.builder_slot
+    if post_slot_tree is nothing or (crypto.sha256_hex using (canonical_json using post_slot_tree)) is not staged.slot_sha256
+      call data.execute using research_ledger_finish, record {plan_id: radar_plan_id, status: "dispatch_failed", outcome_json: (json.stringify using record {status: "dispatch_failed", reason: "concurrent_slot_drift"})}
+      give back server.json using 409, record {ok: no, code: "RESEARCH_SLOT_DRIFT", status: "dispatch_failed", error: "Target slot drifted before dispatch; regenerate radar proposal."}
+    end
+
+    set dispatch_payload to record {slot: staged.builder_slot, actor: "groxy-ai", summary: ("Groxy Bestseller Radar: " joined with gslug), layout: immutable.grex_layout}
+    set dispatch_resp to nothing
+    try
+      set dispatch_resp to http.post using (builder_url joined with "/api/mcp/layout"), (json.stringify using dispatch_payload), record {headers: {"Content-Type": "application/json", "X-CSRF-Token": builder_csrf}}
+    catch disp_err
+      call data.execute using research_ledger_finish, record {plan_id: radar_plan_id, status: "dispatch_failed", outcome_json: (json.stringify using record {status: "dispatch_failed", reason: "builder_dispatch_unreachable"})}
+      give back server.json using 502, record {ok: no, code: "RESEARCH_DISPATCH_FAILED", status: "dispatch_failed", error: "Builder dispatch failed safely; regenerate radar proposal."}
+    end
+    if not dispatch_resp.ok
+      call data.execute using research_ledger_finish, record {plan_id: radar_plan_id, status: "dispatch_failed", outcome_json: (json.stringify using record {status: "dispatch_failed", status_code: dispatch_resp.status})}
+      give back server.json using 502, record {ok: no, code: "RESEARCH_DISPATCH_FAILED", status: "dispatch_failed", error: ("Grex Theme Builder returned HTTP " joined with (text.from using dispatch_resp.status))}
+    end
+    set receipt to json.parse using dispatch_resp.body
+    if not (has_map_key using receipt, "command") or not (has_map_key using receipt, "document")
+      call data.execute using research_ledger_finish, record {plan_id: radar_plan_id, status: "dispatch_failed", outcome_json: (json.stringify using record {status: "dispatch_failed", reason: "missing_builder_receipt"})}
+      give back server.json using 502, record {ok: no, code: "RESEARCH_READBACK_MISMATCH", status: "dispatch_failed", error: "Builder receipt missing command or document readback."}
+    end
+    set ret_slot_tree to author_extract_slot_tree using (receipt at "document"), staged.builder_slot
+    if ret_slot_tree is nothing or (crypto.sha256_hex using (canonical_json using ret_slot_tree)) is not immutable.layout_sha256
+      call data.execute using research_ledger_finish, record {plan_id: radar_plan_id, status: "dispatch_failed", outcome_json: (json.stringify using record {status: "dispatch_failed", reason: "readback_digest_mismatch"})}
+      give back server.json using 502, record {ok: no, code: "RESEARCH_READBACK_MISMATCH", status: "dispatch_failed", error: "Builder readback tree digest did not match dispatched radar grid."}
+    end
+    set applied_out to json.stringify using record {status: "applied", radar_plan_id: radar_plan_id, actor: "groxy-ai", builder_slot: staged.builder_slot, layout_sha256: immutable.layout_sha256, applied_at: now_val.iso}
+    call data.execute using research_ledger_finish, record {plan_id: radar_plan_id, status: "applied", outcome_json: applied_out}
+    give back server.json using 201, record {ok: yes, schema_version: "1.8.0", approved: yes, radar_plan_id: radar_plan_id, genre_slug: gslug, target_consumer: target_consumer, target_slot: target_slot, builder_slot: staged.builder_slot, payload_sha256: payload_sha, status: "applied", status_enforced: "draft", actor: "groxy-ai", command_stack_action: "applyAiLayout", undo_available: yes, builder_receipt: receipt, schema_org_json_ld: immutable.schema_org_json_ld}
+  end
+
+  if target_consumer is "groxy_desk"
+    set desk_receipt to record {ok: yes, schema_version: "1.8.0", approved: yes, radar_plan_id: radar_plan_id, genre_slug: gslug, target_consumer: "groxy_desk", target_slot: target_slot, payload_sha256: payload_sha, receipt_sha256: (crypto.sha256_hex using (radar_plan_id joined with "|" joined with payload_sha)), status: "applied", status_enforced: "draft", human_confirmation_required: yes, brief: immutable.brief, schema_org_json_ld: immutable.schema_org_json_ld, applied_at: now_val.iso}
+    call data.execute using research_ledger_finish, record {plan_id: radar_plan_id, status: "applied", outcome_json: (json.stringify using desk_receipt)}
+    give back server.json using 201, desk_receipt
+  end
+
+  # GrabLab CMS (v1.0.1 / v1.4.0 Embedded Bestseller Radar): strict list_content_types field filtering + create_entry_draft
+  set chosen_ct to nothing
+  for each cand_slug in ["book", "post", "page"]
+    if chosen_ct is nothing
+      for each lct in live_cms_types
+        if (map_get_str using lct, "slug", "") is cand_slug
+          set chosen_ct to lct
+        end
+      end
+    end
+  end
+  if chosen_ct is nothing
+    call data.execute using research_ledger_finish, record {plan_id: radar_plan_id, status: "dispatch_failed", outcome_json: (json.stringify using record {status: "dispatch_failed", reason: "no_compatible_content_type"})}
+    give back server.json using 502, record {ok: no, code: "RESEARCH_CMS_INCOMPATIBLE", status: "dispatch_failed", error: "No compatible GrabLab content type (book/post/page) found."}
+  end
+  set ct_slug_used to map_get_str using chosen_ct, "slug", "post"
+  set reg_fields to {}
+  if (has_map_key using chosen_ct, "fields") and (is_list_value using (chosen_ct at "fields"))
+    for each fd in (chosen_ct at "fields")
+      set fkey to map_get_str using fd, "field_key", ""
+      if fkey is not ""
+        set reg_fields to collections.put using reg_fields, fkey, (map_get_str using fd, "field_type", "text")
+      end
+    end
+  end
+  set filtered_cf to {}
+  if has_map_key using reg_fields, "subtitle"
+    set filtered_cf to collections.put using filtered_cf, "subtitle", (gslug joined with " Bestseller Radar ($" joined with ((immutable.brief) at "selected_price_tier_usd") joined with ")")
+  end
+  set r_title to "Bestseller Radar Brief — " joined with ((immutable.brief) at "display_name") joined with " ($" joined with ((immutable.brief) at "selected_price_tier_usd") joined with ")"
+  set draft_envelope to json.stringify using record {schema_version: "1.8.0", radar_plan_id: radar_plan_id, genre_slug: gslug, target_consumer: target_consumer, payload_sha256: payload_sha, brief: immutable.brief, schema_org_json_ld: immutable.schema_org_json_ld}
+  set cms_args to record {content_type_slug: ct_slug_used, title: r_title, slug: radar_plan_id, excerpt: ("Human-reviewed Bestseller Radar brief (" joined with gslug joined with ")."), meta_title: r_title, meta_description: ("Draft Bestseller Radar import for " joined with gslug), body: draft_envelope, custom_fields: filtered_cf}
+  set cms_res to call_cms_mcp_tool using cms_url, cms_token, "create_entry_draft", cms_args, 1803
+  if not cms_res.ok or (map_get_str using cms_res.data, "status_enforced", "") is not "draft"
+    call data.execute using research_ledger_finish, record {plan_id: radar_plan_id, status: "dispatch_failed", outcome_json: (json.stringify using record {status: "dispatch_failed", reason: "cms_create_entry_draft_failed"})}
+    give back server.json using 502, record {ok: no, code: "RESEARCH_DRAFT_FAILED", status: "dispatch_failed", error: "CMS create_entry_draft failed or did not enforce draft status."}
+  end
+  set draft_data to cms_res.data
+  set draft_id to map_get_str using draft_data, "entry_id", ""
+  if (has_map_key using draft_data, "entry") and (is_record_value using (draft_data at "entry"))
+    set draft_id to text.from using ((draft_data at "entry") at "id")
+  end
+  set applied_cms_out to json.stringify using record {status: "applied", radar_plan_id: radar_plan_id, draft_id: draft_id, content_type_used: ct_slug_used, status_enforced: "draft", applied_at: now_val.iso}
+  call data.execute using research_ledger_finish, record {plan_id: radar_plan_id, status: "applied", outcome_json: applied_cms_out}
+  give back server.json using 201, record {ok: yes, schema_version: "1.8.0", approved: yes, radar_plan_id: radar_plan_id, genre_slug: gslug, target_consumer: target_consumer, target_slot: target_slot, payload_sha256: payload_sha, status: "applied", status_enforced: "draft", human_confirmation_required: yes, draft_id: draft_id, content_type_used: ct_slug_used, entry: (draft_data at "entry"), schema_org_json_ld: immutable.schema_org_json_ld}
+end
+
+route "POST" "/api/groxy/research/apply" using req
+  give back handle_research_apply using req, groxy_cache, research_ledger_read, research_ledger_claim, research_ledger_finish
+end
+
+route "POST" "/api/groxy/research/bestseller-radar/apply" using req
+  give back handle_research_apply using req, groxy_cache, research_ledger_read, research_ledger_claim, research_ledger_finish
+end
+
+# ---------------------------------------------------------------------------
+# Google Search Console OAuth2 Read-Only (gsc.readonly, PKCE S256, AES-256-GCM)
+# ---------------------------------------------------------------------------
+
+make gsc_get_master_key
+  set k to resolve_env_opt using "GROXY_MASTER_KEY"
+  if k is ""
+    set k to resolve_env_opt using "GRABLAB_MASTER_KEY"
+  end
+  give back k
+end
+
+make gsc_get_test_base_url
+  set raw to resolve_env_opt using "GROXY_GSC_TEST_BASE_URL"
+  if raw is not "" and (text.starts_with using raw, "http://127.0.0.1:")
+    if text.ends_with using raw, "/"
+      set chs to text.split using raw, ""
+      give back text.join using (collections.slice using chs, 0, ((collections.length using chs) minus 1)), ""
+    end
+    give back raw
+  end
+  give back ""
+end
+
+make gsc_allowed_origins
+  give back ["https://oauth2.googleapis.com", "https://www.googleapis.com"]
+end
+
+make gsc_readonly_scope
+  give back "https://www.googleapis.com/auth/webmasters.readonly"
+end
+
+make gsc_format_dec4_from_number using num_val
+  set w to json.stringify using num_val
+  if text.starts_with using w, "\""
+    set clean_s to text.trim using (text.from using num_val)
+    if is_strict_decimal_wire_str using clean_s
+      give back clean_s
+    end
+  end
+  set scaled to math.floor using ((num_val times 10000.0) plus 0.5)
+  if scaled is less than 0
+    set scaled to 0
+  end
+  set whole to math.floor using (scaled divided by 10000)
+  set frac to scaled modulo 10000
+  set frac_s to text.from using frac
+  while (text.length using frac_s) is less than 4
+    set frac_s to "0" joined with frac_s
+  end
+  give back (text.from using whole) joined with "." joined with frac_s
+end
+
+make gsc_format_int_str using num_val
+  set w to json.stringify using num_val
+  if text.starts_with using w, "\""
+    set clean_s to text.trim using (text.from using num_val)
+    if is_exact_integer_wire_str using clean_s
+      give back clean_s
+    end
+  end
+  set n to math.floor using (num_val plus 0.5)
+  if n is less than 0
+    set n to 0
+  end
+  give back text.from using n
+end
+
+make gsc_start_pkce_state using req, groxy_cache, site_url, redir_override
+  set verifier to crypto.random_urlsafe using 48
+  set challenge to crypto.sha256_base64url using verifier
+  set state_tok to crypto.random_urlsafe using 32
+  set redir_uri to redir_override
+  if redir_uri is ""
+    set scheme to req.scheme
+    if scheme is ""
+      set scheme to "http"
+    end
+    set host_v to req.host
+    if host_v is ""
+      set host_v to "127.0.0.1:8090"
+    end
+    set redir_uri to scheme joined with "://" joined with host_v joined with "/api/groxy/gsc/callback"
+  end
+  set client_id to resolve_env_opt using "GROXY_GSC_CLIENT_ID"
+  if client_id is ""
+    set client_id to "groxy-gsc-pkce-client"
+  end
+  set operator_id to resolve_env_opt using "GROXY_OPERATOR_ID"
+  if operator_id is ""
+    set operator_id to "local-operator"
+  end
+  set tx_json to json.stringify using record {code_verifier: verifier, site_url: site_url, redirect_uri: redir_uri, operator_id: operator_id}
+  call cache.set using groxy_cache, ("gsc_pkce:" joined with state_tok), tx_json, 300000
+  set auth_base to "https://accounts.google.com/o/oauth2/v2/auth"
+  set test_base to call gsc_get_test_base_url
+  if test_base is not ""
+    set auth_base to test_base joined with "/o/oauth2/v2/auth"
+  end
+  set scope_str to call gsc_readonly_scope
+  set auth_url to auth_base joined with "?client_id=" joined with (research_url_encode using client_id) joined with "&redirect_uri=" joined with (research_url_encode using redir_uri) joined with "&response_type=code&scope=" joined with (research_url_encode using scope_str) joined with "&state=" joined with (research_url_encode using state_tok) joined with "&code_challenge=" joined with (research_url_encode using challenge) joined with "&code_challenge_method=S256&access_type=offline"
+  give back record {authorize_url: auth_url, state: state_tok, code_challenge: challenge, code_challenge_method: "S256", scope: scope_str, redirect_uri: redir_uri}
+end
+
+make gsc_exchange_and_store using gsc_conn_insert, gsc_conn_update, site_url, auth_code, verifier, redir_uri
+  set master_key to call gsc_get_master_key
+  if master_key is ""
+    give back record {ok: no, status: 503, code: "GSC_MASTER_KEY_REQUIRED", error: "GROXY_MASTER_KEY or GRABLAB_MASTER_KEY capability is required for AES-256-GCM token encryption."}
+  end
+  set test_base to call gsc_get_test_base_url
+  set token_url to "https://oauth2.googleapis.com/token"
+  if test_base is not ""
+    set token_url to test_base joined with "/token"
+  end
+  set chk to research_validate_outbound_url using token_url, (call gsc_allowed_origins), test_base
+  if not chk.ok
+    give back record {ok: no, status: 403, code: "GRAB-E402", error: chk.error}
+  end
+  set client_id to resolve_env_opt using "GROXY_GSC_CLIENT_ID"
+  if client_id is ""
+    set client_id to "groxy-gsc-pkce-client"
+  end
+  set tok_body to "grant_type=authorization_code&code=" joined with (research_url_encode using auth_code) joined with "&redirect_uri=" joined with (research_url_encode using redir_uri) joined with "&client_id=" joined with (research_url_encode using client_id) joined with "&code_verifier=" joined with (research_url_encode using verifier)
+  set tok_resp to nothing
+  try
+    set tok_resp to http.post using token_url, tok_body, record {headers: {"Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json"}, timeout_ms: 8000, retries: 0}
+  catch net_err
+    give back record {ok: no, status: 403, code: "GRAB-E402", error: ("GSC token exchange blocked or unreachable: " joined with net_err.message)}
+  end
+  if not tok_resp.ok
+    give back record {ok: no, status: 502, code: "GSC_TOKEN_EXCHANGE_FAILED", error: "OAuth2 token exchange failed."}
+  end
+  set tok_json to json.parse using tok_resp.body
+  if not (has_map_key using tok_json, "access_token")
+    give back record {ok: no, status: 401, code: "GSC_TOKEN_MISSING", error: "OAuth2 response omitted access_token."}
+  end
+  set raw_access to text.from using (tok_json at "access_token")
+  set raw_refresh to map_get_str using tok_json, "refresh_token", ""
+  set ret_scope to map_get_str using tok_json, "scope", (call gsc_readonly_scope)
+  if ret_scope is not (call gsc_readonly_scope) and not (text.contains using ret_scope, "webmasters.readonly")
+    give back record {ok: no, status: 403, code: "GSC_SCOPE_INVALID", error: "Only read-only webmasters.readonly scope is permitted."}
+  end
+
+  set acc_enc to crypto.encrypt_aead using raw_access, master_key
+  set ref_enc to ""
+  if raw_refresh is not ""
+    set ref_enc to crypto.encrypt_aead using raw_refresh, master_key
+  end
+  set operator_id to resolve_env_opt using "GROXY_OPERATOR_ID"
+  if operator_id is ""
+    set operator_id to "local-operator"
+  end
+  set now_val to call dates.now_utc
+  set exp_val to dates.from_unix using (now_val.unix plus 3600)
+  try
+    set upd_res to data.execute using gsc_conn_update, record {site_url: site_url, operator_id: operator_id, scope: (call gsc_readonly_scope), access_token_enc: acc_enc, refresh_token_enc: ref_enc, token_type: "Bearer", expires_at: exp_val.iso, updated_at: now_val.iso}
+    if upd_res.rows_affected is 0
+      call data.execute using gsc_conn_insert, record {site_url: site_url, operator_id: operator_id, scope: (call gsc_readonly_scope), access_token_enc: acc_enc, refresh_token_enc: ref_enc, token_type: "Bearer", expires_at: exp_val.iso, connected_at: now_val.iso, updated_at: now_val.iso}
+    end
+  catch db_err
+    give back record {ok: no, status: 503, code: "GSC_DB_FAILED", error: "Failed to persist encrypted GSC connection."}
+  end
+  give back record {ok: yes, status: 200, data: record {ok: yes, schema_version: "1.8.0", connected: yes, site_url: site_url, scope: (call gsc_readonly_scope), token_encrypted: yes, encryption_scheme: "AES-256-GCM", envelope_prefix: "v1:", expires_at: exp_val.iso}}
+end
+
+make handle_gsc_status_or_pkce using req, groxy_cache, gsc_conn_list
+  set conns to []
+  try
+    set conns to data.query using gsc_conn_list, record {}
+  catch q_err
+    set conns to []
+  end
+  set site_url to "https://example.com"
+  if has_map_key using req.query, "site_url"
+    set site_url to text.trim using (text.from using (req.query at "site_url"))
+  end
+  set pkce to gsc_start_pkce_state using req, groxy_cache, site_url, ""
+  give back server.json using 200, record {ok: yes, schema_version: "1.8.0", connected: ((collections.length using conns) is greater than 0), scope: (call gsc_readonly_scope), connections: conns, pkce: pkce}
+end
+
+route "GET" "/api/groxy/gsc/connect" using req
+  give back handle_gsc_status_or_pkce using req, groxy_cache, gsc_conn_list
+end
+
+route "GET" "/api/groxy/research/gsc/status" using req
+  give back handle_gsc_status_or_pkce using req, groxy_cache, gsc_conn_list
+end
+
+make handle_gsc_connect_post using req, groxy_cache, gsc_conn_insert, gsc_conn_update
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  if has_map_key using req, "body"
+    if json_has_duplicate_keys using (req at "body")
+      give back server.json using 400, record {ok: no, code: "GSC_DUPLICATE_KEY", error: "Duplicate JSON keys are not permitted."}
+    end
+  end
+  set payload to nothing
+  try
+    set payload to server.parse_json using req
+  catch parse_err
+    give back server.json using 400, record {ok: no, code: "GSC_INVALID_JSON", error: "Request body must be valid JSON."}
+  end
+  if not (is_record_value using payload)
+    give back server.json using 400, record {ok: no, code: "GSC_INVALID_JSON", error: "Request body must be a JSON object."}
+  end
+  for each gk in (collections.keys using payload)
+    if gk is not "site_url" and gk is not "action" and gk is not "authorization_code" and gk is not "code_verifier" and gk is not "redirect_uri"
+      give back server.json using 400, record {ok: no, code: "GSC_UNKNOWN_FIELD", error: ("Unsupported GSC field: " joined with gk)}
+    end
+  end
+  set site_url to text.trim using (map_get_str using payload, "site_url", "")
+  if site_url is "" or not ((text.starts_with using site_url, "https://") or (text.starts_with using site_url, "sc-domain:"))
+    give back server.json using 400, record {ok: no, code: "GSC_SITE_INVALID", error: "site_url must start with https:// or sc-domain:."}
+  end
+  set action to text.lower using (text.trim using (map_get_str using payload, "action", ""))
+  set auth_code to text.trim using (map_get_str using payload, "authorization_code", "")
+  if action is "start" or auth_code is ""
+    set redir_ov to text.trim using (map_get_str using payload, "redirect_uri", "")
+    set pkce to gsc_start_pkce_state using req, groxy_cache, site_url, redir_ov
+    give back server.json using 200, record {ok: yes, schema_version: "1.8.0", site_url: site_url, pkce: pkce, scope: (call gsc_readonly_scope)}
+  end
+  set verifier to text.trim using (map_get_str using payload, "code_verifier", "")
+  set redir_uri to text.trim using (map_get_str using payload, "redirect_uri", "")
+  if verifier is "" or redir_uri is ""
+    give back server.json using 400, record {ok: no, code: "GSC_PKCE_REQUIRED", error: "code_verifier and redirect_uri are required for PKCE token exchange."}
+  end
+  set ex_res to gsc_exchange_and_store using gsc_conn_insert, gsc_conn_update, site_url, auth_code, verifier, redir_uri
+  if not ex_res.ok
+    give back server.json using ex_res.status, record {ok: no, code: ex_res.code, error: ex_res.error}
+  end
+  give back server.json using 200, ex_res.data
+end
+
+route "POST" "/api/groxy/gsc/connect" using req
+  give back handle_gsc_connect_post using req, groxy_cache, gsc_conn_insert, gsc_conn_update
+end
+
+route "POST" "/api/groxy/research/gsc/connect" using req
+  give back handle_gsc_connect_post using req, groxy_cache, gsc_conn_insert, gsc_conn_update
+end
+
+route "GET" "/api/groxy/gsc/callback" using req
+  if has_map_key using req.query, "error"
+    set e_val to text.from using (req.query at "error")
+    if e_val is not ""
+      give back server.json using 401, record {ok: no, code: "GSC_OAUTH_ERROR", error: ("GSC authorization denied: " joined with e_val)}
+    end
+  end
+  set state_tok to ""
+  if has_map_key using req.query, "state"
+    set state_tok to text.trim using (text.from using (req.query at "state"))
+  end
+  set code_val to ""
+  if has_map_key using req.query, "code"
+    set code_val to text.trim using (text.from using (req.query at "code"))
+  end
+  if state_tok is "" or code_val is ""
+    give back server.json using 400, record {ok: no, code: "GSC_CALLBACK_PARAMS", error: "Missing state or authorization code."}
+  end
+  set cache_key to "gsc_pkce:" joined with state_tok
+  set cached to cache.get using groxy_cache, cache_key
+  if (not cached.found) or cached.value is nothing
+    give back server.json using 403, record {ok: no, code: "GSC_STATE_INVALID", error: "Invalid or expired PKCE state."}
+  end
+  call cache.delete using groxy_cache, cache_key
+  set tx_rec to json.parse using (text.from using cached.value)
+  set site_url to map_get_str using tx_rec, "site_url", "https://example.com"
+  if has_map_key using req.query, "site_url"
+    set q_site to text.trim using (text.from using (req.query at "site_url"))
+    if q_site is not ""
+      set site_url to q_site
+    end
+  end
+  set ex_res to gsc_exchange_and_store using gsc_conn_insert, gsc_conn_update, site_url, code_val, (tx_rec at "code_verifier"), (tx_rec at "redirect_uri")
+  if not ex_res.ok
+    give back server.json using ex_res.status, record {ok: no, code: ex_res.code, error: ex_res.error}
+  end
+  give back server.json using 200, ex_res.data
+end
+
+make handle_gsc_metrics_post using req, groxy_cache, gsc_conn_read
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  if has_map_key using req, "body"
+    if json_has_duplicate_keys using (req at "body")
+      give back server.json using 400, record {ok: no, code: "GSC_DUPLICATE_KEY", error: "Duplicate JSON keys are not permitted."}
+    end
+  end
+  set payload to nothing
+  try
+    set payload to server.parse_json using req
+  catch parse_err
+    give back server.json using 400, record {ok: no, code: "GSC_INVALID_JSON", error: "Request body must be valid JSON."}
+  end
+  if not (is_record_value using payload)
+    give back server.json using 400, record {ok: no, code: "GSC_INVALID_JSON", error: "Request body must be a JSON object."}
+  end
+  for each gk in (collections.keys using payload)
+    if gk is not "site_url" and gk is not "start_date" and gk is not "end_date" and gk is not "row_limit"
+      give back server.json using 400, record {ok: no, code: "GSC_UNKNOWN_FIELD", error: ("Unsupported GSC query field: " joined with gk)}
+    end
+  end
+
+  set site_url to text.trim using (map_get_str using payload, "site_url", "")
+  set start_date to text.trim using (map_get_str using payload, "start_date", "")
+  set end_date to text.trim using (map_get_str using payload, "end_date", "")
+  if site_url is "" or start_date is "" or end_date is ""
+    give back server.json using 400, record {ok: no, code: "GSC_QUERY_PARAMS", error: "site_url, start_date, and end_date are required."}
+  end
+  set row_limit to 25
+  if has_map_key using payload, "row_limit"
+    if not (is_exact_integer_wire_str using (payload at "row_limit"))
+      give back server.json using 422, record {ok: no, code: "ADR025C_WIRE_REQUIRED", error: "row_limit must be an exact base-10 integer wire string."}
+    end
+    set row_limit to text.to_integer using (text.from using (payload at "row_limit"))
+    if row_limit is less than 1 or row_limit is greater than 100
+      give back server.json using 400, record {ok: no, code: "GSC_ROW_LIMIT_BOUNDS", error: "row_limit must be between 1 and 100."}
+    end
+  end
+
+  set master_key to call gsc_get_master_key
+  if master_key is ""
+    give back server.json using 503, record {ok: no, code: "GSC_MASTER_KEY_REQUIRED", error: "GROXY_MASTER_KEY or GRABLAB_MASTER_KEY capability is required."}
+  end
+  set rows to []
+  try
+    set rows to data.query using gsc_conn_read, record {site_url: site_url}
+  catch db_err
+    give back server.json using 503, record {ok: no, code: "GSC_DB_FAILED", error: "GSC connection store unavailable."}
+  end
+  if (collections.length using rows) is 0
+    give back server.json using 404, record {ok: no, code: "GSC_NOT_CONNECTED", error: ("No GSC connection stored for " joined with site_url)}
+  end
+  set conn_row to rows at 0
+  set access_token to ""
+  try
+    set access_token to crypto.decrypt_aead using conn_row.access_token_enc, master_key
+  catch dec_err
+    give back server.json using 503, record {ok: no, code: "GSC_DECRYPT_FAILED", error: "Unable to decrypt stored GSC access token."}
+  end
+
+  set test_base to call gsc_get_test_base_url
+  set enc_site to research_url_encode using site_url
+  set api_url to "https://www.googleapis.com/webmasters/v3/sites/" joined with enc_site joined with "/searchAnalytics/query"
+  if test_base is not ""
+    set api_url to test_base joined with "/webmasters/v3/sites/" joined with enc_site joined with "/searchAnalytics/query"
+  end
+  set chk to research_validate_outbound_url using api_url, (call gsc_allowed_origins), test_base
+  if not chk.ok
+    give back server.json using 403, record {ok: no, code: "GRAB-E402", error: chk.error}
+  end
+
+  set gsc_body to json.stringify using record {startDate: start_date, endDate: end_date, dimensions: ["query", "page"], rowLimit: row_limit}
+  set api_resp to nothing
+  try
+    set api_resp to http.post using api_url, gsc_body, record {headers: {"Content-Type": "application/json", "Authorization": ("Bearer " joined with access_token)}, timeout_ms: 8000, retries: 0}
+  catch net_err
+    give back server.json using 403, record {ok: no, code: "GRAB-E402", error: ("GSC API request blocked or unreachable: " joined with net_err.message)}
+  end
+  if not api_resp.ok
+    give back server.json using 502, record {ok: no, code: "GSC_API_ERROR", error: ("Google Search Console returned HTTP " joined with (text.from using api_resp.status))}
+  end
+
+  set api_doc to json.parse using api_resp.body
+  set out_rows to []
+  if (has_map_key using api_doc, "rows") and (is_list_value using (api_doc at "rows"))
+    for each r in (api_doc at "rows")
+      set keys_l to []
+      if (has_map_key using r, "keys") and (is_list_value using (r at "keys"))
+        set keys_l to r at "keys"
+      end
+      set q_txt to ""
+      set p_txt to "/"
+      if (collections.length using keys_l) is at least 1
+        set q_txt to text.from using (keys_l at 0)
+      end
+      if (collections.length using keys_l) is at least 2
+        set p_txt to text.from using (keys_l at 1)
+      end
+      set out_rows to collections.append using out_rows, record {query: q_txt, page: p_txt, clicks: (gsc_format_int_str using (r at "clicks")), impressions: (gsc_format_int_str using (r at "impressions")), ctr: (gsc_format_dec4_from_number using (r at "ctr")), position: (gsc_format_dec4_from_number using (r at "position"))}
+    end
+  end
+
+  give back server.json using 200, record {ok: yes, schema_version: "1.8.0", site_url: site_url, scope: (call gsc_readonly_scope), gdpr_ccpa_aggregated_only: yes, pii_collected: no, row_count: (text.from using (collections.length using out_rows)), rows: out_rows}
+end
+
+route "POST" "/api/groxy/gsc/metrics" using req
+  give back handle_gsc_metrics_post using req, groxy_cache, gsc_conn_read
+end
+
+route "POST" "/api/groxy/research/gsc/query" using req
+  give back handle_gsc_metrics_post using req, groxy_cache, gsc_conn_read
+end
+
+make handle_gsc_disconnect_post using req, groxy_cache, gsc_conn_delete
+  if not (verify_csrf using groxy_cache, req)
+    give back server.json using 403, record {ok: no, code: "CSRF_INVALID", error: "Invalid or missing X-CSRF-Token"}
+  end
+  set payload to nothing
+  try
+    set payload to server.parse_json using req
+  catch parse_err
+    give back server.json using 400, record {ok: no, code: "GSC_INVALID_JSON", error: "Request body must be valid JSON."}
+  end
+  set site_url to text.trim using (map_get_str using payload, "site_url", "")
+  if site_url is ""
+    give back server.json using 400, record {ok: no, code: "GSC_SITE_INVALID", error: "site_url is required."}
+  end
+  try
+    call data.execute using gsc_conn_delete, record {site_url: site_url}
+  catch db_err
+    give back server.json using 503, record {ok: no, code: "GSC_DB_FAILED", error: "Failed to disconnect GSC property."}
+  end
+  give back server.json using 200, record {ok: yes, schema_version: "1.8.0", disconnected: yes, site_url: site_url}
+end
+
+route "POST" "/api/groxy/gsc/disconnect" using req
+  give back handle_gsc_disconnect_post using req, groxy_cache, gsc_conn_delete
+end
+
+route "POST" "/api/groxy/research/gsc/disconnect" using req
+  give back handle_gsc_disconnect_post using req, groxy_cache, gsc_conn_delete
 end

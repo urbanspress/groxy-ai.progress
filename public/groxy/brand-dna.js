@@ -2,7 +2,7 @@
  * Groxy AI v1.3.0 — Brand DNA wizard helpers and zero-wrapper Grex panel.
  * Values are plain data; the module never inserts HTML or coerces prices to Number.
  */
-export const GROXY_VERSION = "1.7.0";
+export const GROXY_VERSION = "1.8.0";
 export const BRAND_DNA_VERSION = "1.5.0";
 export const BRAND_DNA_QUESTIONS = Object.freeze([
   { id: "business", title: "Business identity", fields: ["business_name", "business_type", "niche"] },

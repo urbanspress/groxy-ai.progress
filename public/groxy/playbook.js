@@ -4,7 +4,7 @@
  * Google Search Central, Semrush, Ahrefs, Grex WCAG AA, and GRAB ADR-025c.
  */
 
-export const GROXY_VERSION = "1.7.0";
+export const GROXY_VERSION = "1.8.0";
 
 export const EXPECTED_RULE_IDS = Object.freeze([
   "GROXY-SEO-001",

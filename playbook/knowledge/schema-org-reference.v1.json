@@ -1,0 +1,61 @@
+{
+  "schema_version": "groxy-knowledge-vault-v1.0",
+  "domain_slug": "schema-org-reference",
+  "display_name": "Schema.org v30.1 Reference & XSS-Safe JSON-LD Vault",
+  "updated_at": "2026-11-17",
+  "numeric_thresholds": {
+    "min_offer_price_usd": "0.00",
+    "max_jsonld_nesting_depth": "12"
+  },
+  "entries": [
+    {
+      "entry_id": "KV-SCHEMA-001",
+      "title": "schema.org/Book & BookSeries Required Properties",
+      "category": "book-structured-data",
+      "tags": ["schema.org", "book", "bookseries", "isbn", "json-ld", "offers"],
+      "summary": "Emit clean schema.org/Book and BookSeries JSON-LD using plain https://schema.org/ enum URLs and exact ADR-025c Offer.price strings.",
+      "rules": [
+        "Set @context to plain 'https://schema.org' and bookFormat to plain 'https://schema.org/Paperback', 'https://schema.org/EBook', 'https://schema.org/Hardcover', or 'https://schema.org/AudiobookFormat'.",
+        "Include name, author (@type Person), isbn, numberOfPages (exact base-10 integer string), inLanguage, genre, typicalAgeRange, and offers (@type Offer with exact price string and priceCurrency).",
+        "Never wrap schema.org URLs in Markdown link brackets inside JSON-LD fields."
+      ],
+      "citations": ["Schema.org v30.1 Book", "Schema.org v30.1 BookSeries", "Google Search Book Structured Data"],
+      "thresholds": {
+        "standard_paperback_price_usd": "14.99",
+        "premium_paperback_price_usd": "16.99"
+      }
+    },
+    {
+      "entry_id": "KV-SCHEMA-002",
+      "title": "XSS-Safe Script Tag Escaping for JSON-LD",
+      "category": "jsonld-security",
+      "tags": ["xss", "json-ld", "script", "escaping", "security"],
+      "summary": "Neutralize script breakout vectors in every emitted JSON-LD preview before embedding inside HTML script tags.",
+      "rules": [
+        "Escape '<' as \\u003c, '>' as \\u003e, '&' as \\u0026, U+2028 as \\u2028, and U+2029 as \\u2029 in serialized JSON-LD.",
+        "Verify closing script tags never appear unescaped anywhere inside json_ld_escaped.",
+        "Validate all user-supplied book titles and blurbs against XSS_PATTERN before staging."
+      ],
+      "citations": ["OWASP XSS Prevention Cheat Sheet", "GROXY-EXPERT.md GREX-SEC-003"],
+      "thresholds": {
+        "max_jsonld_nesting_depth": "12"
+      }
+    },
+    {
+      "entry_id": "KV-SCHEMA-003",
+      "title": "Product, Article, BlogPosting, FAQPage, BreadcrumbList & WebSite Patterns",
+      "category": "editorial-and-commerce-schema",
+      "tags": ["product", "article", "blogposting", "faqpage", "breadcrumblist", "website"],
+      "summary": "Match visible page entities strictly to supported schema.org v30.1 types with verifiable URLs and exact decimal offer strings.",
+      "rules": [
+        "Use Product with Offer (@type Offer, price as exact base-10 string, https://schema.org/InStock) for direct-to-reader book bundles.",
+        "Use FAQPage only when every Question and acceptedAnswer matches visible page copy word-for-word.",
+        "Include BreadcrumbList and WebSite SearchAction metadata for clean site hierarchy signals."
+      ],
+      "citations": ["Schema.org v30.1 Core Vocabulary", "Google Search Central Structured Data Gallery"],
+      "thresholds": {
+        "bundle_price_usd": "12.99"
+      }
+    }
+  ]
+}

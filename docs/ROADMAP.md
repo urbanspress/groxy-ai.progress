@@ -154,7 +154,7 @@ Scope:
 
 ## `v1.8.0` — Baked-In Offline Knowledge Vault, Allowlisted Real-Time Web Research & Bestseller Radar
 
-**Status:** Approved; implementation in progress ([`specifications/GROXY-AI-SPEC-180.md`](../specifications/GROXY-AI-SPEC-180.md)) — Backwards-Compatible Minor Feature. Owner-approved on 2026-11-17; Stage 2 Pre-Implementation Cross-Layer Security & Contract Audit `PASS` (Section 11, Conditions `C1–C8`).
+**Status:** Approved & Frozen — Complete ([`specifications/GROXY-AI-SPEC-180.md`](../specifications/GROXY-AI-SPEC-180.md)) — Backwards-Compatible Minor Feature. Owner-approved on 2026-11-17; Stage 2 Cross-Layer Audit `PASS` (`C1–C8`); implemented and verified 100% across all Section 9 gates (`grab check`, byte-for-byte `grab format`, `101/101` Node unit/DOM tests, and live 4-layer Gate 3B with `release-ready: True`) on 2026-11-17.
 
 Scope:
 - **Baked-In Offline Knowledge Vault (`playbook/knowledge/*.v1.json` & `POST /api/groxy/knowledge/query`):** Zero-fee, zero-network queryable vault covering SEO rules, `schema.org` types, WCAG AA patterns, conversion copywriting, and correctional-facility / direct-to-reader book publishing playbooks (`groxy-knowledge-vault-v1.0`, fail-closed validation, `ADR-025c` exact base-10 wire strings, zero inline HTML/XSS).

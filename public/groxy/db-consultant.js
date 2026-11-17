@@ -3,7 +3,7 @@
  * Domain values remain strings; this module never executes SQL or mutates a DB.
  */
 export const DB_CONSULTANT_VERSION = "1.5.0";
-export const GROXY_VERSION = "1.7.0";
+export const GROXY_VERSION = "1.8.0";
 export const DB_QUIZ_QUESTIONS = Object.freeze([
   { id: "catalog", title: "What do you sell?", choices: ["physical", "digital", "subscription", "mixed"], help: "Controls catalog extensions. Subscription metadata does not enable billing." },
   { id: "variants", title: "Do products have variants?", choices: ["none", "variants", "variants_inventory"], help: "Inventory is added only when variants and stock tracking are selected." },

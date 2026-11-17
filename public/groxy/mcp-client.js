@@ -6,7 +6,7 @@
  *   3. Core GRAB CLI v1.1.0 stdio MCP tools (grab_check, grab_format, grab_inspect_routes, grab_inspect_schema, grab_scaffold)
  */
 
-export const GROXY_VERSION = "1.7.0";
+export const GROXY_VERSION = "1.8.0";
 
 import { parseDesignSystemMarkdown } from "./playbook.js";
 

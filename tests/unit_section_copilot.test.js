@@ -128,8 +128,8 @@ const SAMPLE_SLOT_TREE = {
 };
 
 test("playbook/design-craft.v1.json passes schema validation and malformed playbook fails closed", () => {
-  assert.equal(GROXY_VERSION, "1.7.0");
-  assert.equal(assetSectionCopilot.GROXY_VERSION, "1.7.0");
+  assert.equal(GROXY_VERSION, "1.8.0");
+  assert.equal(assetSectionCopilot.GROXY_VERSION, "1.8.0");
 
   const diskPlaybook = JSON.parse(
     fs.readFileSync(path.join(REPO_ROOT, "playbook", "design-craft.v1.json"), "utf8")
