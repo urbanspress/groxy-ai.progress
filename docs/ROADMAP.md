@@ -152,11 +152,12 @@ Scope:
 
 ---
 
-## `v1.8.0` — Baked-In Offline Knowledge Vault, Allowlisted Real-Time Web Research & Browser Co-Pilot
+## `v1.8.0` — Baked-In Offline Knowledge Vault, Allowlisted Real-Time Web Research & Bestseller Radar
 
-**Status:** Planned — Backwards-Compatible Minor Feature
+**Status:** Approved target; specification in review ([`specifications/GROXY-AI-SPEC-180.md`](../specifications/GROXY-AI-SPEC-180.md)) — Backwards-Compatible Minor Feature
 
 Scope:
-- **Baked-In Static Reference Vault (`playbook/knowledge/*.v1.json`):** Zero-network reference datasets (Schema.org v30.1 vocabularies, WCAG AA contrast rules, country/postal formats, and offline AnswerThePublic-style question/keyword intent frameworks).
-- **Opt-In Allowlisted Real-Time Web Search (`POST /api/groxy/research/search`, `groxy_web_research_enabled`):** Enforces `GRAB-E402` outbound domain allowlisting (blocking private/loopback/metadata IPs `127.0.0.1`/`169.254.169.254`) to query user-configured self-hosted **SearXNG**, DuckDuckGo Instant Answers, Wikipedia/Wikidata, or user BYOK search APIs—returning real-time answers with source URL citations.
-- **OAuth2 Read-Only Google Search Console (`gsc.readonly`, `AES-256-GCM` encrypted tokens) + Curated Bestseller Radar Playbooks (`playbook/market/bestseller-radar.v1.json`):** Opt-in, authorized read-only query-demand intelligence and curated genre/product trends from permitted sources, with source provenance and no access-control bypass. Exact OAuth provider-scope mapping and token lifecycle are deferred to the v1.8.0 specification.
+- **Baked-In Offline Knowledge Vault (`playbook/knowledge/*.v1.json` & `POST /api/groxy/knowledge/query`):** Zero-fee, zero-network queryable vault covering SEO rules, `schema.org` types, WCAG AA patterns, conversion copywriting, and correctional-facility / direct-to-reader book publishing playbooks (`groxy-knowledge-vault-v1.0`, fail-closed validation, `ADR-025c` exact base-10 wire strings, zero inline HTML/XSS).
+- **Allowlisted Real-Time Web Research & Bestseller Radar (`POST /api/groxy/research/search`, `POST /api/groxy/research/bestseller-radar`, `playbook/market/bestseller-radar.v1.json`):** Enforces `GRAB-E402` exact-origin HTTPS allowlisting (blocking loopback/private/link-local/cloud-metadata SSRF and revalidating redirects) to query public trend/book feeds and compile profit-ranked genre/book briefs with exact `ADR-025c` base-10 `GrabDecimal` price tiers (`"2.99"`, `"4.99"`, `"12.99"`, `"14.99"`, `"16.99"`—rejecting JS floats with `422`). Supports **Groxy AI Studio** (`/groxy`), **GrabLab CMS `v1.4.0` Embedded Bestseller Radar**, and **Groxy Desk `v1.1.0` WebView2 Co-Pilot** imports behind single-use target-bound `rtok_res_<hex>` approval tokens (`X-CSRF-Token` + atomic single-winner `201`/`403`/`409` race protection).
+- **OAuth2 Read-Only Google Search Console (`gsc.readonly`, `AES-256-GCM` encrypted tokens):** Connects to the operator's own domain Search Console metrics (GDPR/CCPA compliant, aggregated query/impression/CTR metrics only, secrets encrypted at rest via `use crypto` `AES-256-GCM` `"v1:..."` and never leaked in responses/logs).
+- **Pure `Grex JS v1.0.0` Studio Panel & Section 9 Acceptance Gates:** `divCount === 0`, `innerHTMLWriteCount === 0`, Light/Dark WCAG AA `>= 4.5:1` contrast, `grab check`, byte-for-byte `grab format`, `GRAB-E402` SSRF block tests, `AES-256-GCM` token encryption tests, `422`/`403`/`409` race tests, and live Gate 3B verification (`release-ready: True`).
