@@ -161,3 +161,14 @@ Scope:
 - **Allowlisted Real-Time Web Research & Bestseller Radar (`POST /api/groxy/research/search`, `POST /api/groxy/research/bestseller-radar`, `playbook/market/bestseller-radar.v1.json`):** Enforces `GRAB-E402` exact-origin HTTPS allowlisting (blocking loopback/private/link-local/cloud-metadata SSRF and revalidating redirects) to query public trend/book feeds and compile profit-ranked genre/book briefs with exact `ADR-025c` base-10 `GrabDecimal` price tiers (`"2.99"`, `"4.99"`, `"12.99"`, `"14.99"`, `"16.99"`—rejecting JS floats with `422`). Supports **Groxy AI Studio** (`/groxy`), **GrabLab CMS `v1.4.0` Embedded Bestseller Radar**, and **Groxy Desk `v1.1.0` WebView2 Co-Pilot** imports behind single-use target-bound `rtok_res_<hex>` approval tokens (`X-CSRF-Token` + atomic single-winner `201`/`403`/`409` race protection).
 - **OAuth2 Read-Only Google Search Console (`gsc.readonly`, `AES-256-GCM` encrypted tokens):** Connects to the operator's own domain Search Console metrics (GDPR/CCPA compliant, aggregated query/impression/CTR metrics only, secrets encrypted at rest via `use crypto` `AES-256-GCM` `"v1:..."` and never leaked in responses/logs).
 - **Pure `Grex JS v1.0.0` Studio Panel & Section 9 Acceptance Gates:** `divCount === 0`, `innerHTMLWriteCount === 0`, Light/Dark WCAG AA `>= 4.5:1` contrast, `grab check`, byte-for-byte `grab format`, `GRAB-E402` SSRF block tests, `AES-256-GCM` token encryption tests, `422`/`403`/`409` race tests, and live Gate 3B verification (`release-ready: True`).
+
+---
+
+## `v1.9.0` — SEMrush-Parity Full-Site Technical Spider, Auto-Internal-Linker & Free Bing/Common-Crawl Competitor Gap Analyzer
+
+**Status:** Planned — Backwards-Compatible Minor Feature
+
+Scope:
+- **Full-Site Technical SEO Spider (`POST /api/groxy/spider/crawl`):** Bounded, `GRAB-E402`-governed crawler auditing status codes, canonicals, redirect chains/loops, orphan pages, duplicate titles/H1s/meta descriptions, heading hierarchy, `schema.org` coverage, image `alt`/dimension hygiene, and internal PageRank authority.
+- **Contextual Auto-Internal-Linker (`POST /api/groxy/links/auto-stage`):** Generates context-aware internal link anchor diffs across draft/published entries (`GROXY-SAFE-001` single-use approval token + side-by-side human review before staging via `grab mcp`).
+- **Zero-Fee Bing Webmaster & Common Crawl Competitor Gap Analyzer (`POST /api/groxy/research/competitor-gap`):** Combines `GRAB-E402`-allowlisted public Common Crawl index queries, optional read-only Bing Webmaster / `gsc.readonly` metrics, and the Baked-In Knowledge Vault (`v1.8.0`) to uncover high-intent topic, keyword, and SERP feature gaps with `ADR-025c` exact metrics and zero paid third-party SEO API subscriptions.
